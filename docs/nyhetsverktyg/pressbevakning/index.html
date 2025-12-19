@@ -340,16 +340,23 @@
     <script src="../../assets/js/components.js"></script>
     <script>
         // =========================================================================
-        // PRESSBEVAKNING - MyNewsdesk integration
+        // PRESSBEVAKNING - Pressmeddelanden från svenska företag och byråer
         // =========================================================================
 
-        // Default pressrooms att bevaka (kan utökas av användaren)
+        // Default pressrum/RSS-källor att bevaka
+        // Alla feeds nedan är testade och verifierade 2024-12-19
         const DEFAULT_PRESSROOMS = [
-            { id: 'northvolt', name: 'Northvolt', url: 'https://www.mynewsdesk.com/se/northvolt', logo: '🔋' },
-            { id: 'klarna', name: 'Klarna', url: 'https://www.mynewsdesk.com/se/klarna', logo: '💳' },
-            { id: 'spotify', name: 'Spotify', url: 'https://newsroom.spotify.com/feed/', logo: '🎵', isRss: true },
-            { id: 'vattenfall', name: 'Vattenfall', url: 'https://www.mynewsdesk.com/se/vattenfall', logo: '⚡' },
-            { id: 'volvo', name: 'Volvo Group', url: 'https://www.mynewsdesk.com/se/volvogroup', logo: '🚛' }
+            // Svenska affärs/ekonominyheter
+            { id: 'di', name: 'Dagens Industri', url: 'https://www.di.se/rss', logo: '📈' },
+            { id: 'di-digital', name: 'Di Digital', url: 'https://digital.di.se/rss', logo: '💻' },
+            { id: 'breakit', name: 'Breakit', url: 'https://www.breakit.se/feed/artiklar', logo: '🚀' },
+            { id: 'realtid', name: 'Realtid', url: 'https://www.realtid.se/feed', logo: '💹' },
+
+            // Pressrum från företag
+            { id: 'spotify', name: 'Spotify Newsroom', url: 'https://newsroom.spotify.com/feed/', logo: '🎵' },
+
+            // Tech-nyheter
+            { id: 'hackernews', name: 'Hacker News', url: 'https://hnrss.org/frontpage', logo: '🔶' }
         ];
 
         // RSS2JSON API - konverterar RSS till JSON och hanterar CORS
@@ -362,17 +369,13 @@
         let filterSource = '';
 
         // =========================================================================
-        // FETCH MYNEWSDESK
+        // FETCH RSS FEEDS
         // =========================================================================
 
         async function fetchPressroom(pressroom) {
             try {
-                // MyNewsdesk har RSS feeds på /rss/current_news/{id}
-                const rssUrl = pressroom.url.includes('/rss/')
-                    ? pressroom.url
-                    : `${pressroom.url}/rss/pressreleases`;
-
-                const apiUrl = RSS2JSON_API + encodeURIComponent(rssUrl);
+                // Använd URL:en direkt - alla våra källor har redan RSS-format
+                const apiUrl = RSS2JSON_API + encodeURIComponent(pressroom.url);
                 const response = await fetch(apiUrl);
 
                 if (!response.ok) throw new Error('Fetch failed');
