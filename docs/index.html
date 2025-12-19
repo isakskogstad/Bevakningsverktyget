@@ -627,7 +627,7 @@
             document.getElementById('user-avatar').textContent = getInitials(email);
 
             try {
-                const { data: profile } = await supabase
+                const { data: profile } = await sb
                     .from('user_profiles')
                     .select('role')
                     .eq('id', currentUser.id)
@@ -649,7 +649,7 @@
         }
 
         async function loadWatchedCompanies() {
-            const { data } = await supabase
+            const { data } = await sb
                 .from('loop_table')
                 .select('orgnr')
                 .limit(1500);
@@ -661,14 +661,14 @@
             const today = new Date().toISOString().split('T')[0];
 
             // POIT events today
-            const { count: poitCount } = await supabase
+            const { count: poitCount } = await sb
                 .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
                 .gte('announcement_date', today);
             document.getElementById('stat-poit').textContent = poitCount || 0;
 
             // Article stats
-            const { data: articles } = await supabase
+            const { data: articles } = await sb
                 .from('news_articles')
                 .select('status');
 
@@ -679,7 +679,7 @@
         }
 
         async function loadPoitEvents() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('poit_announcements')
                 .select('*')
                 .order('announcement_date', { ascending: false })
