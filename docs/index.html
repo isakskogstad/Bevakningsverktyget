@@ -558,15 +558,16 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+        // App state - use var to allow redefinition
+        var SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
 
-        let supabase = null;
-        let currentUser = null;
-        let events = [];
-        let currentOffset = 0;
-        const pageSize = 20;
-        let watchedOrgnrs = [];
+        var supabase = null;
+        var currentUser = null;
+        var events = [];
+        var currentOffset = 0;
+        var pageSize = 20;
+        var watchedOrgnrs = [];
 
         async function initSupabase() {
             try {
