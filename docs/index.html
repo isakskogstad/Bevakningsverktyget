@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bevakningsverktyget</title>
+    <title>Bevakningsverktyget - Loop Impact</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -22,16 +22,12 @@
             --white: #ffffff;
             --error: #ef4444;
             --success: #22c55e;
+            --warning: #f59e0b;
+            --blue: #3b82f6;
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--white);
             color: var(--dark);
             min-height: 100vh;
@@ -39,22 +35,16 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* ============ LOGIN PAGE ============ */
+        /* LOGIN PAGE */
         .login-page {
             min-height: 100vh;
             display: grid;
             grid-template-columns: 1fr 1fr;
         }
-
         @media (max-width: 900px) {
-            .login-page {
-                grid-template-columns: 1fr;
-            }
-            .login-hero {
-                display: none;
-            }
+            .login-page { grid-template-columns: 1fr; }
+            .login-hero { display: none; }
         }
-
         .login-hero {
             background: var(--accent);
             display: flex;
@@ -64,17 +54,13 @@
             position: relative;
             overflow: hidden;
         }
-
         .login-hero::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 100%;
+            top: -50%; right: -50%;
+            width: 100%; height: 100%;
             background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
         }
-
         .login-hero h1 {
             font-size: 3.5rem;
             font-weight: 700;
@@ -84,7 +70,6 @@
             position: relative;
             z-index: 1;
         }
-
         .login-hero p {
             font-size: 1.25rem;
             color: var(--gray-700);
@@ -92,7 +77,6 @@
             position: relative;
             z-index: 1;
         }
-
         .login-form-container {
             display: flex;
             flex-direction: column;
@@ -102,42 +86,12 @@
             margin: 0 auto;
             width: 100%;
         }
-
-        .login-logo {
-            margin-bottom: 48px;
-        }
-
-        .login-logo span {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--dark);
-            letter-spacing: -0.02em;
-        }
-
-        .login-title {
-            font-size: 2rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 8px;
-        }
-
-        .login-subtitle {
-            color: var(--gray-500);
-            margin-bottom: 40px;
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--gray-700);
-            margin-bottom: 8px;
-        }
-
+        .login-logo { margin-bottom: 48px; }
+        .login-logo span { font-size: 1.5rem; font-weight: 700; color: var(--dark); }
+        .login-title { font-size: 2rem; font-weight: 600; color: var(--dark); margin-bottom: 8px; }
+        .login-subtitle { color: var(--gray-500); margin-bottom: 40px; }
+        .form-group { margin-bottom: 24px; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--gray-700); margin-bottom: 8px; }
         .form-group input {
             width: 100%;
             padding: 16px;
@@ -146,70 +100,31 @@
             border-radius: 8px;
             background: var(--white);
             color: var(--dark);
-            transition: all 0.2s ease;
+            transition: all 0.2s;
         }
-
-        .form-group input::placeholder {
-            color: var(--gray-500);
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--dark);
-            box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
-        }
-
+        .form-group input:focus { outline: none; border-color: var(--dark); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            padding: 16px 32px;
-            font-size: 1rem;
+            gap: 8px;
+            padding: 14px 24px;
+            font-size: 0.9rem;
             font-weight: 600;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
             text-decoration: none;
         }
-
-        .btn-primary {
-            width: 100%;
-            background: var(--dark);
-            color: var(--white);
-        }
-
-        .btn-primary:hover {
-            background: var(--black);
-            transform: translateY(-1px);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--dark);
-            border: 1px solid var(--gray-300);
-        }
-
-        .btn-secondary:hover {
-            background: var(--gray-100);
-            border-color: var(--gray-700);
-        }
-
-        .btn-accent {
-            background: var(--accent);
-            color: var(--dark);
-        }
-
-        .btn-accent:hover {
-            background: var(--accent-hover);
-        }
-
+        .btn-primary { width: 100%; background: var(--dark); color: var(--white); }
+        .btn-primary:hover { background: var(--black); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: transparent; color: var(--dark); border: 1px solid var(--gray-300); }
+        .btn-secondary:hover { background: var(--gray-100); }
+        .btn-accent { background: var(--accent); color: var(--dark); }
+        .btn-accent:hover { background: var(--accent-hover); }
+        .btn-sm { padding: 8px 16px; font-size: 0.8rem; }
         .alert {
             padding: 14px 16px;
             border-radius: 8px;
@@ -217,45 +132,15 @@
             margin-bottom: 24px;
             display: none;
         }
+        .alert.show { display: block; }
+        .alert-error { background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+        .alert-success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
+        .login-footer { margin-top: 40px; text-align: center; color: var(--gray-500); font-size: 0.875rem; }
 
-        .alert.show {
-            display: block;
-        }
-
-        .alert-error {
-            background: #fef2f2;
-            color: var(--error);
-            border: 1px solid #fecaca;
-        }
-
-        .alert-success {
-            background: #f0fdf4;
-            color: var(--success);
-            border: 1px solid #bbf7d0;
-        }
-
-        .login-footer {
-            margin-top: 40px;
-            text-align: center;
-            color: var(--gray-500);
-            font-size: 0.875rem;
-        }
-
-        /* ============ DASHBOARD ============ */
-        #login-form.hide {
-            display: none;
-        }
-
-        #dashboard {
-            display: none;
-            min-height: 100vh;
-            background: var(--gray-100);
-        }
-
-        #dashboard.show {
-            display: block;
-        }
-
+        /* DASHBOARD */
+        #login-form.hide { display: none; }
+        #dashboard { display: none; min-height: 100vh; background: var(--gray-100); }
+        #dashboard.show { display: block; }
         .dashboard-nav {
             background: var(--white);
             border-bottom: 1px solid var(--gray-300);
@@ -264,251 +149,250 @@
             top: 0;
             z-index: 100;
         }
-
         .nav-inner {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 72px;
+            height: 64px;
         }
-
-        .nav-brand {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--dark);
-            letter-spacing: -0.02em;
-        }
-
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-
+        .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
+        .nav-right { display: flex; align-items: center; gap: 16px; }
         .user-pill {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
+            gap: 10px;
+            padding: 6px 14px;
             background: var(--gray-100);
             border-radius: 100px;
         }
-
         .user-avatar {
-            width: 32px;
-            height: 32px;
+            width: 28px; height: 28px;
             background: var(--accent);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             color: var(--dark);
         }
-
-        .user-name {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--dark);
-        }
-
+        .user-name { font-size: 0.85rem; font-weight: 500; color: var(--dark); }
         .role-badge {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 100px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+        }
+        .role-badge.admin { background: var(--accent); color: var(--dark); }
+        .role-badge.member { background: var(--gray-300); color: var(--gray-700); }
+        .btn-logout { padding: 8px 16px; font-size: 0.8rem; }
+
+        .dashboard-content { max-width: 1600px; margin: 0 auto; padding: 32px 40px; }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 32px;
+        }
+        @media (max-width: 1200px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
         }
 
-        .role-badge.admin {
-            background: var(--accent);
-            color: var(--dark);
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--gray-300);
+        }
+        .stat-card.highlight { background: var(--accent); border-color: var(--accent); }
+        .stat-label { font-size: 0.8rem; color: var(--gray-500); margin-bottom: 4px; }
+        .stat-card.highlight .stat-label { color: var(--gray-700); }
+        .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--dark); }
+        @media (max-width: 768px) {
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
         }
 
-        .role-badge.member {
-            background: var(--gray-300);
-            color: var(--gray-700);
-        }
-
-        .btn-logout {
-            padding: 10px 20px;
-            font-size: 0.875rem;
-        }
-
-        .dashboard-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 48px 40px;
-        }
-
-        .welcome-section {
-            margin-bottom: 48px;
-        }
-
-        .welcome-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
-        }
-
-        .welcome-subtitle {
-            font-size: 1.125rem;
-            color: var(--gray-500);
-        }
-
+        /* Feed Section */
+        .feed-section { margin-bottom: 32px; }
         .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
-
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--dark);
+        .section-title { font-size: 1.1rem; font-weight: 600; color: var(--dark); }
+        .live-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
         }
-
-        .tools-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 24px;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
-
-        .tool-card {
+        .feed-list { display: flex; flex-direction: column; gap: 12px; }
+        .feed-item {
             background: var(--white);
-            border-radius: 16px;
-            padding: 32px;
+            border-radius: 12px;
             border: 1px solid var(--gray-300);
-            transition: all 0.3s ease;
-            position: relative;
+            padding: 16px 20px;
+            transition: all 0.2s;
+        }
+        .feed-item:hover { border-color: var(--dark); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .feed-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .feed-category {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .feed-category.konkurs { background: #fecaca; color: var(--error); }
+        .feed-category.registrering { background: #dbeafe; color: var(--blue); }
+        .feed-category.kallelse { background: #fef3c7; color: var(--warning); }
+        .feed-category.skuld { background: #e5e7eb; color: var(--gray-700); }
+        .feed-time { font-size: 0.8rem; color: var(--gray-500); }
+        .feed-company { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+        .feed-description { font-size: 0.9rem; color: var(--gray-500); margin-bottom: 12px; }
+        .feed-actions { display: flex; gap: 8px; }
+        .feed-actions .btn { padding: 6px 12px; font-size: 0.75rem; }
+
+        /* Sidebar */
+        .sidebar { display: flex; flex-direction: column; gap: 24px; }
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--gray-300);
             overflow: hidden;
         }
-
-        .tool-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gray-300);
-            transition: background 0.3s ease;
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-300);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-
-        .tool-card:hover {
-            border-color: var(--dark);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-            transform: translateY(-4px);
+        .card-title { font-size: 0.95rem; font-weight: 600; }
+        .card-body { padding: 16px 20px; }
+        .tool-list { display: flex; flex-direction: column; gap: 8px; }
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--dark);
+            transition: all 0.2s;
         }
-
-        .tool-card:hover::before {
-            background: var(--accent);
-        }
-
-        .tool-card.admin-card::before {
-            background: var(--accent);
-        }
-
+        .tool-item:hover { background: var(--gray-100); }
         .tool-icon {
-            width: 48px;
-            height: 48px;
+            width: 36px; height: 36px;
             background: var(--gray-100);
-            border-radius: 12px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
+            font-size: 1.1rem;
         }
+        .tool-item:hover .tool-icon { background: var(--accent); }
+        .tool-info { flex: 1; }
+        .tool-name { font-weight: 500; font-size: 0.9rem; }
+        .tool-desc { font-size: 0.8rem; color: var(--gray-500); }
 
-        .tool-card h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--dark);
-            margin-bottom: 8px;
-        }
-
-        .tool-card p {
-            color: var(--gray-500);
-            font-size: 0.95rem;
-            margin-bottom: 24px;
-            line-height: 1.6;
-        }
-
-        .tool-link {
-            display: inline-flex;
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
             align-items: center;
-            gap: 8px;
-            font-weight: 600;
-            color: var(--dark);
-            text-decoration: none;
-            font-size: 0.95rem;
-            transition: gap 0.2s ease;
+            justify-content: center;
         }
-
-        .tool-link:hover {
-            gap: 12px;
-        }
-
-        .tool-link svg {
-            width: 16px;
-            height: 16px;
-        }
-
-        /* Stats bar */
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 48px;
-        }
-
-        .stat-card {
+        .modal.show { display: flex; }
+        .modal-content {
             background: var(--white);
-            border-radius: 12px;
-            padding: 24px;
-            border: 1px solid var(--gray-300);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-
-        .stat-label {
-            font-size: 0.875rem;
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        .modal-title { font-size: 1.1rem; font-weight: 600; }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
             color: var(--gray-500);
-            margin-bottom: 8px;
         }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--dark);
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--gray-300);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
         }
+        .investigation-step {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .step-icon {
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .step-icon.pending { background: var(--gray-300); color: var(--gray-500); }
+        .step-icon.active { background: var(--accent); color: var(--dark); }
+        .step-icon.done { background: var(--success); color: var(--white); }
+        .step-content { flex: 1; }
+        .step-title { font-weight: 500; margin-bottom: 2px; }
+        .step-desc { font-size: 0.85rem; color: var(--gray-500); }
 
-        /* Mobile responsive */
+        .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
+        .empty-state h3 { margin-bottom: 8px; color: var(--dark); }
+
         @media (max-width: 768px) {
-            .dashboard-nav {
-                padding: 0 20px;
-            }
-            .dashboard-content {
-                padding: 32px 20px;
-            }
-            .welcome-title {
-                font-size: 1.75rem;
-            }
-            .tools-grid {
-                grid-template-columns: 1fr;
-            }
-            .nav-right {
-                gap: 12px;
-            }
-            .user-name {
-                display: none;
-            }
+            .dashboard-nav { padding: 0 20px; }
+            .dashboard-content { padding: 20px; }
+            .user-name { display: none; }
         }
     </style>
 </head>
@@ -516,36 +400,30 @@
     <!-- Login Page -->
     <div class="login-page" id="login-form">
         <div class="login-hero">
-            <h1>Bevaka.<br>Analysera.<br>Agera.</h1>
-            <p>Automatiserad bevakning av svenska företag med realtidsnotifikationer och AI-driven analys.</p>
+            <h1>Bevaka.<br>Analysera.<br>Publicera.</h1>
+            <p>1214 impact-företag under bevakning. Realtidsnotifikationer från POIT. AI-driven journalistik.</p>
         </div>
         <div class="login-form-container">
             <div class="login-logo">
                 <span>Bevakningsverktyget</span>
             </div>
-
             <h2 class="login-title">Välkommen tillbaka</h2>
             <p class="login-subtitle">Logga in för att fortsätta</p>
-
             <div class="alert alert-error" id="error"></div>
             <div class="alert alert-success" id="success"></div>
-
             <form id="login-form-element">
                 <div class="form-group">
                     <label for="email">E-postadress</label>
                     <input type="email" id="email" placeholder="namn@foretag.se" required autocomplete="email">
                 </div>
-
                 <div class="form-group">
                     <label for="password">Lösenord</label>
                     <input type="password" id="password" placeholder="Ange lösenord" required autocomplete="current-password">
                 </div>
-
                 <button type="submit" class="btn btn-primary" id="submit-btn">Logga in</button>
             </form>
-
             <div class="login-footer">
-                <p>Endast för auktoriserade användare</p>
+                <p>Loop Impact - Bevakningsredaktionen</p>
             </div>
         </div>
     </div>
@@ -567,226 +445,502 @@
         </nav>
 
         <main class="dashboard-content">
-            <section class="welcome-section">
-                <h1 class="welcome-title">God morgon, <span id="user-first-name">Användare</span></h1>
-                <p class="welcome-subtitle">Här är dina verktyg för företagsbevakning</p>
-            </section>
-
-            <section class="stats-bar">
-                <div class="stat-card">
+            <div class="stats-bar">
+                <div class="stat-card highlight">
                     <div class="stat-label">Bevakade företag</div>
-                    <div class="stat-value">247</div>
+                    <div class="stat-value" id="stat-companies">1214</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Ändringar denna vecka</div>
-                    <div class="stat-value">12</div>
+                    <div class="stat-label">POIT-händelser idag</div>
+                    <div class="stat-value" id="stat-poit">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Dokument hämtade</div>
-                    <div class="stat-value">1,432</div>
+                    <div class="stat-label">Utkast</div>
+                    <div class="stat-value" id="stat-drafts">0</div>
                 </div>
-            </section>
-
-            <section>
-                <div class="section-header">
-                    <h2 class="section-title">Verktyg</h2>
+                <div class="stat-card">
+                    <div class="stat-label">Publicerade artiklar</div>
+                    <div class="stat-value" id="stat-published">0</div>
                 </div>
-                <div class="tools-grid">
-                    <div class="tool-card">
-                        <div class="tool-icon">📊</div>
-                        <h3>Företagsbevakning</h3>
-                        <p>Övervaka ändringar i företagsregistret hos Bolagsverket. Få notifikationer vid styrelseändringar, adressbyten och mer.</p>
-                        <a href="#" class="tool-link">
-                            Öppna verktyg
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 8h10M9 4l4 4-4 4"/>
-                            </svg>
-                        </a>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="main-content">
+                    <section class="feed-section">
+                        <div class="section-header">
+                            <h2 class="section-title">
+                                <span class="live-dot"></span>
+                                Händelseflöde - POIT
+                            </h2>
+                            <button class="btn btn-secondary btn-sm" onclick="refreshFeed()">Uppdatera</button>
+                        </div>
+                        <div id="feed-list" class="feed-list">
+                            <div class="empty-state">
+                                <h3>Laddar händelser...</h3>
+                            </div>
+                        </div>
+                        <div style="margin-top: 16px; text-align: center;">
+                            <button class="btn btn-secondary" id="load-more-btn" onclick="loadMoreEvents()" style="display: none;">
+                                Ladda fler händelser
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="sidebar">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Verktyg</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="tool-list">
+                                <a href="verktyg/foretagsbevakning/" class="tool-item">
+                                    <div class="tool-icon">📊</div>
+                                    <div class="tool-info">
+                                        <div class="tool-name">Företagsbevakning</div>
+                                        <div class="tool-desc">1214 Loop Impact-företag</div>
+                                    </div>
+                                </a>
+                                <a href="verktyg/nyhetsredaktion/" class="tool-item">
+                                    <div class="tool-icon">📰</div>
+                                    <div class="tool-info">
+                                        <div class="tool-name">Nyhetsredaktion</div>
+                                        <div class="tool-desc">Skriv och publicera artiklar</div>
+                                    </div>
+                                </a>
+                                <a href="verktyg/dokumentkop/" class="tool-item">
+                                    <div class="tool-icon">📁</div>
+                                    <div class="tool-info">
+                                        <div class="tool-name">Dokumentköp</div>
+                                        <div class="tool-desc">Hämta från Bolagsverket</div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="tool-card">
-                        <div class="tool-icon">📰</div>
-                        <h3>Nyhetsredaktion</h3>
-                        <p>Generera nyhetsartiklar automatiskt baserat på företagshändelser. AI-assisterad research och skrivning.</p>
-                        <a href="#" class="tool-link">
-                            Öppna verktyg
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 8h10M9 4l4 4-4 4"/>
-                            </svg>
-                        </a>
-                    </div>
-
-                    <div class="tool-card">
-                        <div class="tool-icon">📁</div>
-                        <h3>Dokumentköp</h3>
-                        <p>Automatiserad hämtning av årsredovisningar, bolagsordningar och protokoll från Bolagsverket.</p>
-                        <a href="#" class="tool-link">
-                            Öppna verktyg
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 8h10M9 4l4 4-4 4"/>
-                            </svg>
-                        </a>
-                    </div>
-
-                    <div class="tool-card admin-card" id="admin-tools" style="display:none;">
-                        <div class="tool-icon">🔐</div>
-                        <h3>Admin: API-nycklar</h3>
-                        <p>Hantera krypterade API-nycklar och autentiseringsuppgifter för alla integrerade tjänster.</p>
-                        <a href="admin-verktyg/02-api-nycklar/public/index.html" class="tool-link">
-                            Öppna admin
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 8h10M9 4l4 4-4 4"/>
-                            </svg>
-                        </a>
+                    <div class="card" id="admin-card" style="display: none;">
+                        <div class="card-header">
+                            <h3 class="card-title">Administration</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="tool-list">
+                                <a href="admin/api-nycklar/" class="tool-item">
+                                    <div class="tool-icon">🔐</div>
+                                    <div class="tool-info">
+                                        <div class="tool-name">API-nycklar</div>
+                                        <div class="tool-desc">Hantera autentisering</div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
         </main>
     </div>
 
+    <!-- Investigation Modal -->
+    <div class="modal" id="investigate-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Undersök händelse</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <div id="event-details"></div>
+                <div id="investigation-steps" style="margin-top: 20px;"></div>
+            </div>
+            <div class="modal-footer" id="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        (function() {
-            'use strict';
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
 
-            const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+        let supabase = null;
+        let currentUser = null;
+        let events = [];
+        let currentOffset = 0;
+        const pageSize = 20;
+        let watchedOrgnrs = [];
 
-            let supabaseClient = null;
-            let currentUser = null;
+        async function initSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    currentUser = session.user;
+                    await showDashboard();
+                }
+            } catch (error) {
+                console.error('Supabase init error:', error);
+            }
+        }
 
-            async function initSupabase() {
-                try {
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    const { data: { session } } = await supabaseClient.auth.getSession();
-                    if (session) {
-                        currentUser = session.user;
-                        await showDashboard();
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const submitBtn = document.getElementById('submit-btn');
+            const errorEl = document.getElementById('error');
+            const successEl = document.getElementById('success');
+
+            errorEl.classList.remove('show');
+            successEl.classList.remove('show');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Loggar in...';
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                currentUser = data.user;
+                successEl.textContent = 'Inloggning lyckades!';
+                successEl.classList.add('show');
+                setTimeout(() => showDashboard(), 300);
+            } catch (error) {
+                errorEl.textContent = error.message === 'Invalid login credentials'
+                    ? 'Fel e-post eller lösenord'
+                    : error.message;
+                errorEl.classList.add('show');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Logga in';
+            }
+        }
+
+        function getInitials(email) {
+            const parts = email.split('@')[0].split('.');
+            return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : email.substring(0, 2).toUpperCase();
+        }
+
+        async function showDashboard() {
+            document.getElementById('login-form').classList.add('hide');
+            document.getElementById('dashboard').classList.add('show');
+
+            const email = currentUser.email;
+            document.getElementById('user-email-display').textContent = email;
+            document.getElementById('user-avatar').textContent = getInitials(email);
+
+            try {
+                const { data: profile } = await supabase
+                    .from('user_profiles')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profile) {
+                    const roleEl = document.getElementById('user-role');
+                    roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
+                    roleEl.className = 'role-badge ' + profile.role;
+                    if (profile.role === 'admin') {
+                        document.getElementById('admin-card').style.display = 'block';
                     }
-                } catch (error) {
-                    console.error('Supabase init error:', error);
                 }
+            } catch (e) { console.error(e); }
+
+            await loadWatchedCompanies();
+            await loadStats();
+            await loadPoitEvents();
+        }
+
+        async function loadWatchedCompanies() {
+            const { data } = await supabase
+                .from('loop_table')
+                .select('orgnr')
+                .limit(1500);
+            watchedOrgnrs = (data || []).map(c => c.orgnr);
+            document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
+        }
+
+        async function loadStats() {
+            const today = new Date().toISOString().split('T')[0];
+
+            // POIT events today
+            const { count: poitCount } = await supabase
+                .from('poit_announcements')
+                .select('*', { count: 'exact', head: true })
+                .gte('announcement_date', today);
+            document.getElementById('stat-poit').textContent = poitCount || 0;
+
+            // Article stats
+            const { data: articles } = await supabase
+                .from('news_articles')
+                .select('status');
+
+            if (articles) {
+                document.getElementById('stat-drafts').textContent = articles.filter(a => a.status === 'draft').length;
+                document.getElementById('stat-published').textContent = articles.filter(a => a.status === 'published').length;
+            }
+        }
+
+        async function loadPoitEvents() {
+            const { data, error } = await supabase
+                .from('poit_announcements')
+                .select('*')
+                .order('announcement_date', { ascending: false })
+                .range(currentOffset, currentOffset + pageSize - 1);
+
+            if (error) {
+                console.error('Error loading events:', error);
+                return;
             }
 
-            async function handleLogin(event) {
-                event.preventDefault();
+            events = data || [];
+            renderEvents();
 
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const submitBtn = document.getElementById('submit-btn');
-                const errorEl = document.getElementById('error');
-                const successEl = document.getElementById('success');
+            if (events.length === pageSize) {
+                document.getElementById('load-more-btn').style.display = 'inline-flex';
+            }
+        }
 
-                errorEl.classList.remove('show');
-                successEl.classList.remove('show');
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Loggar in...';
+        function renderEvents() {
+            const container = document.getElementById('feed-list');
 
-                try {
-                    const { data, error } = await supabaseClient.auth.signInWithPassword({
-                        email: email,
-                        password: password
-                    });
+            if (events.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Inga händelser hittade</h3>
+                        <p>Nya POIT-händelser visas här i realtid</p>
+                    </div>
+                `;
+                return;
+            }
 
-                    if (error) throw error;
+            container.innerHTML = events.map(e => {
+                const isWatched = watchedOrgnrs.includes(e.orgnr) ||
+                    (e.extracted_orgnrs && e.extracted_orgnrs.some(o => watchedOrgnrs.includes(o)));
 
-                    currentUser = data.user;
-                    successEl.textContent = 'Inloggning lyckades!';
-                    successEl.classList.add('show');
+                return `
+                    <div class="feed-item" data-id="${e.id}">
+                        <div class="feed-item-header">
+                            <span class="feed-category ${getCategoryClass(e.category)}">${e.category}</span>
+                            <span class="feed-time">${formatDate(e.announcement_date)}</span>
+                        </div>
+                        <div class="feed-company">${e.orgnr || 'Okänt orgnr'} ${isWatched ? '⭐' : ''}</div>
+                        <div class="feed-description">${truncate(e.title || e.content, 150)}</div>
+                        <div class="feed-actions">
+                            <button class="btn btn-accent btn-sm" onclick="investigateEvent('${e.id}')">
+                                Undersök mer
+                            </button>
+                            <button class="btn btn-secondary btn-sm" onclick="ignoreEvent('${e.id}')">
+                                Bortse
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
-                    setTimeout(() => {
-                        showDashboard();
-                    }, 300);
+        function getCategoryClass(category) {
+            if (!category) return 'registrering';
+            const cat = category.toLowerCase();
+            if (cat.includes('konkurs') || cat.includes('likvidation')) return 'konkurs';
+            if (cat.includes('kallelse')) return 'kallelse';
+            if (cat.includes('skuld')) return 'skuld';
+            return 'registrering';
+        }
 
-                } catch (error) {
-                    console.error('Login error:', error);
-                    errorEl.textContent = error.message === 'Invalid login credentials'
-                        ? 'Fel e-post eller lösenord'
-                        : error.message;
-                    errorEl.classList.add('show');
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Logga in';
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) {
+                return 'Idag';
+            }
+            return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+        }
+
+        function truncate(text, length) {
+            if (!text) return '-';
+            return text.length > length ? text.substring(0, length) + '...' : text;
+        }
+
+        async function refreshFeed() {
+            currentOffset = 0;
+            await loadPoitEvents();
+        }
+
+        async function loadMoreEvents() {
+            currentOffset += pageSize;
+            const { data } = await supabase
+                .from('poit_announcements')
+                .select('*')
+                .order('announcement_date', { ascending: false })
+                .range(currentOffset, currentOffset + pageSize - 1);
+
+            if (data && data.length > 0) {
+                events = [...events, ...data];
+                renderEvents();
+                if (data.length < pageSize) {
+                    document.getElementById('load-more-btn').style.display = 'none';
                 }
+            } else {
+                document.getElementById('load-more-btn').style.display = 'none';
             }
+        }
 
-            function getInitials(email) {
-                const parts = email.split('@')[0].split('.');
-                if (parts.length >= 2) {
-                    return (parts[0][0] + parts[1][0]).toUpperCase();
-                }
-                return email.substring(0, 2).toUpperCase();
+        let currentEventId = null;
+
+        function investigateEvent(eventId) {
+            currentEventId = eventId;
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            document.getElementById('event-details').innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <div class="feed-category ${getCategoryClass(event.category)}" style="margin-bottom: 8px;">
+                        ${event.category}
+                    </div>
+                    <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${event.orgnr || 'Okänt företag'}</h4>
+                    <p style="color: var(--gray-500);">${event.title || event.content || 'Ingen beskrivning'}</p>
+                </div>
+            `;
+
+            document.getElementById('investigation-steps').innerHTML = `
+                <h4 style="margin-bottom: 12px;">Undersökningsprocess</h4>
+                <div class="investigation-step">
+                    <div class="step-icon pending">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Sök företagsinfo</div>
+                        <div class="step-desc">Hämta grundläggande data från Bolagsverket</div>
+                    </div>
+                </div>
+                <div class="investigation-step">
+                    <div class="step-icon pending">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Köp underlag</div>
+                        <div class="step-desc">Beställ relevant dokumentation (protokoll, årsredovisning)</div>
+                    </div>
+                </div>
+                <div class="investigation-step">
+                    <div class="step-icon pending">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Analysera dokument</div>
+                        <div class="step-desc">AI-driven analys av innehållet</div>
+                    </div>
+                </div>
+                <div class="investigation-step">
+                    <div class="step-icon pending">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Sammanställ resultat</div>
+                        <div class="step-desc">Presentera fynd och rekommendationer</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Avbryt</button>
+                <button class="btn btn-accent" onclick="startInvestigation('${eventId}')">Starta undersökning</button>
+            `;
+
+            document.getElementById('investigate-modal').classList.add('show');
+        }
+
+        async function startInvestigation(eventId) {
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            const steps = document.querySelectorAll('.investigation-step .step-icon');
+
+            // Step 1: Search
+            steps[0].className = 'step-icon active';
+            await delay(1500);
+            steps[0].className = 'step-icon done';
+            steps[0].textContent = '✓';
+
+            // Step 2: Would trigger document purchase
+            steps[1].className = 'step-icon active';
+            await delay(2000);
+            steps[1].className = 'step-icon done';
+            steps[1].textContent = '✓';
+
+            // Step 3: Analysis
+            steps[2].className = 'step-icon active';
+            await delay(2000);
+            steps[2].className = 'step-icon done';
+            steps[2].textContent = '✓';
+
+            // Step 4: Complete
+            steps[3].className = 'step-icon active';
+            await delay(1000);
+            steps[3].className = 'step-icon done';
+            steps[3].textContent = '✓';
+
+            // Show results
+            document.getElementById('investigation-steps').innerHTML += `
+                <div style="margin-top: 20px; padding: 16px; background: var(--gray-100); border-radius: 8px;">
+                    <h4 style="margin-bottom: 12px;">Undersökning klar</h4>
+                    <p style="margin-bottom: 16px; color: var(--gray-500);">
+                        Händelsen har analyserats. Välj hur du vill fortsätta:
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="ignoreEventFromModal()">Bortse från händelse</button>
+                <button class="btn btn-secondary" onclick="digDeeper()">Gräv vidare</button>
+                <button class="btn btn-accent" onclick="createArticle()">Ta fram nyhetsartikel</button>
+            `;
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function createArticle() {
+            const event = events.find(e => e.id === currentEventId);
+            if (event) {
+                // Navigate to news editor with pre-filled data
+                const params = new URLSearchParams({
+                    orgnr: event.orgnr || '',
+                    category: event.category || '',
+                    title: event.title || ''
+                });
+                window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
             }
+        }
 
-            function getFirstName(email) {
-                const name = email.split('@')[0].split('.')[0];
-                return name.charAt(0).toUpperCase() + name.slice(1);
+        function digDeeper() {
+            alert('Funktionen "Gräv vidare" kommer snart. Detta skulle starta en djupare undersökning med fler datakällor.');
+        }
+
+        function ignoreEvent(eventId) {
+            const item = document.querySelector(`.feed-item[data-id="${eventId}"]`);
+            if (item) {
+                item.style.opacity = '0.5';
+                item.style.pointerEvents = 'none';
             }
+        }
 
-            function getGreeting() {
-                const hour = new Date().getHours();
-                if (hour < 10) return 'God morgon';
-                if (hour < 18) return 'Hej';
-                return 'God kväll';
-            }
+        function ignoreEventFromModal() {
+            ignoreEvent(currentEventId);
+            closeModal();
+        }
 
-            async function showDashboard() {
-                document.getElementById('login-form').classList.add('hide');
-                document.getElementById('dashboard').classList.add('show');
+        function closeModal() {
+            document.getElementById('investigate-modal').classList.remove('show');
+            currentEventId = null;
+        }
 
-                const email = currentUser.email;
-                document.getElementById('user-email-display').textContent = email;
-                document.getElementById('user-avatar').textContent = getInitials(email);
-                document.getElementById('user-first-name').textContent = getFirstName(email);
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            document.getElementById('dashboard').classList.remove('show');
+            document.getElementById('login-form').classList.remove('hide');
+            document.getElementById('admin-card').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
 
-                // Update greeting based on time
-                const welcomeTitle = document.querySelector('.welcome-title');
-                welcomeTitle.innerHTML = `${getGreeting()}, <span id="user-first-name">${getFirstName(email)}</span>`;
-
-                try {
-                    const { data: profile, error } = await supabaseClient
-                        .from('user_profiles')
-                        .select('role')
-                        .eq('id', currentUser.id)
-                        .single();
-
-                    if (profile) {
-                        const roleEl = document.getElementById('user-role');
-                        roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
-                        roleEl.className = 'role-badge ' + profile.role;
-
-                        if (profile.role === 'admin') {
-                            document.getElementById('admin-tools').style.display = 'block';
-                        }
-                    }
-                } catch (error) {
-                    console.error('Profile fetch error:', error);
-                }
-            }
-
-            async function handleLogout() {
-                await supabaseClient.auth.signOut();
-                currentUser = null;
-                document.getElementById('dashboard').classList.remove('show');
-                document.getElementById('login-form').classList.remove('hide');
-                document.getElementById('admin-tools').style.display = 'none';
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
-            }
-
-            document.addEventListener('DOMContentLoaded', function() {
-                const loginForm = document.getElementById('login-form-element');
-                if (loginForm) {
-                    loginForm.addEventListener('submit', handleLogin);
-                }
-
-                const logoutBtn = document.getElementById('logout-btn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', handleLogout);
-                }
-
-                initSupabase();
-            });
-        })();
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('login-form-element').addEventListener('submit', handleLogin);
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            initSupabase();
+        });
     </script>
 </body>
 </html>

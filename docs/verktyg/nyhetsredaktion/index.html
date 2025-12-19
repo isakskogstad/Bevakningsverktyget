@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nyhetsredaktion - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --accent: #D4FF00;
+            --black: #000000;
+            --dark: #111111;
+            --gray-700: #404040;
+            --gray-500: #6b6b6b;
+            --gray-300: #d1d1d1;
+            --gray-100: #f5f5f5;
+            --white: #ffffff;
+            --error: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--gray-100);
+            color: var(--dark);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        .nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-300);
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--dark);
+        }
+        .nav-brand span { font-weight: 700; font-size: 1.1rem; }
+        .back-link {
+            color: var(--gray-500);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-link:hover { color: var(--dark); }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .page-subtitle { color: var(--gray-500); }
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 24px;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .stat-card.highlight {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-label { font-size: 0.85rem; color: var(--gray-500); }
+        .stat-card.highlight .stat-label { color: var(--gray-700); }
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--gray-300);
+            margin-bottom: 24px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        .card-title { font-size: 1.1rem; font-weight: 600; }
+        .card-body { padding: 24px; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--dark); color: var(--white); }
+        .btn-primary:hover { background: var(--black); }
+        .btn-accent { background: var(--accent); color: var(--dark); }
+        .btn-accent:hover { opacity: 0.9; }
+        .btn-secondary {
+            background: transparent;
+            color: var(--dark);
+            border: 1px solid var(--gray-300);
+        }
+        .btn-secondary:hover { background: var(--gray-100); }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .article-list { display: flex; flex-direction: column; gap: 16px; }
+        .article-item {
+            padding: 16px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .article-item:hover {
+            border-color: var(--gray-300);
+            background: var(--white);
+        }
+        .article-item.selected {
+            border-color: var(--accent);
+            background: var(--white);
+        }
+        .article-headline {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        .article-meta {
+            display: flex;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-draft { background: #fef3c7; color: var(--warning); }
+        .status-published { background: #dcfce7; color: var(--success); }
+        .status-archived { background: var(--gray-100); color: var(--gray-500); }
+        .editor-panel { position: sticky; top: 88px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--dark);
+        }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        .company-picker {
+            padding: 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            background: var(--gray-100);
+        }
+        .company-picker input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--gray-300);
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        .company-picker-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .company-picker-item {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .company-picker-item:hover { background: var(--white); }
+        .company-picker-item.selected { background: var(--accent); }
+        .poit-results {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        .poit-results h4 { margin-bottom: 8px; font-size: 0.9rem; }
+        .poit-item {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        .poit-item:last-child { border-bottom: none; }
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--gray-500);
+        }
+        .empty-state h3 { margin-bottom: 8px; color: var(--dark); }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+        .alert-success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
+        .alert-error { background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+        @media (max-width: 1024px) {
+            .layout-grid { grid-template-columns: 1fr; }
+            .editor-panel { position: static; }
+            .container { padding: 20px; }
+            .nav { padding: 0 20px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="../../" class="nav-brand">
+                <span>Bevakningsverktyget</span>
+            </a>
+            <a href="../../" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 12L6 8l4-4"/>
+                </svg>
+                Tillbaka till dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Nyhetsredaktion</h1>
+                <p class="page-subtitle">Skriv och publicera nyheter om Loop Impact-företagen</p>
+            </div>
+            <button class="btn btn-accent" onclick="createNewArticle()">+ Ny artikel</button>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-drafts">-</div>
+                <div class="stat-label">Utkast</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-published">-</div>
+                <div class="stat-label">Publicerade</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-value" id="stat-companies">1214</div>
+                <div class="stat-label">Bevakade företag</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-poit">-</div>
+                <div class="stat-label">POIT-händelser idag</div>
+            </div>
+        </div>
+
+        <div class="layout-grid">
+            <div class="main-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Artiklar</h2>
+                        <select class="btn btn-secondary btn-sm" id="status-filter" onchange="filterArticles()">
+                            <option value="">Alla</option>
+                            <option value="draft">Utkast</option>
+                            <option value="published">Publicerade</option>
+                            <option value="archived">Arkiverade</option>
+                        </select>
+                    </div>
+                    <div class="card-body">
+                        <div id="articles-list" class="article-list">
+                            <div class="empty-state">
+                                <h3>Laddar artiklar...</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="editor-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title" id="editor-title">Ny artikel</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="article-form" onsubmit="saveArticle(event)">
+                            <input type="hidden" id="article-id">
+
+                            <div class="form-group">
+                                <label>Välj företag (Loop Impact)</label>
+                                <div class="company-picker">
+                                    <input type="text" id="company-search" placeholder="Sök företag..." oninput="searchCompanies()">
+                                    <div id="company-picker-list" class="company-picker-list"></div>
+                                </div>
+                                <input type="hidden" id="selected-orgnr">
+                                <input type="hidden" id="selected-company-name">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="headline">Rubrik</label>
+                                <input type="text" id="headline" placeholder="Skriv en rubrik..." required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lead">Ingress</label>
+                                <textarea id="lead" rows="3" placeholder="Kort sammanfattning..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="body">Brödtext</label>
+                                <textarea id="body" rows="8" placeholder="Artikelns innehåll..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="article-type">Artikeltyp</label>
+                                <select id="article-type">
+                                    <option value="bolagshändelse">Bolagshändelse</option>
+                                    <option value="finansiering">Finansiering</option>
+                                    <option value="styrelseändring">Styrelseändring</option>
+                                    <option value="konkurs">Konkurs/Likvidation</option>
+                                    <option value="gräv">Journalistiskt gräv</option>
+                                    <option value="analys">Analys</option>
+                                </select>
+                            </div>
+
+                            <div id="poit-results"></div>
+
+                            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                                <button type="submit" class="btn btn-primary">Spara utkast</button>
+                                <button type="button" class="btn btn-accent" onclick="publishArticle()">Publicera</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+
+        let supabase = null;
+        let articles = [];
+        let companies = [];
+        let selectedArticleId = null;
+
+        async function init() {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = '../../';
+                return;
+            }
+
+            await Promise.all([
+                loadArticles(),
+                loadCompanies(),
+                loadStats()
+            ]);
+        }
+
+        async function loadArticles() {
+            const { data, error } = await supabase
+                .from('news_articles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error:', error);
+                return;
+            }
+
+            articles = data || [];
+            renderArticles();
+            updateArticleStats();
+        }
+
+        async function loadCompanies() {
+            const { data, error } = await supabase
+                .from('loop_table')
+                .select('orgnr, company_name')
+                .order('company_name')
+                .limit(1500);
+
+            if (error) {
+                console.error('Error:', error);
+                return;
+            }
+
+            companies = data || [];
+            document.getElementById('stat-companies').textContent = companies.length;
+        }
+
+        async function loadStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const { count } = await supabase
+                .from('poit_announcements')
+                .select('*', { count: 'exact', head: true })
+                .gte('announcement_date', today);
+
+            document.getElementById('stat-poit').textContent = count || 0;
+        }
+
+        function updateArticleStats() {
+            const drafts = articles.filter(a => a.status === 'draft').length;
+            const published = articles.filter(a => a.status === 'published').length;
+            document.getElementById('stat-drafts').textContent = drafts;
+            document.getElementById('stat-published').textContent = published;
+        }
+
+        function renderArticles() {
+            const container = document.getElementById('articles-list');
+            const filter = document.getElementById('status-filter').value;
+
+            const filtered = filter
+                ? articles.filter(a => a.status === filter)
+                : articles;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Inga artiklar</h3>
+                        <p>Klicka på "Ny artikel" för att komma igång</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(a => `
+                <div class="article-item ${selectedArticleId === a.id ? 'selected' : ''}"
+                     onclick="selectArticle('${a.id}')">
+                    <div class="article-headline">${a.headline || 'Utan rubrik'}</div>
+                    <div class="article-meta">
+                        <span>${a.company_name || 'Inget företag'}</span>
+                        <span>${formatDate(a.created_at)}</span>
+                        <span class="status-badge status-${a.status || 'draft'}">${translateStatus(a.status)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterArticles() {
+            renderArticles();
+        }
+
+        function translateStatus(status) {
+            const map = { draft: 'Utkast', published: 'Publicerad', archived: 'Arkiverad' };
+            return map[status] || 'Utkast';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('sv-SE');
+        }
+
+        function searchCompanies() {
+            const search = document.getElementById('company-search').value.toLowerCase();
+            const container = document.getElementById('company-picker-list');
+
+            if (!search) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const matches = companies
+                .filter(c => c.company_name && c.company_name.toLowerCase().includes(search))
+                .slice(0, 10);
+
+            container.innerHTML = matches.map(c => `
+                <div class="company-picker-item" onclick="selectCompany('${c.orgnr}', '${c.company_name.replace(/'/g, "\\'")}')">
+                    ${c.company_name}
+                </div>
+            `).join('');
+        }
+
+        function selectCompany(orgnr, name) {
+            document.getElementById('selected-orgnr').value = orgnr;
+            document.getElementById('selected-company-name').value = name;
+            document.getElementById('company-search').value = name;
+            document.getElementById('company-picker-list').innerHTML = '';
+
+            // Load POIT data for this company
+            loadPoitData(orgnr);
+        }
+
+        async function loadPoitData(orgnr) {
+            const { data, error } = await supabase
+                .from('poit_announcements')
+                .select('*')
+                .or(`orgnr.eq.${orgnr},extracted_orgnrs.cs.{${orgnr}}`)
+                .order('announcement_date', { ascending: false })
+                .limit(5);
+
+            const container = document.getElementById('poit-results');
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="poit-results">
+                    <h4>Senaste POIT-händelser</h4>
+                    ${data.map(p => `
+                        <div class="poit-item">
+                            <strong>${p.category}</strong> - ${p.announcement_date}<br>
+                            ${p.title || p.content?.substring(0, 100) || 'Ingen beskrivning'}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function createNewArticle() {
+            selectedArticleId = null;
+            document.getElementById('article-form').reset();
+            document.getElementById('article-id').value = '';
+            document.getElementById('selected-orgnr').value = '';
+            document.getElementById('selected-company-name').value = '';
+            document.getElementById('poit-results').innerHTML = '';
+            document.getElementById('editor-title').textContent = 'Ny artikel';
+            renderArticles();
+        }
+
+        function selectArticle(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            selectedArticleId = id;
+            document.getElementById('article-id').value = article.id;
+            document.getElementById('headline').value = article.headline || '';
+            document.getElementById('lead').value = article.lead || '';
+            document.getElementById('body').value = article.body || '';
+            document.getElementById('article-type').value = article.article_type || 'bolagshändelse';
+            document.getElementById('selected-orgnr').value = article.orgnr || '';
+            document.getElementById('selected-company-name').value = article.company_name || '';
+            document.getElementById('company-search').value = article.company_name || '';
+            document.getElementById('editor-title').textContent = 'Redigera artikel';
+
+            if (article.orgnr) {
+                loadPoitData(article.orgnr);
+            }
+
+            renderArticles();
+        }
+
+        async function saveArticle(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('article-id').value;
+            const articleData = {
+                orgnr: document.getElementById('selected-orgnr').value,
+                company_name: document.getElementById('selected-company-name').value,
+                headline: document.getElementById('headline').value,
+                lead: document.getElementById('lead').value,
+                body: document.getElementById('body').value,
+                article_type: document.getElementById('article-type').value,
+                status: 'draft'
+            };
+
+            let result;
+            if (id) {
+                result = await supabase.from('news_articles').update(articleData).eq('id', id);
+            } else {
+                result = await supabase.from('news_articles').insert([articleData]);
+            }
+
+            if (result.error) {
+                showAlert('Fel vid sparande: ' + result.error.message, 'error');
+                return;
+            }
+
+            showAlert('Artikel sparad!', 'success');
+            loadArticles();
+        }
+
+        async function publishArticle() {
+            const id = document.getElementById('article-id').value;
+            if (!id) {
+                showAlert('Spara artikeln först', 'error');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('news_articles')
+                .update({ status: 'published', published_at: new Date().toISOString() })
+                .eq('id', id);
+
+            if (error) {
+                showAlert('Fel vid publicering: ' + error.message, 'error');
+                return;
+            }
+
+            showAlert('Artikel publicerad!', 'success');
+            loadArticles();
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 4000);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
