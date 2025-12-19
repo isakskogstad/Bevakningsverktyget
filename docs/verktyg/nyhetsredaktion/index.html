@@ -454,8 +454,9 @@
 
         async function loadStats() {
             const today = new Date().toISOString().split('T')[0];
+            // ENDAST Loop's bevakade företag
             const { count } = await sb
-                .from('poit_announcements')
+                .from('loop_poit_events')
                 .select('*', { count: 'exact', head: true })
                 .gte('announcement_date', today);
 
@@ -545,10 +546,11 @@
         }
 
         async function loadPoitData(orgnr) {
+            // Hämta POIT-händelser för specifikt Loop-företag via viewen
             const { data, error } = await sb
-                .from('poit_announcements')
+                .from('loop_poit_events')
                 .select('*')
-                .or(`orgnr.eq.${orgnr},extracted_orgnrs.cs.{${orgnr}}`)
+                .eq('matched_orgnr', orgnr)
                 .order('announcement_date', { ascending: false })
                 .limit(5);
 

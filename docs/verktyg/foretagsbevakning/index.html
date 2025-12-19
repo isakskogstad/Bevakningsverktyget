@@ -400,10 +400,10 @@
         }
 
         async function loadStats() {
-            // Get POIT announcements from today
+            // Get POIT announcements from today - ENDAST för Loop's bevakade företag
             const today = new Date().toISOString().split('T')[0];
             const { count: poitCount } = await sb
-                .from('poit_announcements')
+                .from('loop_poit_events')
                 .select('*', { count: 'exact', head: true })
                 .gte('announcement_date', today);
 

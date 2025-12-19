@@ -114,8 +114,9 @@ const API = (function() {
         } = options;
 
         const sb = getClient();
+        // Använd loop_poit_events view för endast Loop's bevakade företag
         let query = sb
-            .from('poit_announcements')
+            .from('loop_poit_events')
             .select('*', { count: 'exact' });
 
         if (category) {
@@ -147,8 +148,9 @@ const API = (function() {
 
     async function getPoitEventCount(today = false) {
         const sb = getClient();
+        // Använd loop_poit_events view för endast Loop's bevakade företag
         let query = sb
-            .from('poit_announcements')
+            .from('loop_poit_events')
             .select('*', { count: 'exact', head: true });
 
         if (today) {

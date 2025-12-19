@@ -692,9 +692,9 @@
         async function loadStats() {
             const today = new Date().toISOString().split('T')[0];
 
-            // POIT events today
+            // POIT events today - ENDAST för Loop's bevakade företag
             const { count: poitCount } = await sb
-                .from('poit_announcements')
+                .from('loop_poit_events')
                 .select('*', { count: 'exact', head: true })
                 .gte('announcement_date', today);
 
@@ -704,8 +704,9 @@
         }
 
         async function loadPoitEvents() {
+            // Hämta ENDAST POIT-händelser för Loop's 1214 bevakade företag
             const { data, error } = await sb
-                .from('poit_announcements')
+                .from('loop_poit_events')
                 .select('*')
                 .order('announcement_date', { ascending: false })
                 .range(currentOffset, currentOffset + pageSize - 1);
@@ -742,11 +743,9 @@
             }
 
             container.innerHTML = events.map(e => {
-                const isWatched = watchedOrgnrs.includes(e.orgnr) ||
-                    (e.extracted_orgnrs && e.extracted_orgnrs.some(o => watchedOrgnrs.includes(o)));
-
-                // Extrahera företagsnamn från content (format: "K123/25 Tingsrätt Typ FÖRETAGSNAMN Datum")
-                const companyName = getCompanyNameFromEvent(e);
+                // Använd matched_company_name från loop_poit_events view
+                // Alla händelser här är för Loop's bevakade företag
+                const companyName = e.matched_company_name || getCompanyNameFromEvent(e);
 
                 return `
                     <div class="feed-item" data-id="${e.id}">
@@ -754,7 +753,7 @@
                             <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
                             <span class="feed-time">${formatDate(e.announcement_date)}</span>
                         </div>
-                        <div class="feed-company">${escapeHtml(companyName)} ${isWatched ? '⭐' : ''}</div>
+                        <div class="feed-company">${escapeHtml(companyName)}</div>
                         <div class="feed-description">${escapeHtml(e.title || '')}</div>
                         <div class="feed-actions">
                             <button class="btn btn-accent btn-sm" onclick="investigateEvent('${e.id}')">
@@ -874,7 +873,8 @@
             const event = events.find(e => e.id === eventId);
             if (!event) return;
 
-            const companyName = getCompanyNameFromEvent(event);
+            // Använd matched_company_name från loop_poit_events view
+            const companyName = event.matched_company_name || getCompanyNameFromEvent(event);
             document.getElementById('event-details').innerHTML = `
                 <div style="margin-bottom: 16px;">
                     <div class="feed-category ${getCategoryClass(event.category)}" style="margin-bottom: 8px;">
