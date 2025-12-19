@@ -714,7 +714,7 @@
                         <span>${Utils.formatDate(selectedArticle.pubDate, { includeTime: true })}</span>
                         ${selectedArticle.author ? `<span>• ${escapeHtml(selectedArticle.author)}</span>` : ''}
                     </div>
-                    ${selectedArticle.image ? `<img src="${selectedArticle.image}" class="preview-image" alt="">` : ''}
+                    ${selectedArticle.image ? `<img src="${selectedArticle.image}" class="preview-image" alt="Bild för artikeln ${escapeHtml(selectedArticle.title || '')}">` : ''}
                     <div class="preview-text">
                         <p>${escapeHtml(selectedArticle.description)}</p>
                     </div>

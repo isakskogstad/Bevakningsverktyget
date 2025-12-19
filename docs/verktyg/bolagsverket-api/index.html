@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolagsverket VDM API - Bevakningsverktyget</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <style>
+        /* Page-specific styles */
+        .search-container {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .search-form {
+            display: flex;
+            gap: var(--spacing-3);
+            align-items: flex-end;
+        }
+
+        .search-form .input-group {
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .search-form label {
+            display: block;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            color: var(--gray-700);
+            margin-bottom: var(--spacing-1);
+        }
+
+        .search-form input {
+            width: 100%;
+            padding: var(--spacing-3) var(--spacing-4);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            transition: border-color var(--transition-fast);
+        }
+
+        .search-form input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            padding: var(--spacing-3) var(--spacing-5);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-primary {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--gray-900);
+        }
+
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-200);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Results section */
+        .results-container {
+            display: none;
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-12);
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error message */
+        .error-message {
+            display: none;
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-4);
+            color: var(--error);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        /* Data cards */
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .data-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .data-card-header {
+            background: var(--gray-100);
+            padding: var(--spacing-3) var(--spacing-4);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .data-card-header h3 {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-700);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .data-card-content {
+            padding: var(--spacing-4);
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-2) 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: var(--gray-500);
+            font-size: var(--font-size-sm);
+        }
+
+        .data-value {
+            color: var(--gray-900);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            text-align: right;
+            max-width: 60%;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: var(--spacing-1) var(--spacing-2);
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .status-active {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .status-inactive {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        .status-deregistered {
+            background: var(--error-bg);
+            color: var(--error);
+        }
+
+        .status-bankruptcy, .status-liquidation {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        /* Industries list */
+        .industries-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .industries-list li {
+            padding: var(--spacing-2) 0;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: var(--font-size-sm);
+        }
+
+        .industries-list li:last-child {
+            border-bottom: none;
+        }
+
+        .sni-code {
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-700);
+            margin-right: var(--spacing-2);
+        }
+
+        .primary-badge {
+            background: var(--accent-muted);
+            color: var(--gray-700);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: 10px;
+            font-weight: var(--font-weight-medium);
+            margin-left: var(--spacing-2);
+        }
+
+        /* Documents section */
+        .documents-section {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .documents-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-4);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .documents-header h3 {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            margin: 0;
+        }
+
+        .documents-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .document-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-3) var(--spacing-4);
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .document-item:last-child {
+            border-bottom: none;
+        }
+
+        .document-info {
+            flex: 1;
+        }
+
+        .document-title {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            color: var(--gray-900);
+        }
+
+        .document-meta {
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+            margin-top: 2px;
+        }
+
+        /* Export buttons */
+        .export-buttons {
+            display: flex;
+            gap: var(--spacing-2);
+            margin-top: var(--spacing-4);
+        }
+
+        /* Info box */
+        .info-box {
+            background: var(--blue-bg);
+            border: 1px solid var(--blue-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-4);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .info-box h4 {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--blue);
+            margin: 0 0 var(--spacing-2);
+        }
+
+        .info-box p {
+            font-size: var(--font-size-sm);
+            color: var(--gray-700);
+            margin: 0;
+            line-height: var(--line-height-relaxed);
+        }
+
+        .info-box ul {
+            margin: var(--spacing-2) 0 0;
+            padding-left: var(--spacing-4);
+            font-size: var(--font-size-sm);
+            color: var(--gray-700);
+        }
+
+        /* Company header */
+        .company-header {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .company-header h2 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            margin: 0 0 var(--spacing-2);
+            color: var(--gray-900);
+        }
+
+        .company-orgnr {
+            font-size: var(--font-size-base);
+            color: var(--gray-500);
+            font-family: monospace;
+        }
+
+        .company-header-meta {
+            display: flex;
+            gap: var(--spacing-4);
+            margin-top: var(--spacing-4);
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-sm);
+            color: var(--gray-600);
+        }
+
+        /* API status indicator */
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-300);
+        }
+
+        .status-dot.online {
+            background: var(--success);
+        }
+
+        .status-dot.offline {
+            background: var(--error);
+        }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <!-- Sidebar navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <a href="../../" class="logo">Bevakningsverktyget</a>
+            </div>
+            <div class="sidebar-content">
+                <div class="nav-section">
+                    <div class="nav-section-title">Verktyg</div>
+                    <a href="../foretagsbevakning/" class="nav-item">Foretagsbevakning</a>
+                    <a href="../allabolag/" class="nav-item">Allabolag Sokning</a>
+                    <a href="./" class="nav-item active">Bolagsverket API</a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title">Administration</div>
+                    <a href="../../admin/api-nycklar/" class="nav-item">API-nycklar</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <header class="page-header">
+                <h1>Bolagsverket VDM API</h1>
+                <p class="page-description">Officiell API fran Bolagsverket for grundlaggande foretagsdata och arsredovisningar (digitalt inlamnade)</p>
+            </header>
+
+            <!-- API Status -->
+            <div class="api-status" id="apiStatus">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Kontrollerar API-status...</span>
+            </div>
+
+            <!-- Info box -->
+            <div class="info-box">
+                <h4>Om Bolagsverket VDM API</h4>
+                <p>Detta ar Bolagsverkets officiella gratis-API (Vardefulla Datamangder). Data kommer direkt fran kallorna.</p>
+                <ul>
+                    <li><strong>Tillgangligt:</strong> Grundinfo, adresser (SCB), SNI-koder, registreringsdatum</li>
+                    <li><strong>Arsredovisningar:</strong> Endast digitalt inlamnade (XBRL-format)</li>
+                    <li><strong>Ej tillgangligt:</strong> Styrelse, finansiell data, koncernstruktur (anvand Allabolag for detta)</li>
+                </ul>
+            </div>
+
+            <!-- Search -->
+            <div class="search-container">
+                <form class="search-form" id="searchForm">
+                    <div class="input-group">
+                        <label for="orgnrInput">Organisationsnummer</label>
+                        <input type="text" id="orgnrInput" placeholder="556012-5790" maxlength="13">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="searchBtn">
+                        Sok foretag
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="documentsBtn" disabled>
+                        Hamta arsredovisningar
+                    </button>
+                </form>
+            </div>
+
+            <!-- Error message -->
+            <div class="error-message" id="errorMessage"></div>
+
+            <!-- Loading -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+            </div>
+
+            <!-- Results -->
+            <div class="results-container" id="results">
+                <!-- Company header -->
+                <div class="company-header" id="companyHeader">
+                    <h2 id="companyName">-</h2>
+                    <div class="company-orgnr" id="companyOrgnr">-</div>
+                    <div class="company-header-meta">
+                        <div class="meta-item" id="statusMeta"></div>
+                        <div class="meta-item" id="typeMeta"></div>
+                        <div class="meta-item" id="dateMeta"></div>
+                    </div>
+                </div>
+
+                <!-- Data grid -->
+                <div class="data-grid">
+                    <!-- Address card -->
+                    <div class="data-card">
+                        <div class="data-card-header">
+                            <h3>Postadress</h3>
+                        </div>
+                        <div class="data-card-content" id="addressCard">
+                            <p class="data-value">Ingen adress tillganglig</p>
+                        </div>
+                    </div>
+
+                    <!-- Registration card -->
+                    <div class="data-card">
+                        <div class="data-card-header">
+                            <h3>Registrering</h3>
+                        </div>
+                        <div class="data-card-content" id="registrationCard">
+                            <p class="data-value">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Industries card (full width) -->
+                <div class="data-card" style="margin-bottom: var(--spacing-6);">
+                    <div class="data-card-header">
+                        <h3>Branscher (SNI-koder)</h3>
+                    </div>
+                    <div class="data-card-content" id="industriesCard">
+                        <p class="data-value">Inga branscher tillgangliga</p>
+                    </div>
+                </div>
+
+                <!-- Documents section -->
+                <div class="documents-section" id="documentsSection" style="display: none;">
+                    <div class="documents-header">
+                        <h3>Arsredovisningar (digitalt inlamnade)</h3>
+                        <span id="documentsCount">0 dokument</span>
+                    </div>
+                    <div class="documents-list" id="documentsList">
+                        <p style="padding: var(--spacing-4); color: var(--gray-500); font-size: var(--font-size-sm);">
+                            Klicka "Hamta arsredovisningar" for att ladda dokumentlistan.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Export buttons -->
+                <div class="export-buttons">
+                    <button class="btn btn-secondary" onclick="exportJSON()">
+                        Exportera JSON
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportCSV()">
+                        Exportera CSV
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global state
+        window.currentCompanyData = null;
+        window.currentDocuments = null;
+
+        // Supabase Edge Function URL
+        const EDGE_FUNCTION_URL = 'https://wzkohritxdrstsmwopco.supabase.co/functions/v1/bolagsverket-vdm';
+
+        // Check API status on load
+        async function checkAPIStatus() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            try {
+                const response = await fetch(`${EDGE_FUNCTION_URL}?action=health`);
+                const data = await response.json();
+
+                if (data.status === 'ok') {
+                    statusDot.classList.add('online');
+                    statusText.textContent = 'API tillgangligt';
+                } else {
+                    statusDot.classList.add('offline');
+                    statusText.textContent = 'API ej tillgangligt - kontrollera API-nycklar';
+                }
+            } catch (error) {
+                statusDot.classList.add('offline');
+                statusText.textContent = 'Kunde inte kontakta API';
+            }
+        }
+
+        // Search form handler
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const orgnr = document.getElementById('orgnrInput').value.trim();
+
+            if (!orgnr) {
+                showError('Ange ett organisationsnummer');
+                return;
+            }
+
+            await searchCompany(orgnr);
+        });
+
+        // Documents button handler
+        document.getElementById('documentsBtn').addEventListener('click', async () => {
+            if (!window.currentCompanyData) return;
+            await loadDocuments(window.currentCompanyData.orgnr);
+        });
+
+        // Search company
+        async function searchCompany(orgnr) {
+            hideError();
+            showLoading(true);
+            hideResults();
+
+            try {
+                const response = await fetch(`${EDGE_FUNCTION_URL}?action=company&orgnr=${encodeURIComponent(orgnr)}`);
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `API error: ${response.status}`);
+                }
+
+                if (!result.success || !result.data) {
+                    throw new Error('Inget data returnerades');
+                }
+
+                window.currentCompanyData = result.data;
+                displayResults(result.data);
+                document.getElementById('documentsBtn').disabled = false;
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load documents
+        async function loadDocuments(orgnr) {
+            const documentsSection = document.getElementById('documentsSection');
+            const documentsList = document.getElementById('documentsList');
+            const documentsCount = document.getElementById('documentsCount');
+
+            documentsSection.style.display = 'block';
+            documentsList.innerHTML = '<p style="padding: var(--spacing-4); color: var(--gray-500);">Laddar dokument...</p>';
+
+            try {
+                const response = await fetch(`${EDGE_FUNCTION_URL}?action=documents&orgnr=${encodeURIComponent(orgnr)}`);
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Kunde inte hamta dokument');
+                }
+
+                window.currentDocuments = result.documents || [];
+                documentsCount.textContent = `${window.currentDocuments.length} dokument`;
+
+                if (window.currentDocuments.length === 0) {
+                    documentsList.innerHTML = '<p style="padding: var(--spacing-4); color: var(--gray-500);">Inga digitalt inlamnade arsredovisningar hittades.</p>';
+                    return;
+                }
+
+                documentsList.innerHTML = window.currentDocuments.map(doc => `
+                    <div class="document-item">
+                        <div class="document-info">
+                            <div class="document-title">${doc.beskrivning || doc.dokumenttyp || 'Arsredovisning'}</div>
+                            <div class="document-meta">
+                                ${doc.rakenskapsperiodFran || ''} - ${doc.rakenskapsperiodTill || ''}
+                                | ID: ${doc.dokumentId || '-'}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                documentsList.innerHTML = `<p style="padding: var(--spacing-4); color: var(--error);">${error.message}</p>`;
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            // Company header
+            document.getElementById('companyName').textContent = data.name || 'Okant foretag';
+            document.getElementById('companyOrgnr').textContent = formatOrgnr(data.orgnr);
+
+            // Status
+            const statusMeta = document.getElementById('statusMeta');
+            const status = data.status || 'UNKNOWN';
+            const statusClass = getStatusClass(status);
+            statusMeta.innerHTML = `<span class="status-badge ${statusClass}">${getStatusText(status)}</span>`;
+
+            // Type
+            document.getElementById('typeMeta').textContent = data.company_type || data.legal_form || '-';
+
+            // Date
+            document.getElementById('dateMeta').textContent = data.registered_date ? `Reg. ${data.registered_date}` : '';
+
+            // Address
+            const addressCard = document.getElementById('addressCard');
+            if (data.postal_street || data.postal_city) {
+                const parts = [];
+                if (data.postal_co) parts.push(`c/o ${data.postal_co}`);
+                if (data.postal_street) parts.push(data.postal_street);
+                if (data.postal_code || data.postal_city) {
+                    parts.push(`${data.postal_code || ''} ${data.postal_city || ''}`.trim());
+                }
+                if (data.postal_country && data.postal_country !== 'SE') {
+                    parts.push(data.postal_country);
+                }
+                addressCard.innerHTML = `<p class="data-value" style="white-space: pre-line; text-align: left;">${parts.join('\n')}</p>`;
+            } else {
+                addressCard.innerHTML = '<p class="data-value" style="color: var(--gray-400);">Ingen adress tillganglig</p>';
+            }
+
+            // Registration
+            const registrationCard = document.getElementById('registrationCard');
+            let regHtml = '';
+            if (data.registered_date) {
+                regHtml += `<div class="data-row"><span class="data-label">Registrerad</span><span class="data-value">${data.registered_date}</span></div>`;
+            }
+            if (data.scb_registered_date) {
+                regHtml += `<div class="data-row"><span class="data-label">Reg. hos SCB</span><span class="data-value">${data.scb_registered_date}</span></div>`;
+            }
+            if (data.deregistration_date) {
+                regHtml += `<div class="data-row"><span class="data-label">Avregistrerad</span><span class="data-value">${data.deregistration_date}</span></div>`;
+            }
+            if (data.ad_block !== undefined) {
+                regHtml += `<div class="data-row"><span class="data-label">Reklamspärr</span><span class="data-value">${data.ad_block ? 'Ja' : 'Nej'}</span></div>`;
+            }
+            registrationCard.innerHTML = regHtml || '<p class="data-value" style="color: var(--gray-400);">-</p>';
+
+            // Industries
+            const industriesCard = document.getElementById('industriesCard');
+            if (data.industries && data.industries.length > 0) {
+                industriesCard.innerHTML = `
+                    <ul class="industries-list">
+                        ${data.industries.map(ind => `
+                            <li>
+                                <span class="sni-code">${ind.sni_code}</span>
+                                ${ind.sni_description}
+                                ${ind.is_primary ? '<span class="primary-badge">PRIMAR</span>' : ''}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+            } else {
+                industriesCard.innerHTML = '<p class="data-value" style="color: var(--gray-400);">Inga branscher tillgangliga</p>';
+            }
+
+            // Show results
+            document.getElementById('results').classList.add('active');
+        }
+
+        // Helper functions
+        function formatOrgnr(orgnr) {
+            if (!orgnr) return '-';
+            const clean = orgnr.replace(/\D/g, '');
+            if (clean.length === 10) {
+                return `${clean.slice(0, 6)}-${clean.slice(6)}`;
+            }
+            return orgnr;
+        }
+
+        function getStatusClass(status) {
+            switch (status.toUpperCase()) {
+                case 'ACTIVE': return 'status-active';
+                case 'INACTIVE': return 'status-inactive';
+                case 'DEREGISTERED': return 'status-deregistered';
+                case 'BANKRUPTCY': return 'status-bankruptcy';
+                case 'LIQUIDATION': return 'status-liquidation';
+                default: return 'status-inactive';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status.toUpperCase()) {
+                case 'ACTIVE': return 'Aktiv';
+                case 'INACTIVE': return 'Inaktiv';
+                case 'DEREGISTERED': return 'Avregistrerad';
+                case 'BANKRUPTCY': return 'Konkurs';
+                case 'LIQUIDATION': return 'Likvidation';
+                default: return status;
+            }
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+            document.getElementById('searchBtn').disabled = show;
+        }
+
+        function hideResults() {
+            document.getElementById('results').classList.remove('active');
+            document.getElementById('documentsSection').style.display = 'none';
+        }
+
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.classList.add('active');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('active');
+        }
+
+        // Export functions
+        function exportJSON() {
+            if (!window.currentCompanyData) return;
+
+            const exportData = {
+                company: window.currentCompanyData,
+                documents: window.currentDocuments || [],
+                exported_at: new Date().toISOString()
+            };
+
+            const json = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bolagsverket_${window.currentCompanyData.orgnr}.json`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        function exportCSV() {
+            if (!window.currentCompanyData) return;
+
+            const d = window.currentCompanyData;
+            const industries = (d.industries || []).map(i => i.sni_code).join('; ');
+
+            const headers = [
+                'Orgnr', 'Namn', 'Status', 'Bolagsform', 'Registrerad',
+                'Gata', 'Postnr', 'Ort', 'SNI-koder', 'Kalla'
+            ];
+
+            const values = [
+                d.orgnr,
+                d.name,
+                d.status,
+                d.company_type || d.legal_form,
+                d.registered_date,
+                d.postal_street,
+                d.postal_code,
+                d.postal_city,
+                industries,
+                d.source
+            ];
+
+            const csvContent = [
+                headers.join(','),
+                values.map(v => `"${(v || '').toString().replace(/"/g, '""')}"`).join(',')
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bolagsverket_${window.currentCompanyData.orgnr}.csv`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        checkAPIStatus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Allabolag Sökning - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/utilities.css">
+    <style>
+        /* Page-specific styles */
+        .tool-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-6);
+        }
+
+        .tool-header {
+            margin-bottom: var(--spacing-6);
+        }
+
+        .tool-title {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .tool-description {
+            color: var(--gray-500);
+            font-size: var(--font-size-base);
+        }
+
+        /* Search section */
+        .search-section {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-6);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .search-form {
+            display: flex;
+            gap: var(--spacing-3);
+            align-items: flex-end;
+        }
+
+        .search-input-group {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-label {
+            display: block;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--spacing-2);
+            color: var(--dark);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-3) var(--spacing-4);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            transition: border-color var(--transition-fast);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-muted);
+        }
+
+        .search-input::placeholder {
+            color: var(--gray-500);
+        }
+
+        .btn-search {
+            padding: var(--spacing-3) var(--spacing-6);
+            background: var(--accent);
+            color: var(--dark);
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+
+        .btn-search:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-search:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid transparent;
+            border-top-color: var(--dark);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Results section */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        /* Company header card */
+        .company-header-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-4);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .company-name {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .company-orgnr {
+            color: var(--gray-500);
+            font-size: var(--font-size-sm);
+            font-family: monospace;
+        }
+
+        .company-status {
+            display: inline-block;
+            padding: var(--spacing-1) var(--spacing-3);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            margin-left: var(--spacing-3);
+        }
+
+        .company-status.active {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .company-status.inactive {
+            background: var(--error-bg);
+            color: var(--error);
+        }
+
+        /* Info grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .info-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-5);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .info-card-title {
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: var(--spacing-4);
+            padding-bottom: var(--spacing-2);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-2) 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--gray-500);
+            font-size: var(--font-size-sm);
+        }
+
+        .info-value {
+            font-weight: var(--font-weight-medium);
+            font-size: var(--font-size-sm);
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .info-value a {
+            color: var(--blue);
+            text-decoration: none;
+        }
+
+        .info-value a:hover {
+            text-decoration: underline;
+        }
+
+        /* Roles table */
+        .roles-section {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-5);
+            margin-bottom: var(--spacing-4);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .roles-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .roles-table th {
+            text-align: left;
+            padding: var(--spacing-3);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .roles-table td {
+            padding: var(--spacing-3);
+            font-size: var(--font-size-sm);
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .role-category-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .role-category-badge.board {
+            background: var(--blue-bg);
+            color: var(--blue);
+        }
+
+        .role-category-badge.management {
+            background: var(--accent-muted);
+            color: var(--dark);
+        }
+
+        .role-category-badge.auditor {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .role-category-badge.other {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        /* Financials table */
+        .financials-section {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-5);
+            margin-bottom: var(--spacing-4);
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+        }
+
+        .financials-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .financials-table th {
+            text-align: right;
+            padding: var(--spacing-3);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-500);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .financials-table th:first-child {
+            text-align: left;
+        }
+
+        .financials-table td {
+            text-align: right;
+            padding: var(--spacing-3);
+            font-size: var(--font-size-sm);
+            border-bottom: 1px solid var(--gray-100);
+            font-family: monospace;
+        }
+
+        .financials-table td:first-child {
+            text-align: left;
+            font-family: inherit;
+            font-weight: var(--font-weight-medium);
+        }
+
+        .financials-table tr:hover {
+            background: var(--gray-50);
+        }
+
+        .amount-positive {
+            color: var(--success);
+        }
+
+        .amount-negative {
+            color: var(--error);
+        }
+
+        /* Export buttons */
+        .export-section {
+            display: flex;
+            gap: var(--spacing-3);
+            margin-top: var(--spacing-4);
+        }
+
+        .btn-export {
+            padding: var(--spacing-2) var(--spacing-4);
+            background: var(--white);
+            color: var(--dark);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .btn-export:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-500);
+        }
+
+        /* Error message */
+        .error-message {
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error);
+            padding: var(--spacing-4);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-4);
+            display: none;
+        }
+
+        .error-message.visible {
+            display: block;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            color: var(--gray-500);
+            text-decoration: none;
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-4);
+            transition: color var(--transition-fast);
+        }
+
+        .back-link:hover {
+            color: var(--dark);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-12);
+            color: var(--gray-500);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-4);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .search-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input-group {
+                max-width: none;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="../../" class="nav-brand">Bevakningsverktyget</a>
+            <div class="nav-links">
+                <a href="../../" class="nav-link">Dashboard</a>
+                <a href="../foretagsbevakning/" class="nav-link">Bolagshändelser</a>
+                <a href="./" class="nav-link active">Allabolag</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="tool-container">
+        <a href="../../" class="back-link">
+            <span>&larr;</span>
+            <span>Tillbaka till Dashboard</span>
+        </a>
+
+        <div class="tool-header">
+            <h1 class="tool-title">Allabolag Sökning</h1>
+            <p class="tool-description">Sök efter företagsinformation från Allabolag.se - styrelse, ledning, ekonomi och koncernstruktur.</p>
+        </div>
+
+        <!-- Search section -->
+        <section class="search-section">
+            <form class="search-form" id="search-form">
+                <div class="search-input-group">
+                    <label for="orgnr-input" class="search-label">Organisationsnummer</label>
+                    <input
+                        type="text"
+                        id="orgnr-input"
+                        class="search-input"
+                        placeholder="T.ex. 5560125790"
+                        pattern="[0-9]{10}"
+                        maxlength="11"
+                        autocomplete="off"
+                    >
+                </div>
+                <button type="submit" class="btn-search" id="search-btn">
+                    <span id="search-btn-text">Sök företag</span>
+                    <div class="spinner" id="search-spinner" style="display: none;"></div>
+                </button>
+            </form>
+        </section>
+
+        <!-- Error message -->
+        <div class="error-message" id="error-message"></div>
+
+        <!-- Results section -->
+        <section class="results-section" id="results-section">
+            <!-- Company header -->
+            <div class="company-header-card">
+                <div>
+                    <span class="company-name" id="company-name">-</span>
+                    <span class="company-status" id="company-status">-</span>
+                </div>
+                <div class="company-orgnr" id="company-orgnr">-</div>
+            </div>
+
+            <!-- Info grid -->
+            <div class="info-grid">
+                <!-- Basic info -->
+                <div class="info-card">
+                    <div class="info-card-title">Grunduppgifter</div>
+                    <div class="info-row">
+                        <span class="info-label">Bolagsform</span>
+                        <span class="info-value" id="company-type">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Registrerat</span>
+                        <span class="info-value" id="registered-date">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">SNI-kod</span>
+                        <span class="info-value" id="sni-code">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Anställda</span>
+                        <span class="info-value" id="num-employees">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">F-skatt</span>
+                        <span class="info-value" id="f-skatt">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Moms</span>
+                        <span class="info-value" id="moms">-</span>
+                    </div>
+                </div>
+
+                <!-- Addresses -->
+                <div class="info-card">
+                    <div class="info-card-title">Adresser</div>
+                    <div class="info-row">
+                        <span class="info-label">Postadress</span>
+                        <span class="info-value" id="postal-address">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Besöksadress</span>
+                        <span class="info-value" id="visiting-address">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Kommun</span>
+                        <span class="info-value" id="municipality">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Län</span>
+                        <span class="info-value" id="county">-</span>
+                    </div>
+                </div>
+
+                <!-- Contact -->
+                <div class="info-card">
+                    <div class="info-card-title">Kontakt</div>
+                    <div class="info-row">
+                        <span class="info-label">Telefon</span>
+                        <span class="info-value" id="phone">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">E-post</span>
+                        <span class="info-value" id="email">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Webbplats</span>
+                        <span class="info-value" id="website">-</span>
+                    </div>
+                </div>
+
+                <!-- Financials summary -->
+                <div class="info-card">
+                    <div class="info-card-title">Ekonomi (senaste)</div>
+                    <div class="info-row">
+                        <span class="info-label">Omsättning</span>
+                        <span class="info-value" id="revenue">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Resultat</span>
+                        <span class="info-value" id="net-profit">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Eget kapital</span>
+                        <span class="info-value" id="equity">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Soliditet</span>
+                        <span class="info-value" id="equity-ratio">-</span>
+                    </div>
+                </div>
+
+                <!-- Corporate structure -->
+                <div class="info-card">
+                    <div class="info-card-title">Koncernstruktur</div>
+                    <div class="info-row">
+                        <span class="info-label">Är koncern</span>
+                        <span class="info-value" id="is-group">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Antal i koncern</span>
+                        <span class="info-value" id="companies-in-group">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Moderbolag</span>
+                        <span class="info-value" id="parent-company">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Aktiekapital</span>
+                        <span class="info-value" id="share-capital">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roles section -->
+            <div class="roles-section">
+                <div class="info-card-title">Styrelse & Ledning</div>
+                <table class="roles-table">
+                    <thead>
+                        <tr>
+                            <th>Namn</th>
+                            <th>Roll</th>
+                            <th>Kategori</th>
+                            <th>Födelseår</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roles-tbody">
+                        <tr>
+                            <td colspan="4" class="empty-state">Ingen data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Financials history -->
+            <div class="financials-section">
+                <div class="info-card-title">Ekonomisk historik</div>
+                <table class="financials-table" id="financials-table">
+                    <thead>
+                        <tr id="financials-header">
+                            <th>Nyckeltal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="financials-tbody">
+                        <tr>
+                            <td colspan="6" class="empty-state">Ingen data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Export buttons -->
+            <div class="export-section">
+                <button class="btn-export" id="export-json">Exportera JSON</button>
+                <button class="btn-export" id="export-csv">Exportera CSV</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ============================================================
+        // Allabolag Scraper - Inline Implementation
+        // Based on src/scrapers/allabolag-scraper.js
+        // ============================================================
+
+        // Account code mapping for financial data
+        const ACCOUNT_CODE_MAP = {
+            'SDI': 'revenue',
+            'RR': 'operating_profit',
+            'DR': 'net_profit',
+            'SGE': 'total_assets',
+            'SEK': 'equity',
+            'EKA': 'equity_ratio',
+            'ANT': 'num_employees',
+            'RG': 'profit_margin',
+            'RPE': 'revenue_per_employee',
+        };
+
+        // Codes that should NOT be multiplied by 1000
+        const NO_MULTIPLY_CODES = new Set(['ANT', 'EKA', 'RG', 'RPE']);
+
+        // Role category mapping
+        const ROLE_CATEGORY_MAP = {
+            'Styrelseledamot': 'BOARD',
+            'Styrelsesuppleant': 'BOARD',
+            'Styrelseordförande': 'BOARD',
+            'Ledamot': 'BOARD',
+            'Suppleant': 'BOARD',
+            'Ordförande': 'BOARD',
+            'Vice verkställande direktör': 'MANAGEMENT',
+            'Verkställande direktör': 'MANAGEMENT',
+            'Extern verkställande direktör': 'MANAGEMENT',
+            'VD': 'MANAGEMENT',
+            'Revisor': 'AUDITOR',
+            'Revisorssuppleant': 'AUDITOR',
+            'Huvudansvarig revisor': 'AUDITOR',
+            'Lekmannarevisor': 'AUDITOR',
+            'Extern firmatecknare': 'OTHER',
+            'Bolagsman': 'OTHER',
+            'Komplementär': 'OTHER',
+            'Likvidator': 'OTHER',
+        };
+
+        // Current company data (global for export functions)
+        window.currentCompanyData = null;
+
+        // DOM elements
+        const searchForm = document.getElementById('search-form');
+        const orgnrInput = document.getElementById('orgnr-input');
+        const searchBtn = document.getElementById('search-btn');
+        const searchBtnText = document.getElementById('search-btn-text');
+        const searchSpinner = document.getElementById('search-spinner');
+        const errorMessage = document.getElementById('error-message');
+        const resultsSection = document.getElementById('results-section');
+
+        // Format currency
+        function formatCurrency(value) {
+            if (value === null || value === undefined) return '-';
+            const absValue = Math.abs(value);
+            let formatted;
+            if (absValue >= 1e9) {
+                formatted = (value / 1e9).toFixed(1) + ' mdr kr';
+            } else if (absValue >= 1e6) {
+                formatted = (value / 1e6).toFixed(1) + ' mkr';
+            } else if (absValue >= 1e3) {
+                formatted = (value / 1e3).toFixed(0) + ' tkr';
+            } else {
+                formatted = value.toFixed(0) + ' kr';
+            }
+            return formatted;
+        }
+
+        // Format percentage
+        function formatPercent(value) {
+            if (value === null || value === undefined) return '-';
+            return value.toFixed(1) + '%';
+        }
+
+        // Parse birth year from date string
+        function parseBirthYear(birthDate) {
+            if (!birthDate) return null;
+            const parts = birthDate.split('.');
+            if (parts.length >= 3) {
+                const year = parseInt(parts[2], 10);
+                return isNaN(year) ? null : year;
+            }
+            return null;
+        }
+
+        // Map role category
+        function mapRoleCategory(groupName, roleType) {
+            if (ROLE_CATEGORY_MAP[roleType]) {
+                return ROLE_CATEGORY_MAP[roleType];
+            }
+            const groupMapping = {
+                'Management': 'MANAGEMENT',
+                'Board': 'BOARD',
+                'Revision': 'AUDITOR',
+                'Other': 'OTHER'
+            };
+            return groupMapping[groupName] || 'OTHER';
+        }
+
+        // Parse financial period
+        function parseFinancialPeriod(period, isConsolidated) {
+            if (!period) return null;
+
+            const year = period.year ? parseInt(period.year, 10) : null;
+            const periodMonths = period.length ? parseInt(period.length, 10) : 12;
+
+            const result = {
+                period_year: year,
+                period_months: periodMonths,
+                is_consolidated: isConsolidated ? 1 : 0
+            };
+
+            const accounts = period.accounts || [];
+            accounts.forEach(acc => {
+                const code = acc.code;
+                const amount = acc.amount;
+
+                if (code && ACCOUNT_CODE_MAP[code] && amount !== null && amount !== undefined) {
+                    const field = ACCOUNT_CODE_MAP[code];
+                    const numValue = parseFloat(amount);
+
+                    if (!isNaN(numValue)) {
+                        if (NO_MULTIPLY_CODES.has(code)) {
+                            result[field] = Math.round(numValue);
+                        } else {
+                            result[field] = Math.round(numValue * 1000);
+                        }
+                    }
+                }
+            });
+
+            return result;
+        }
+
+        // Extract JSON data from Next.js page
+        function extractJsonData(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const nextDataScript = doc.getElementById('__NEXT_DATA__');
+
+            if (nextDataScript) {
+                try {
+                    const data = JSON.parse(nextDataScript.textContent);
+                    const pageProps = data?.props?.pageProps;
+                    if (pageProps?.company) {
+                        return pageProps;
+                    }
+                } catch (error) {
+                    console.error('Error parsing __NEXT_DATA__:', error);
+                }
+            }
+            return null;
+        }
+
+        // Structure data from Next.js format
+        function structureNextJsData(mainData, orgData, orgnr) {
+            const company = mainData.company || {};
+
+            const result = {
+                orgnr,
+                name: company.name || company.legalName,
+                company_type: company.companyType?.code,
+                status: company.status?.status || 'UNKNOWN',
+                purpose: company.purpose,
+                registered_date: company.registrationDate,
+                foundation_year: company.foundationYear,
+            };
+
+            // Postal address
+            const postal = company.postalAddress || {};
+            result.postal_street = postal.addressLine;
+            result.postal_code = postal.zipCode;
+            result.postal_city = postal.postPlace;
+
+            // Visitor address
+            const visitor = company.visitorAddress || {};
+            result.visiting_street = visitor.addressLine;
+            result.visiting_code = visitor.zipCode;
+            result.visiting_city = visitor.postPlace;
+
+            // Contact info
+            result.phone = company.phone || company.legalPhone;
+            result.email = company.email;
+            result.website = company.homePage;
+
+            // Location
+            const location = company.location || {};
+            result.municipality = location.municipality;
+            result.county = location.county;
+
+            // Registrations
+            result.moms_registered = company.registeredForVat ? 1 : 0;
+            result.f_skatt = company.registeredForPrepayment ? 1 : 0;
+
+            // Check F-skatt in description
+            const vatDesc = (company.registeredForVatDescription || '').toLowerCase();
+            if (vatDesc.includes('f-skatt')) {
+                result.f_skatt = 1;
+            }
+
+            // Corporate structure
+            const corpStructure = company.corporateStructure || {};
+            result.is_group = (corpStructure.numberOfSubsidiaries || 0) > 0 ? 1 : 0;
+            result.companies_in_group = corpStructure.numberOfCompanies || null;
+
+            if (corpStructure.parentCompanyOrganisationNumber) {
+                result.parent_orgnr = corpStructure.parentCompanyOrganisationNumber;
+                result.parent_name = corpStructure.parentCompanyName;
+            }
+
+            // Share capital
+            if (company.shareCapital) {
+                const shareCapital = parseFloat(company.shareCapital);
+                if (!isNaN(shareCapital)) {
+                    result.share_capital = Math.round(shareCapital);
+                }
+            }
+
+            // Financial summary
+            if (company.revenue) {
+                const revenue = parseFloat(company.revenue);
+                if (!isNaN(revenue)) {
+                    result.revenue = Math.round(revenue * 1000);
+                }
+            }
+
+            if (company.profit) {
+                const profit = parseFloat(company.profit);
+                if (!isNaN(profit)) {
+                    result.net_profit = Math.round(profit * 1000);
+                }
+            }
+
+            // Employee count
+            const employees = company.numberOfEmployees;
+            if (employees) {
+                if (typeof employees === 'string' && employees.includes('-')) {
+                    const firstNum = parseInt(employees.split('-')[0], 10);
+                    result.num_employees = isNaN(firstNum) ? null : firstNum;
+                } else {
+                    const numEmp = parseInt(employees, 10);
+                    result.num_employees = isNaN(numEmp) ? null : numEmp;
+                }
+            }
+
+            // Industries / SNI codes
+            result.industries = [];
+            const naceIndustries = company.naceIndustries || [];
+            naceIndustries.forEach((nace, index) => {
+                if (nace.includes(' ')) {
+                    const parts = nace.split(' ');
+                    result.industries.push({
+                        sni_code: parts[0],
+                        sni_description: parts.slice(1).join(' '),
+                        is_primary: index === 0 ? 1 : 0
+                    });
+                }
+            });
+
+            // Financials
+            result.financials = [];
+
+            const companyAccounts = company.companyAccounts || [];
+            companyAccounts.forEach(period => {
+                const fin = parseFinancialPeriod(period, false);
+                if (fin) {
+                    result.financials.push(fin);
+                }
+            });
+
+            const corporateAccounts = company.corporateAccounts || [];
+            corporateAccounts.forEach(period => {
+                const fin = parseFinancialPeriod(period, true);
+                if (fin) {
+                    result.financials.push(fin);
+                }
+            });
+
+            // Update summary from latest financials
+            if (result.financials.length > 0) {
+                const companyFinancials = result.financials.filter(f => f.is_consolidated === 0);
+                if (companyFinancials.length > 0) {
+                    const latest = companyFinancials[0];
+                    if (result.equity === undefined) result.equity = latest.equity;
+                    if (result.equity_ratio === undefined) result.equity_ratio = latest.equity_ratio;
+                }
+            }
+
+            // Roles (board, management, auditors)
+            result.roles = [];
+            const rolesData = company.roles || {};
+            const roleGroups = rolesData.roleGroups || [];
+
+            roleGroups.forEach(group => {
+                const groupName = group.name || '';
+                const roles = group.roles || [];
+
+                roles.forEach(roleEntry => {
+                    if (roleEntry.type === 'Company') return;
+
+                    const roleType = roleEntry.role || '';
+                    result.roles.push({
+                        name: roleEntry.name,
+                        birth_year: parseBirthYear(roleEntry.birthDate),
+                        role_type: roleType,
+                        role_category: mapRoleCategory(groupName, roleType)
+                    });
+                });
+            });
+
+            return result;
+        }
+
+        // Supabase Edge Function URL
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/allabolag-proxy`;
+
+        // Fetch company data via Supabase Edge Function
+        async function fetchCompanyData(orgnr) {
+            orgnr = orgnr.replace(/[^0-9]/g, '');
+
+            if (orgnr.length !== 10) {
+                throw new Error('Organisationsnummer måste vara 10 siffror');
+            }
+
+            const response = await fetch(`${EDGE_FUNCTION_URL}?orgnr=${orgnr}`);
+            const result = await response.json();
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('Företaget hittades inte');
+                }
+                if (response.status === 429) {
+                    throw new Error('För många förfrågningar. Vänta en minut och försök igen.');
+                }
+                throw new Error(result.error || `Fel vid hämtning: ${response.status}`);
+            }
+
+            if (!result.success || !result.data) {
+                throw new Error('Kunde inte hämta företagsdata');
+            }
+
+            return structureNextJsData(result.data, null, orgnr);
+        }
+
+        // Display company data
+        function displayCompanyData(data) {
+            window.currentCompanyData = data;
+
+            // Company header
+            document.getElementById('company-name').textContent = data.name || '-';
+            document.getElementById('company-orgnr').textContent = `Org.nr: ${data.orgnr}`;
+
+            const statusEl = document.getElementById('company-status');
+            if (data.status === 'ACTIVE' || data.status === 'Aktiv') {
+                statusEl.textContent = 'Aktiv';
+                statusEl.className = 'company-status active';
+            } else {
+                statusEl.textContent = data.status || 'Okänd';
+                statusEl.className = 'company-status inactive';
+            }
+
+            // Basic info
+            document.getElementById('company-type').textContent = data.company_type || '-';
+            document.getElementById('registered-date').textContent = data.registered_date || '-';
+            document.getElementById('num-employees').textContent = data.num_employees || '-';
+            document.getElementById('f-skatt').textContent = data.f_skatt ? 'Ja' : 'Nej';
+            document.getElementById('moms').textContent = data.moms_registered ? 'Ja' : 'Nej';
+
+            // SNI code
+            if (data.industries && data.industries.length > 0) {
+                const primary = data.industries.find(i => i.is_primary) || data.industries[0];
+                document.getElementById('sni-code').textContent = `${primary.sni_code} ${primary.sni_description}`;
+            } else {
+                document.getElementById('sni-code').textContent = '-';
+            }
+
+            // Addresses
+            const postalParts = [data.postal_street, data.postal_code, data.postal_city].filter(Boolean);
+            document.getElementById('postal-address').textContent = postalParts.join(', ') || '-';
+
+            const visitingParts = [data.visiting_street, data.visiting_code, data.visiting_city].filter(Boolean);
+            document.getElementById('visiting-address').textContent = visitingParts.join(', ') || '-';
+
+            document.getElementById('municipality').textContent = data.municipality || '-';
+            document.getElementById('county').textContent = data.county || '-';
+
+            // Contact
+            document.getElementById('phone').textContent = data.phone || '-';
+            document.getElementById('email').textContent = data.email || '-';
+
+            const websiteEl = document.getElementById('website');
+            if (data.website) {
+                websiteEl.innerHTML = `<a href="${data.website}" target="_blank" rel="noopener">${data.website}</a>`;
+            } else {
+                websiteEl.textContent = '-';
+            }
+
+            // Financials summary
+            document.getElementById('revenue').textContent = formatCurrency(data.revenue);
+            document.getElementById('net-profit').textContent = formatCurrency(data.net_profit);
+            document.getElementById('equity').textContent = formatCurrency(data.equity);
+            document.getElementById('equity-ratio').textContent = formatPercent(data.equity_ratio);
+
+            // Corporate structure
+            document.getElementById('is-group').textContent = data.is_group ? 'Ja' : 'Nej';
+            document.getElementById('companies-in-group').textContent = data.companies_in_group || '-';
+            document.getElementById('parent-company').textContent = data.parent_name || '-';
+            document.getElementById('share-capital').textContent = formatCurrency(data.share_capital);
+
+            // Roles table
+            const rolesTbody = document.getElementById('roles-tbody');
+            if (data.roles && data.roles.length > 0) {
+                rolesTbody.innerHTML = data.roles.map(role => {
+                    const categoryClass = role.role_category.toLowerCase();
+                    const categoryLabel = {
+                        'BOARD': 'Styrelse',
+                        'MANAGEMENT': 'Ledning',
+                        'AUDITOR': 'Revisor',
+                        'OTHER': 'Övrigt'
+                    }[role.role_category] || role.role_category;
+
+                    return `
+                        <tr>
+                            <td>${role.name || '-'}</td>
+                            <td>${role.role_type || '-'}</td>
+                            <td><span class="role-category-badge ${categoryClass}">${categoryLabel}</span></td>
+                            <td>${role.birth_year || '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                rolesTbody.innerHTML = '<tr><td colspan="4" class="empty-state">Ingen rolldata tillgänglig</td></tr>';
+            }
+
+            // Financials history table
+            const companyFinancials = (data.financials || []).filter(f => f.is_consolidated === 0);
+            const financialsHeader = document.getElementById('financials-header');
+            const financialsTbody = document.getElementById('financials-tbody');
+
+            if (companyFinancials.length > 0) {
+                // Sort by year descending
+                companyFinancials.sort((a, b) => (b.period_year || 0) - (a.period_year || 0));
+
+                // Take last 5 years
+                const years = companyFinancials.slice(0, 5);
+
+                // Header
+                financialsHeader.innerHTML = '<th>Nyckeltal</th>' + years.map(y => `<th>${y.period_year || '-'}</th>`).join('');
+
+                // Rows
+                const metrics = [
+                    { key: 'revenue', label: 'Omsättning', format: formatCurrency },
+                    { key: 'operating_profit', label: 'Rörelseresultat', format: formatCurrency },
+                    { key: 'net_profit', label: 'Resultat', format: formatCurrency },
+                    { key: 'total_assets', label: 'Tillgångar', format: formatCurrency },
+                    { key: 'equity', label: 'Eget kapital', format: formatCurrency },
+                    { key: 'equity_ratio', label: 'Soliditet (%)', format: formatPercent },
+                    { key: 'num_employees', label: 'Anställda', format: v => v || '-' },
+                ];
+
+                financialsTbody.innerHTML = metrics.map(metric => {
+                    const cells = years.map(y => {
+                        const value = y[metric.key];
+                        const formatted = metric.format(value);
+                        let className = '';
+                        if (value !== null && value !== undefined) {
+                            if (metric.key.includes('profit') || metric.key === 'revenue') {
+                                className = value >= 0 ? 'amount-positive' : 'amount-negative';
+                            }
+                        }
+                        return `<td class="${className}">${formatted}</td>`;
+                    }).join('');
+
+                    return `<tr><td>${metric.label}</td>${cells}</tr>`;
+                }).join('');
+            } else {
+                financialsHeader.innerHTML = '<th>Nyckeltal</th>';
+                financialsTbody.innerHTML = '<tr><td colspan="6" class="empty-state">Ingen ekonomisk historik tillgänglig</td></tr>';
+            }
+
+            // Show results section
+            resultsSection.classList.add('visible');
+        }
+
+        // Show error
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('visible');
+            resultsSection.classList.remove('visible');
+        }
+
+        // Hide error
+        function hideError() {
+            errorMessage.classList.remove('visible');
+        }
+
+        // Set loading state
+        function setLoading(loading) {
+            searchBtn.disabled = loading;
+            searchBtnText.style.display = loading ? 'none' : 'inline';
+            searchSpinner.style.display = loading ? 'block' : 'none';
+        }
+
+        // Handle search
+        async function handleSearch(e) {
+            e.preventDefault();
+
+            const orgnr = orgnrInput.value.trim();
+            if (!orgnr) {
+                showError('Ange ett organisationsnummer');
+                return;
+            }
+
+            hideError();
+            setLoading(true);
+
+            try {
+                const data = await fetchCompanyData(orgnr);
+                displayCompanyData(data);
+            } catch (error) {
+                console.error('Search error:', error);
+                showError(error.message || 'Ett fel uppstod vid sökning');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Export JSON
+        function exportJson() {
+            if (!window.currentCompanyData) return;
+
+            const json = JSON.stringify(window.currentCompanyData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `allabolag_${window.currentCompanyData.orgnr}.json`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        // Export CSV
+        function exportCsv() {
+            if (!window.currentCompanyData) return;
+
+            const d = window.currentCompanyData;
+            const rows = [
+                ['Fält', 'Värde'],
+                ['Organisationsnummer', d.orgnr],
+                ['Namn', d.name],
+                ['Status', d.status],
+                ['Bolagsform', d.company_type],
+                ['Registrerat', d.registered_date],
+                ['Postadress', [d.postal_street, d.postal_code, d.postal_city].filter(Boolean).join(', ')],
+                ['Besöksadress', [d.visiting_street, d.visiting_code, d.visiting_city].filter(Boolean).join(', ')],
+                ['Kommun', d.municipality],
+                ['Län', d.county],
+                ['Telefon', d.phone],
+                ['E-post', d.email],
+                ['Webbplats', d.website],
+                ['Anställda', d.num_employees],
+                ['F-skatt', d.f_skatt ? 'Ja' : 'Nej'],
+                ['Moms', d.moms_registered ? 'Ja' : 'Nej'],
+                ['Omsättning', d.revenue],
+                ['Resultat', d.net_profit],
+                ['Eget kapital', d.equity],
+                ['Soliditet', d.equity_ratio],
+                ['Aktiekapital', d.share_capital],
+            ];
+
+            const csv = rows.map(row => row.map(cell => {
+                const str = String(cell || '');
+                if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                }
+                return str;
+            }).join(',')).join('\n');
+
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `allabolag_${window.currentCompanyData.orgnr}.csv`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        // Event listeners
+        searchForm.addEventListener('submit', handleSearch);
+        document.getElementById('export-json').addEventListener('click', exportJson);
+        document.getElementById('export-csv').addEventListener('click', exportCsv);
+
+        // Format input as user types
+        orgnrInput.addEventListener('input', (e) => {
+            // Remove non-digits except hyphen
+            let value = e.target.value.replace(/[^0-9-]/g, '');
+            // Remove hyphen if present (we'll display without)
+            value = value.replace(/-/g, '');
+            // Limit to 10 digits
+            value = value.slice(0, 10);
+            e.target.value = value;
+        });
+
+        // Check URL for orgnr parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlOrgnr = urlParams.get('orgnr');
+        if (urlOrgnr) {
+            orgnrInput.value = urlOrgnr.replace(/[^0-9]/g, '').slice(0, 10);
+            handleSearch(new Event('submit'));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inställningar - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../assets/css/variables.css">
+    <link rel="stylesheet" href="../assets/css/reset.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/utilities.css">
+    <style>
+        .settings-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--spacing-6);
+        }
+
+        .settings-header {
+            margin-bottom: var(--spacing-8);
+        }
+
+        .settings-title {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--dark);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .settings-subtitle {
+            color: var(--gray-600);
+            font-size: var(--font-size-base);
+        }
+
+        .settings-section {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-6);
+            overflow: hidden;
+        }
+
+        .settings-section-header {
+            padding: var(--spacing-4) var(--spacing-5);
+            border-bottom: 1px solid var(--gray-200);
+            background: var(--gray-50);
+        }
+
+        .settings-section-title {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            color: var(--dark);
+        }
+
+        .settings-section-desc {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            margin-top: var(--spacing-1);
+        }
+
+        .settings-section-body {
+            padding: var(--spacing-5);
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-4) 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .setting-row:first-child {
+            padding-top: 0;
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-weight: var(--font-weight-medium);
+            color: var(--dark);
+            margin-bottom: var(--spacing-1);
+        }
+
+        .setting-description {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+        }
+
+        .setting-control {
+            margin-left: var(--spacing-4);
+        }
+
+        /* Toggle switch */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-300);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Form inputs */
+        .form-group {
+            margin-bottom: var(--spacing-4);
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--spacing-2);
+            color: var(--dark);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: var(--spacing-3);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-muted);
+        }
+
+        .form-hint {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            margin-top: var(--spacing-1);
+        }
+
+        /* User profile section */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-5);
+            padding-bottom: var(--spacing-5);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .user-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            color: var(--dark);
+        }
+
+        .user-info h3 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--dark);
+        }
+
+        .user-info p {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+        }
+
+        /* Buttons */
+        .btn-save {
+            background: var(--accent);
+            color: var(--dark);
+            padding: var(--spacing-3) var(--spacing-5);
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-save:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-logout {
+            background: transparent;
+            color: var(--gray-600);
+            padding: var(--spacing-3) var(--spacing-5);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-400);
+        }
+
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: var(--spacing-3) var(--spacing-5);
+            border: 1px solid #fecaca;
+            border-radius: var(--radius-md);
+            font-weight: var(--font-weight-medium);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
+        }
+
+        .settings-actions {
+            display: flex;
+            gap: var(--spacing-3);
+            justify-content: flex-end;
+            margin-top: var(--spacing-4);
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: var(--spacing-6);
+            right: var(--spacing-6);
+            background: var(--dark);
+            color: white;
+            padding: var(--spacing-4) var(--spacing-5);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: #059669;
+        }
+
+        .toast.error {
+            background: #dc2626;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            color: var(--gray-600);
+            text-decoration: none;
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-4);
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <a href="../" class="header-logo">Bevakningsverktyget</a>
+        </div>
+        <div class="header-right">
+            <span class="header-user" id="user-email"></span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content" style="background: var(--gray-50); min-height: calc(100vh - 64px);">
+        <div class="settings-container">
+            <a href="../" class="back-link">
+                <span>&#8592;</span> Tillbaka till Dashboard
+            </a>
+
+            <div class="settings-header">
+                <h1 class="settings-title">Inställningar</h1>
+                <p class="settings-subtitle">Hantera ditt konto och preferenser</p>
+            </div>
+
+            <!-- Profile Section -->
+            <section class="settings-section">
+                <div class="settings-section-header">
+                    <h2 class="settings-section-title">Profil</h2>
+                    <p class="settings-section-desc">Din kontoinformation</p>
+                </div>
+                <div class="settings-section-body">
+                    <div class="user-profile">
+                        <div class="user-avatar" id="user-avatar">?</div>
+                        <div class="user-info">
+                            <h3 id="profile-name">Laddar...</h3>
+                            <p id="profile-email">-</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="display-name">Visningsnamn</label>
+                        <input type="text" id="display-name" class="form-input" placeholder="Ditt namn">
+                        <p class="form-hint">Detta visas i gränssnittet och på delade rapporter</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notifications Section -->
+            <section class="settings-section">
+                <div class="settings-section-header">
+                    <h2 class="settings-section-title">Notifieringar</h2>
+                    <p class="settings-section-desc">Konfigurera hur du vill bli notifierad</p>
+                </div>
+                <div class="settings-section-body">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">E-postnotifieringar</div>
+                            <div class="setting-description">Få dagliga sammanfattningar av nya bolagshändelser</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="email-notifications" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">SMS-varningar</div>
+                            <div class="setting-description">Direkta SMS vid konkurser och kritiska händelser</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="sms-notifications">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: var(--spacing-4);">
+                        <label class="form-label" for="phone-number">Telefonnummer för SMS</label>
+                        <input type="tel" id="phone-number" class="form-input" placeholder="+46 70 123 45 67">
+                        <p class="form-hint">Endast för SMS-varningar (valfritt)</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preferences Section -->
+            <section class="settings-section">
+                <div class="settings-section-header">
+                    <h2 class="settings-section-title">Preferenser</h2>
+                    <p class="settings-section-desc">Anpassa hur verktyget fungerar</p>
+                </div>
+                <div class="settings-section-body">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Visa endast bevakade företag</div>
+                            <div class="setting-description">Filtrera händelser till endast dina bevakade företag</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="watched-only">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Kompakt vy</div>
+                            <div class="setting-description">Visa fler händelser per sida med mindre mellanrum</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="compact-view">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Account Actions -->
+            <section class="settings-section">
+                <div class="settings-section-header">
+                    <h2 class="settings-section-title">Konto</h2>
+                    <p class="settings-section-desc">Hantera ditt konto</p>
+                </div>
+                <div class="settings-section-body">
+                    <div class="settings-actions" style="justify-content: flex-start;">
+                        <button class="btn-logout" onclick="logout()">Logga ut</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Save Button -->
+            <div class="settings-actions">
+                <button class="btn-save" onclick="saveSettings()">Spara inställningar</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script>
+        const sb = Auth.getClient();
+        let currentUser = null;
+
+        // Check auth on load
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { data: { user } } = await sb.auth.getUser();
+
+            if (!user) {
+                window.location.href = '../';
+                return;
+            }
+
+            currentUser = user;
+            initializeSettings();
+        });
+
+        function initializeSettings() {
+            const email = currentUser.email || '';
+            const initials = email.substring(0, 2).toUpperCase();
+
+            document.getElementById('user-email').textContent = email;
+            document.getElementById('user-avatar').textContent = initials;
+            document.getElementById('profile-email').textContent = email;
+            document.getElementById('profile-name').textContent = email.split('@')[0];
+
+            // Load saved settings from localStorage
+            const settings = JSON.parse(localStorage.getItem('bevakningsverktyget_settings') || '{}');
+
+            if (settings.displayName) {
+                document.getElementById('display-name').value = settings.displayName;
+                document.getElementById('profile-name').textContent = settings.displayName;
+            }
+            if (settings.phoneNumber) {
+                document.getElementById('phone-number').value = settings.phoneNumber;
+            }
+            if (settings.emailNotifications !== undefined) {
+                document.getElementById('email-notifications').checked = settings.emailNotifications;
+            }
+            if (settings.smsNotifications !== undefined) {
+                document.getElementById('sms-notifications').checked = settings.smsNotifications;
+            }
+            if (settings.watchedOnly !== undefined) {
+                document.getElementById('watched-only').checked = settings.watchedOnly;
+            }
+            if (settings.compactView !== undefined) {
+                document.getElementById('compact-view').checked = settings.compactView;
+            }
+        }
+
+        function saveSettings() {
+            const settings = {
+                displayName: document.getElementById('display-name').value,
+                phoneNumber: document.getElementById('phone-number').value,
+                emailNotifications: document.getElementById('email-notifications').checked,
+                smsNotifications: document.getElementById('sms-notifications').checked,
+                watchedOnly: document.getElementById('watched-only').checked,
+                compactView: document.getElementById('compact-view').checked
+            };
+
+            localStorage.setItem('bevakningsverktyget_settings', JSON.stringify(settings));
+            showToast('Inställningar sparade!', 'success');
+        }
+
+        async function logout() {
+            await sb.auth.signOut();
+            window.location.href = '../';
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

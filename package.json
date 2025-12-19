@@ -27,5 +27,18 @@
     "resend": "^6.6.0",
     "undetected-chromedriver": "^0.0.1-security",
     "xlsx": "^0.18.5"
-  }
+  },
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isakskogstad/Bevakningsverktyget.git"
+  },
+  "bugs": {
+    "url": "https://github.com/isakskogstad/Bevakningsverktyget/issues"
+  },
+  "homepage": "https://github.com/isakskogstad/Bevakningsverktyget#readme"
 }
