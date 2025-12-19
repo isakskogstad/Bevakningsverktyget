@@ -1,6 +1,9 @@
 /**
  * Protokoll Scraper - Hämtar bolagsstämmoprotokoll från Bolagsverket
- * Använder puppeteer-extra med stealth plugin
+ *
+ * Använder centraliserade moduler:
+ * - browser-factory: Browser-skapande med stealth, adblocker, CAPTCHA-hantering
+ * - popup-blocker: Cookie consent, popup-hantering
  *
  * SÄKERHETSFUNKTIONER:
  * - Daglig gräns på 100 SEK
@@ -8,25 +11,27 @@
  * - Validering innan betalning
  */
 
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const {
+    createBrowser,
+    createPage,
+    configurePage,
+    dismissAllPopups,
+    handleCaptcha,
+    sleep
+} = require('../utils/browser-factory');
 const purchaseLogger = require('../services/purchase_logger');
 const twilioSMS = require('../services/twilio_sms_node');
-
-puppeteer.use(StealthPlugin());
 
 // 3D Secure lösenord för kortverifiering
 const SECURE_PASSWORD = 'Wdef3579';
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 /**
- * Hanterar CAPTCHA om den visas
- * Tar screenshot, läser av koden och fyller i
+ * Hanterar CAPTCHA specifikt för Bolagsverket
+ * Delegerar till centraliserad handleCaptcha men med extra Bolagsverket-logik
  */
-async function handleCaptcha(page, maxAttempts = 3) {
+async function handleBolagsverketCaptcha(page, maxAttempts = 3) {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        // Kolla om CAPTCHA visas
+        // Kolla om Bolagsverket-specifik CAPTCHA visas
         const hasCaptcha = await page.evaluate(() => {
             const text = document.body.innerText || '';
             return text.includes('What code is in the image?') ||
@@ -38,120 +43,30 @@ async function handleCaptcha(page, maxAttempts = 3) {
             return true; // Ingen CAPTCHA, fortsätt
         }
 
-        console.error(`[CAPTCHA] Detekterade CAPTCHA (försök ${attempt + 1}/${maxAttempts})`);
+        console.error(`[CAPTCHA] Detekterade Bolagsverket CAPTCHA (försök ${attempt + 1}/${maxAttempts})`);
 
-        // Ta screenshot av CAPTCHA-bilden
-        const captchaScreenshot = `/tmp/captcha_${Date.now()}.png`;
-        await page.screenshot({ path: captchaScreenshot, fullPage: true });
-        console.error(`[CAPTCHA] Screenshot sparad: ${captchaScreenshot}`);
-
-        // Försök läsa av CAPTCHA-koden från bilden
-        // Bilden innehåller typiskt en förvrängd textsträng
-        const captchaCode = await page.evaluate(() => {
-            // Leta efter CAPTCHA-bilden och försök extrahera alt-text eller andra ledtrådar
-            const img = document.querySelector('img');
-            if (img && img.alt) return img.alt;
-
-            // Om det finns en audio-knapp, kan vi försöka med den istället
-            // Men för nu, returnera null så vi vet att vi behöver manuell avläsning
-            return null;
-        });
-
-        if (!captchaCode) {
-            // Försök extrahera CAPTCHA-bilden och analysera den
-            // Spara endast CAPTCHA-bilden (inte hela sidan)
-            const captchaImagePath = `/tmp/captcha_image_${Date.now()}.png`;
-
-            try {
-                // Hitta CAPTCHA-bilden och spara den separat
-                const captchaElement = await page.$('img');
-                if (captchaElement) {
-                    await captchaElement.screenshot({ path: captchaImagePath });
-                    console.error(`[CAPTCHA] CAPTCHA-bild sparad: ${captchaImagePath}`);
-                }
-            } catch (e) {
-                console.error(`[CAPTCHA] Kunde inte spara CAPTCHA-bild: ${e.message}`);
-            }
-
-            // När vi kör i --visible läge, vänta på manuell inmatning
-            console.error('[CAPTCHA] Väntar på manuell inmatning (30 sek)...');
-            console.error('[CAPTCHA] Fyll i CAPTCHA-koden i webbläsaren och klicka submit');
-
-            // Vänta och polla efter att användaren fyllt i
-            for (let i = 0; i < 30; i++) {
-                await sleep(1000);
-
-                // Kolla om CAPTCHA är löst (sidan har ändrats)
-                const stillHasCaptcha = await page.evaluate(() => {
-                    const text = document.body.innerText || '';
-                    return text.includes('What code is in the image?');
-                });
-
-                if (!stillHasCaptcha) {
-                    console.error('[CAPTCHA] CAPTCHA löst!');
-                    return true;
-                }
-            }
-
-            console.error('[CAPTCHA] Timeout - CAPTCHA inte löst');
-            return false;
+        // Försök använda centraliserad CAPTCHA-hantering först
+        const solved = await handleCaptcha(page, 15000);
+        if (solved) {
+            return true;
         }
 
-        // Fyll i CAPTCHA-koden
-        console.error(`[CAPTCHA] Fyller i kod: ${captchaCode}`);
-        await page.evaluate((code) => {
-            const input = document.querySelector('input[type="text"]');
-            if (input) {
-                input.value = code;
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-        }, captchaCode);
+        // Om centraliserad hantering inte fungerar, försök manuellt
+        console.error('[CAPTCHA] Väntar på manuell inmatning (30 sek)...');
 
-        await sleep(500);
+        for (let i = 0; i < 30; i++) {
+            await sleep(1000);
 
-        // Klicka på submit
-        await page.evaluate(() => {
-            const submitBtn = document.querySelector('input[type="submit"], button');
-            if (submitBtn) submitBtn.click();
-        });
-
-        await sleep(3000);
-    }
-
-    return false;
-}
-
-/**
- * Accepterar cookie-dialog om den visas
- */
-async function acceptCookies(page, maxWait = 10000) {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < maxWait) {
-        try {
-            const clicked = await page.evaluate(() => {
-                // Bolagsverket cookie-knapp (flera varianter)
-                const buttons = Array.from(document.querySelectorAll('button'));
-                const cookieBtn = buttons.find(b =>
-                    b.textContent.includes('OK') ||
-                    b.textContent.includes('Acceptera') ||
-                    b.textContent.includes('Godkänn alla kakor') ||
-                    b.textContent.includes('Godkänn')
-                );
-                if (cookieBtn && cookieBtn.offsetParent !== null) {
-                    cookieBtn.click();
-                    return true;
-                }
-                return false;
+            const stillHasCaptcha = await page.evaluate(() => {
+                const text = document.body.innerText || '';
+                return text.includes('What code is in the image?');
             });
 
-            if (clicked) {
-                await sleep(1000);
+            if (!stillHasCaptcha) {
+                console.error('[CAPTCHA] CAPTCHA löst!');
                 return true;
             }
-        } catch (e) {}
-
-        await sleep(500);
+        }
     }
 
     return false;
@@ -178,19 +93,9 @@ async function fetchProtokoll(orgnr, email, options = {}) {
     // Normalisera orgnr (ta bort bindestreck)
     orgnr = orgnr.replace(/-/g, '').replace(/ /g, '');
 
-    const browser = await puppeteer.launch({
-        headless: headless ? 'new' : false,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--lang=sv-SE'
-        ]
-    });
-
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1400, height: 900 });
-    await page.setExtraHTTPHeaders({ 'Accept-Language': 'sv-SE,sv;q=0.9' });
+    // Använd centraliserad browser-factory
+    const browser = await createBrowser({ headless });
+    const page = await createPage(browser);
 
     const steps = [];
 
@@ -203,10 +108,14 @@ async function fetchProtokoll(orgnr, email, options = {}) {
             waitUntil: 'networkidle2',
             timeout: timeout
         });
-        await sleep(3000);
+        await sleep(2000);
 
-        // Hantera CAPTCHA om den visas
-        const captchaSolved = await handleCaptcha(page);
+        // Konfigurera sidan och stäng popups/cookies
+        await configurePage(page);
+        await dismissAllPopups(page);
+
+        // Hantera CAPTCHA om den visas (använder Bolagsverket-specifik hantering)
+        const captchaSolved = await handleBolagsverketCaptcha(page);
         if (!captchaSolved) {
             steps.push({ step: 1, status: 'failed', message: 'CAPTCHA kunde inte lösas' });
             return {
@@ -219,9 +128,6 @@ async function fetchProtokoll(orgnr, email, options = {}) {
         }
 
         steps.push({ step: 1, status: 'success', message: 'Navigerade till protokollsidan' });
-
-        // Acceptera cookies om de dyker upp
-        await acceptCookies(page, 5000);
 
         // Ta screenshot för debugging
         await page.screenshot({ path: '/tmp/protokoll_1.png' });
@@ -437,8 +343,8 @@ async function fetchProtokoll(orgnr, email, options = {}) {
         await page.screenshot({ path: '/tmp/protokoll_6.png', fullPage: true });
         steps.push({ step: 7, status: filledEmail ? 'success' : 'failed', message: 'Fyller i e-post' });
 
-        // Acceptera cookies om dialogen fortfarande visas
-        await acceptCookies(page, 3000);
+        // Stäng eventuella kvarvarande popups
+        await dismissAllPopups(page);
 
         // Steg 8: Klicka på "Betala" (går till Nets betalningssida)
         console.error('Steg 8: Klickar på Betala');
@@ -1219,4 +1125,4 @@ if (require.main === module) {
         });
 }
 
-module.exports = { fetchProtokoll, acceptCookies };
+module.exports = { fetchProtokoll };

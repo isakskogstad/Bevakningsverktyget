@@ -1,44 +1,19 @@
 /**
  * POIT Scraper - Node.js version med puppeteer-extra stealth
  * Hämtar kungörelser från Post- och Inrikes Tidningar
+ *
+ * Använder centraliserade moduler:
+ * - browser-factory: Browser-skapande med stealth, adblocker, CAPTCHA-hantering
+ * - popup-blocker: Cookie consent, popup-hantering
  */
 
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-
-puppeteer.use(StealthPlugin());
-
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
- * Accepterar cookie-dialog om den visas
- */
-async function acceptCookies(page, maxWait = 15000) {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < maxWait) {
-        try {
-            const clicked = await page.evaluate(() => {
-                const buttons = Array.from(document.querySelectorAll('button'));
-                const cookieBtn = buttons.find(b => b.textContent.includes('OK, fortsätt'));
-                if (cookieBtn && cookieBtn.offsetParent !== null) {
-                    cookieBtn.click();
-                    return true;
-                }
-                return false;
-            });
-
-            if (clicked) {
-                await sleep(1000);
-                return true;
-            }
-        } catch (e) {}
-
-        await sleep(500);
-    }
-
-    return false;
-}
+const {
+    createBrowser,
+    createPage,
+    configurePage,
+    dismissAllPopups,
+    sleep
+} = require('../utils/browser-factory');
 
 /**
  * Parsar sökresultat från POIT-sidan
@@ -80,19 +55,9 @@ async function parseSearchResults(page) {
 async function searchByOrgnr(orgnr, options = {}) {
     const { headless = true, timeout = 60000 } = options;
 
-    const browser = await puppeteer.launch({
-        headless: headless ? 'new' : false,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--lang=sv-SE'
-        ]
-    });
-
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1400, height: 900 });
-    await page.setExtraHTTPHeaders({ 'Accept-Language': 'sv-SE,sv;q=0.9' });
+    // Använd centraliserad browser-factory
+    const browser = await createBrowser({ headless });
+    const page = await createPage(browser);
 
     try {
         // Navigera till POIT
@@ -102,8 +67,9 @@ async function searchByOrgnr(orgnr, options = {}) {
         });
         await sleep(3000);
 
-        // Acceptera cookies
-        await acceptCookies(page, 15000);
+        // Konfigurera sidan och stäng popups/cookies
+        await configurePage(page);
+        await dismissAllPopups(page);
 
         // Gå till söksidan
         await page.evaluate(() => {
@@ -112,8 +78,8 @@ async function searchByOrgnr(orgnr, options = {}) {
         });
         await sleep(3000);
 
-        // Acceptera cookies igen om de dyker upp
-        await acceptCookies(page, 5000);
+        // Stäng eventuella nya popups
+        await dismissAllPopups(page);
 
         // Fyll i organisationsnummer
         await page.waitForSelector('#personOrgnummer', { timeout: 10000 });
@@ -192,19 +158,9 @@ async function getKungorelseDetails(kungorelseId, options = {}) {
     const normalizedId = kungorelseId.replace('/', '-');
     const url = `https://poit.bolagsverket.se/poit-app/kungorelse/${normalizedId}`;
 
-    const browser = await puppeteer.launch({
-        headless: headless ? 'new' : false,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--lang=sv-SE'
-        ]
-    });
-
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1400, height: 900 });
-    await page.setExtraHTTPHeaders({ 'Accept-Language': 'sv-SE,sv;q=0.9' });
+    // Använd centraliserad browser-factory
+    const browser = await createBrowser({ headless });
+    const page = await createPage(browser);
 
     try {
         console.error(`Hämtar kungörelse: ${url}`);
@@ -215,9 +171,10 @@ async function getKungorelseDetails(kungorelseId, options = {}) {
         });
         await sleep(3000);
 
-        // Acceptera cookies
-        await acceptCookies(page, 10000);
-        await sleep(2000);
+        // Konfigurera sidan och stäng popups/cookies
+        await configurePage(page);
+        await dismissAllPopups(page);
+        await sleep(1000);
 
         // Extrahera all information från sidan
         const details = await page.evaluate(() => {
@@ -433,6 +390,5 @@ module.exports = {
     searchByOrgnr,
     searchMultiple,
     getKungorelseDetails,
-    getMultipleKungorelseDetails,
-    acceptCookies
+    getMultipleKungorelseDetails
 };

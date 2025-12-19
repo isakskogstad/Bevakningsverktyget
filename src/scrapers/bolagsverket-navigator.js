@@ -11,24 +11,28 @@
  * 5. Bekräftelse och dokumentnedladdning
  * 6. Sparning till Supabase
  *
- * Använder:
- * - puppeteer-extra med stealth plugin
- * - Automatisk CAPTCHA-lösning
- * - Retry-logik med flera metoder
- * - Daglig köpgräns via purchase_logger
+ * Använder centraliserade moduler:
+ * - browser-factory: Browser-skapande med stealth, adblocker, CAPTCHA-hantering
+ * - popup-blocker: Cookie consent, popup-hantering
+ * - auto_captcha_solver: NopeCHA integration
+ * - purchase_logger: Daglig köpgräns
  *
  * Dokumenterar alla tillgängliga dokumenttyper på foretagsinfo.bolagsverket.se
  */
 
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const {
+    createBrowser: createBrowserBase,
+    createPage,
+    configurePage,
+    dismissAllPopups,
+    handleCaptcha,
+    sleep
+} = require('../utils/browser-factory');
 const captchaSolver = require('../services/auto_captcha_solver');
 const purchaseLogger = require('../services/purchase_logger');
 const fs = require('fs');
 const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-
-puppeteer.use(StealthPlugin());
 
 // Supabase-klient
 const supabaseUrl = process.env.SUPABASE_URL || 'https://wzkohrittxdrstsmwopco.supabase.co';
@@ -42,7 +46,7 @@ function getSupabase() {
     return supabase;
 }
 
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+// sleep importeras från browser-factory
 
 // Konfiguration
 const CONFIG = {
@@ -187,72 +191,35 @@ function log(message, level = 'info') {
 }
 
 /**
- * Skapar en stealth browser
+ * Skapar en stealth browser med centraliserad browser-factory
+ * Returnerar { browser, page } för bakåtkompatibilitet
  */
-async function createBrowser(headless = false) {
-    const browser = await puppeteer.launch({
-        headless: headless ? 'new' : false,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--lang=sv-SE,sv',
-            '--window-size=1400,900',
-            '--disable-blink-features=AutomationControlled',
-            '--disable-features=IsolateOrigins,site-per-process'
-        ],
-        ignoreDefaultArgs: ['--enable-automation'],
-        defaultViewport: null
+async function createBrowser(headless = true) {
+    // Använd centraliserad browser-factory (headless=true för serverless)
+    const browser = await createBrowserBase({ headless });
+    const page = await createPage(browser, {
+        viewport: { width: 1400, height: 900 }
     });
-    
-    const page = await browser.newPage();
-    
-    // Realistiska headers
+
+    // Extra headers specifika för Bolagsverket
     await page.setExtraHTTPHeaders({
-        'Accept-Language': 'sv-SE,sv;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
         'Sec-Fetch-Site': 'none',
         'Sec-Fetch-User': '?1'
     });
-    
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    await page.setViewport({ width: 1400, height: 900 });
-    
-    // Simulera mänskligt beteende
-    await page.evaluateOnNewDocument(() => {
-        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-        window.chrome = { runtime: {} };
-        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-        Object.defineProperty(navigator, 'languages', { get: () => ['sv-SE', 'sv', 'en-US', 'en'] });
-    });
-    
+
     return { browser, page };
 }
 
 /**
  * Accepterar cookies om dialog visas
+ * (Wrapper för bakåtkompatibilitet - använder centraliserad dismissAllPopups)
  */
 async function acceptCookies(page) {
     try {
-        const clicked = await page.evaluate(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            for (const btn of buttons) {
-                const text = btn.textContent.toLowerCase();
-                if (text.includes('ok') || text.includes('acceptera') || text.includes('godkänn')) {
-                    btn.click();
-                    return true;
-                }
-            }
-            return false;
-        });
-        if (clicked) log('Accepterade cookies');
-        return clicked;
+        await dismissAllPopups(page);
+        return true;
     } catch (e) {
         return false;
     }
@@ -263,17 +230,19 @@ async function acceptCookies(page) {
  */
 async function navigateWithRetry(page, url, options = {}) {
     const { retries = CONFIG.MAX_RETRIES, solveCaptcha = true } = options;
-    
+
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
             log(`Navigerar till ${url} (försök ${attempt}/${retries})`);
-            
+
             await page.goto(url, {
                 waitUntil: 'networkidle2',
                 timeout: CONFIG.PAGE_TIMEOUT
             });
-            
-            await sleep(2000);
+
+            // Konfigurera sidan och hantera cookies/popups
+            await configurePage(page);
+            await sleep(1000);
             
             // Ta screenshot
             const screenshotPath = path.join(CONFIG.SCREENSHOT_DIR, `nav_${Date.now()}.png`);
@@ -323,7 +292,7 @@ async function navigateWithRetry(page, url, options = {}) {
  * Hämtar företagsinformation och tillgängliga dokument
  */
 async function getCompanyDocuments(orgnr, options = {}) {
-    const { headless = false } = options;
+    const { headless = true } = options;
     
     log(`\n${'='.repeat(60)}`);
     log(`HÄMTAR DOKUMENT FÖR: ${orgnr}`);
@@ -427,7 +396,7 @@ async function getCompanyDocuments(orgnr, options = {}) {
  * Dokumenterar alla produkttyper på Bolagsverket
  */
 async function discoverAllProducts(orgnr, options = {}) {
-    const { headless = false } = options;
+    const { headless = true } = options;
     
     log(`\n${'='.repeat(60)}`);
     log(`UNDERSÖKER ALLA PRODUKTTYPER`);
@@ -612,7 +581,7 @@ async function humanMouseMove(page, x, y) {
  */
 async function purchaseDocument(orgnr, productCode, options = {}) {
     const {
-        headless = false,
+        headless = true,  // Serverless-kompatibelt (default: true)
         email = process.env.PURCHASE_EMAIL || 'dokument@loop-impact.se',
         dryRun = false,  // Kör utan att faktiskt köpa
         saveToSupabase = true,
@@ -1304,7 +1273,7 @@ function getPurchaseStats() {
  */
 async function investigateCompanyEvent(orgnr, eventData, options = {}) {
     const {
-        headless = false,
+        headless = true,  // Serverless-kompatibelt (default: true)
         email = process.env.PURCHASE_EMAIL || 'dokument@loop-impact.se',
         dryRun = false,
         saveToSupabase = true,
@@ -1502,7 +1471,7 @@ module.exports = {
 
     // Utility-funktioner
     createBrowser,
-    acceptCookies,
+    acceptCookies,  // Bakåtkompatibilitet - wrapper för dismissAllPopups
     navigateWithRetry,
     saveSuccessfulMethod,
     getSupabase,

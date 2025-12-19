@@ -1,96 +1,40 @@
 /**
  * POIT & Bolagsverket Document Purchase - Stealth Mode
- * Använder puppeteer-extra med stealth plugin för att undvika bot-detection
+ *
+ * Använder centraliserade moduler:
+ * - browser-factory: Browser-skapande med stealth, adblocker, CAPTCHA-hantering
+ * - popup-blocker: Cookie consent, popup-hantering
  */
 
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-
-// Aktivera stealth plugin med alla evasions
-puppeteer.use(StealthPlugin());
-
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const {
+    createBrowser,
+    createPage,
+    configurePage,
+    dismissAllPopups,
+    humanType: humanTypeBase,
+    sleep
+} = require('../src/utils/browser-factory');
 
 // Randomiserad delay för mänskligt beteende
 const humanDelay = () => sleep(Math.random() * 2000 + 1000);
 
 /**
  * Skapa en stealth browser med alla anti-detection features
+ * Använder browser-factory för centraliserad hantering
  */
-async function createStealthBrowser(headless = false) {
-    const browser = await puppeteer.launch({
-        headless: headless,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu',
-            '--lang=sv-SE,sv',
-            '--window-size=1920,1080',
-            // Anti-detection
-            '--disable-blink-features=AutomationControlled',
-            '--disable-features=IsolateOrigins,site-per-process',
-        ],
-        ignoreDefaultArgs: ['--enable-automation'],
-        defaultViewport: null
+async function createStealthBrowser(headless = true) {
+    // Använd centraliserad browser-factory (headless=true för serverless)
+    const browser = await createBrowser({ headless });
+    const page = await createPage(browser, {
+        viewport: { width: 1920, height: 1080 },
+        extraHeaders: {
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0'
+        }
     });
-
-    const page = await browser.newPage();
-
-    // Sätt realistiska headers
-    await page.setExtraHTTPHeaders({
-        'Accept-Language': 'sv-SE,sv;q=0.9,en-US;q=0.8,en;q=0.7',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Cache-Control': 'max-age=0'
-    });
-
-    // Sätt realistisk user agent
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-    // Override navigator properties för att undvika detection
-    await page.evaluateOnNewDocument(() => {
-        // Webdriver
-        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-
-        // Chrome
-        window.chrome = { runtime: {} };
-
-        // Permissions
-        const originalQuery = window.navigator.permissions.query;
-        window.navigator.permissions.query = (parameters) => (
-            parameters.name === 'notifications' ?
-                Promise.resolve({ state: Notification.permission }) :
-                originalQuery(parameters)
-        );
-
-        // Plugins
-        Object.defineProperty(navigator, 'plugins', {
-            get: () => [1, 2, 3, 4, 5]
-        });
-
-        // Languages
-        Object.defineProperty(navigator, 'languages', {
-            get: () => ['sv-SE', 'sv', 'en-US', 'en']
-        });
-
-        // Platform
-        Object.defineProperty(navigator, 'platform', {
-            get: () => 'MacIntel'
-        });
-    });
-
-    // Viewport
-    await page.setViewport({ width: 1920, height: 1080 });
 
     return { browser, page };
 }
@@ -105,14 +49,13 @@ async function humanMouseMove(page, x, y) {
 
 /**
  * Simulera mänsklig typing
+ * Använder browser-factory's humanType
  */
 async function humanType(page, selector, text) {
-    await page.click(selector);
-    await humanDelay();
-
-    for (const char of text) {
-        await page.keyboard.type(char, { delay: Math.random() * 150 + 50 });
-    }
+    await humanTypeBase(page, selector, text, {
+        minDelay: 50,
+        maxDelay: 150
+    });
 }
 
 /**
@@ -140,51 +83,12 @@ async function safeNavigate(page, url, options = {}) {
 
 /**
  * Acceptera cookies om dialog visas
+ * Använder browser-factory's dismissAllPopups
  */
 async function acceptCookiesIfPresent(page) {
     try {
-        const cookieSelectors = [
-            'button:has-text("OK, fortsätt")',
-            'button:has-text("Acceptera")',
-            'button:has-text("Godkänn")',
-            '[data-testid="cookie-accept"]',
-            '.cookie-consent button',
-            '#cookie-consent-accept'
-        ];
-
-        for (const selector of cookieSelectors) {
-            try {
-                const btn = await page.$(selector);
-                if (btn) {
-                    await btn.click();
-                    console.log('   ✓ Accepterade cookies');
-                    await humanDelay();
-                    return true;
-                }
-            } catch (e) {}
-        }
-
-        // Fallback: sök efter knapp med text
-        const clicked = await page.evaluate(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const cookieBtn = buttons.find(b =>
-                b.textContent.includes('OK, fortsätt') ||
-                b.textContent.includes('Acceptera') ||
-                b.textContent.includes('Godkänn alla')
-            );
-            if (cookieBtn) {
-                cookieBtn.click();
-                return true;
-            }
-            return false;
-        });
-
-        if (clicked) {
-            console.log('   ✓ Accepterade cookies (via evaluate)');
-            await humanDelay();
-        }
-
-        return clicked;
+        await dismissAllPopups(page);
+        return true;
     } catch (e) {
         return false;
     }
@@ -197,7 +101,7 @@ async function searchPOIT(orgnr, options = {}) {
     console.log(`\n🔍 POIT-SÖKNING FÖR: ${orgnr}`);
     console.log('=' .repeat(50));
 
-    const { browser, page } = await createStealthBrowser(options.headless ?? false);
+    const { browser, page } = await createStealthBrowser(options.headless ?? true);
 
     try {
         // Steg 1: Navigera till POIT
@@ -370,7 +274,7 @@ async function searchForetagsinfo(orgnr, options = {}) {
     console.log(`\n🏢 FÖRETAGSINFORMATION FÖR: ${orgnr}`);
     console.log('=' .repeat(50));
 
-    const { browser, page } = await createStealthBrowser(options.headless ?? false);
+    const { browser, page } = await createStealthBrowser(options.headless ?? true);
 
     try {
         // Navigera till Företagsinfo
@@ -454,7 +358,7 @@ async function runFullFlow(orgnr) {
     console.log(`Tid: ${new Date().toLocaleString('sv-SE')}`);
 
     // Steg 1: Sök POIT
-    const poitResult = await searchPOIT(orgnr, { headless: false });
+    const poitResult = await searchPOIT(orgnr, { headless: true });
 
     if (poitResult.success && poitResult.antal_traffar > 0) {
         console.log(`\n✅ POIT: Hittade ${poitResult.antal_traffar} kungörelse(r)`);
@@ -463,7 +367,7 @@ async function runFullFlow(orgnr) {
     }
 
     // Steg 2: Sök Företagsinfo
-    const foretagsinfoResult = await searchForetagsinfo(orgnr, { headless: false });
+    const foretagsinfoResult = await searchForetagsinfo(orgnr, { headless: true });
 
     // Summering
     console.log('\n' + '='.repeat(60));
