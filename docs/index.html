@@ -745,14 +745,17 @@
                 const isWatched = watchedOrgnrs.includes(e.orgnr) ||
                     (e.extracted_orgnrs && e.extracted_orgnrs.some(o => watchedOrgnrs.includes(o)));
 
+                // Extrahera företagsnamn från content (format: "K123/25 Tingsrätt Typ FÖRETAGSNAMN Datum")
+                const companyName = getCompanyNameFromEvent(e);
+
                 return `
                     <div class="feed-item" data-id="${e.id}">
                         <div class="feed-item-header">
                             <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
                             <span class="feed-time">${formatDate(e.announcement_date)}</span>
                         </div>
-                        <div class="feed-company">${escapeHtml(companyNames[e.orgnr] || e.orgnr || 'Okänt företag')} ${isWatched ? '⭐' : ''}</div>
-                        <div class="feed-description">${escapeHtml(truncate(e.title || e.content, 150))}</div>
+                        <div class="feed-company">${escapeHtml(companyName)} ${isWatched ? '⭐' : ''}</div>
+                        <div class="feed-description">${escapeHtml(e.title || '')}</div>
                         <div class="feed-actions">
                             <button class="btn btn-accent btn-sm" onclick="investigateEvent('${e.id}')">
                                 Undersök mer
@@ -764,6 +767,37 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function getCompanyNameFromEvent(event) {
+            // Om vi har orgnr och det finns i vår lookup, använd det
+            if (event.orgnr && companyNames[event.orgnr]) {
+                return companyNames[event.orgnr];
+            }
+
+            // Försök extrahera företagsnamn från content
+            // Format: "K123456/25 Stockholms tingsrätt Konkursbeslut FÖRETAGSNAMN 2025-12-19"
+            if (event.content) {
+                // Ta bort mål-ID, tingsrätt, och typ i början, samt datum i slutet
+                const content = event.content;
+                // Regex: ta bort K-nummer, tingsrätt (ord+tingsrätt), typ (Konkursbeslut etc), datum
+                const match = content.match(/K\d+\/\d+\s+\w+\s+tingsrätt\s+\w+\s+(.+?)\s+\d{4}-\d{2}-\d{2}/i);
+                if (match && match[1]) {
+                    return match[1].trim();
+                }
+                // Fallback: försök enklare extrahering
+                const parts = content.split(/\s+/);
+                if (parts.length > 4) {
+                    // Hoppa över K-nummer, tingsrätt (2 ord), typ (1 ord), ta resten minus datum
+                    const nameParts = parts.slice(4, -1);
+                    if (nameParts.length > 0) {
+                        return nameParts.join(' ');
+                    }
+                }
+            }
+
+            // Fallback till title om inget annat fungerar
+            return event.title || 'Okänt företag';
         }
 
         function getCategoryClass(category) {
