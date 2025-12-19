@@ -874,13 +874,14 @@
             const event = events.find(e => e.id === eventId);
             if (!event) return;
 
+            const companyName = getCompanyNameFromEvent(event);
             document.getElementById('event-details').innerHTML = `
                 <div style="margin-bottom: 16px;">
                     <div class="feed-category ${getCategoryClass(event.category)}" style="margin-bottom: 8px;">
                         ${escapeHtml(event.category)}
                     </div>
-                    <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(event.orgnr || 'Okänt företag')}</h4>
-                    <p style="color: var(--gray-500);">${escapeHtml(event.title || event.content || 'Ingen beskrivning')}</p>
+                    <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(companyName)}</h4>
+                    <p style="color: var(--gray-500);">${escapeHtml(event.title || '')}</p>
                 </div>
             `;
 
