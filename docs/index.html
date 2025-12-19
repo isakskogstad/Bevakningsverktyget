@@ -376,7 +376,7 @@
                         <div class="settings-dropdown" id="settings-dropdown">
                             <a href="sms-notiser/" class="settings-dropdown-item">📱 SMS-notiser</a>
                             <div class="settings-dropdown-divider"></div>
-                            <a href="bevakning/foretagslista/" class="settings-dropdown-item" id="admin-companies-link" style="display: none;">📊 Hantera företag</a>
+                            <a href="verktyg/foretagsbevakning/#companies" class="settings-dropdown-item" id="admin-companies-link" style="display: none;">📊 Hantera företag</a>
                             <a href="#" class="settings-dropdown-item" id="admin-api-link" style="display: none;">🔐 API-nycklar</a>
                             <div class="settings-dropdown-divider" id="admin-divider" style="display: none;"></div>
                             <a href="#" class="settings-dropdown-item" id="logout-link">🚪 Logga ut</a>
@@ -412,7 +412,7 @@
 
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Företagsbevakning</div>
-                    <a href="bevakning/handelser/" class="sidebar-link active">
+                    <a href="verktyg/foretagsbevakning/" class="sidebar-link active">
                         <div class="sidebar-link-icon">🔔</div>
                         <div class="sidebar-link-text">
                             <div class="sidebar-link-title">POIT-händelser</div>
@@ -420,7 +420,7 @@
                         </div>
                         <span class="sidebar-link-badge" id="poit-badge">0</span>
                     </a>
-                    <a href="bevakning/foretagslista/" class="sidebar-link">
+                    <a href="verktyg/foretagsbevakning/#companies" class="sidebar-link">
                         <div class="sidebar-link-icon">🏢</div>
                         <div class="sidebar-link-text">
                             <div class="sidebar-link-title">Företagslista</div>
@@ -476,7 +476,7 @@
                         <div class="quick-action-title">Bevaka pressreleaser</div>
                         <div class="quick-action-desc">Följ pressmeddelanden från Northvolt, Klarna, Spotify och andra företag</div>
                     </a>
-                    <a href="bevakning/handelser/" class="quick-action-card">
+                    <a href="verktyg/foretagsbevakning/" class="quick-action-card">
                         <div class="quick-action-icon">🔔</div>
                         <div class="quick-action-title">Se POIT-händelser</div>
                         <div class="quick-action-desc">Konkurser, likvidationer, kallelser och skulder för bevakade företag</div>
@@ -565,6 +565,7 @@
         var currentOffset = 0;
         var pageSize = 10;
         var watchedOrgnrs = [];
+        var companyNames = {};
 
         // =========================================================================
         // INITIALIZATION
@@ -675,9 +676,16 @@
         async function loadWatchedCompanies() {
             const { data } = await sb
                 .from('loop_table')
-                .select('orgnr')
+                .select('orgnr, company_name')
                 .limit(1500);
             watchedOrgnrs = (data || []).map(c => c.orgnr);
+            // Skapa lookup-map för företagsnamn
+            companyNames = {};
+            (data || []).forEach(c => {
+                if (c.orgnr && c.company_name) {
+                    companyNames[c.orgnr] = c.company_name;
+                }
+            });
             document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
         }
 
@@ -743,7 +751,7 @@
                             <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
                             <span class="feed-time">${formatDate(e.announcement_date)}</span>
                         </div>
-                        <div class="feed-company">${escapeHtml(e.orgnr || 'Okänt orgnr')} ${isWatched ? '⭐' : ''}</div>
+                        <div class="feed-company">${escapeHtml(companyNames[e.orgnr] || e.orgnr || 'Okänt företag')} ${isWatched ? '⭐' : ''}</div>
                         <div class="feed-description">${escapeHtml(truncate(e.title || e.content, 150))}</div>
                         <div class="feed-actions">
                             <button class="btn btn-accent btn-sm" onclick="investigateEvent('${e.id}')">
