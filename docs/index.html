@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bevakningsverktyget - Logga in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 420px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .logo h1 {
+            font-size: 1.8em;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .logo p {
+            color: #666;
+            font-size: 0.95em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #D4FF00;
+            box-shadow: 0 0 0 3px rgba(212, 255, 0, 0.2);
+        }
+        button {
+            width: 100%;
+            padding: 16px;
+            background: #D4FF00;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(212, 255, 0, 0.3);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .error.show {
+            display: block;
+        }
+        .success {
+            background: #efe;
+            color: #060;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            display: none;
+        }
+        .success.show {
+            display: block;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 24px;
+            color: #999;
+            font-size: 0.85em;
+        }
+        .footer a {
+            color: #666;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Dashboard styles (hidden initially) */
+        #dashboard {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+        }
+        #dashboard.show {
+            display: block;
+        }
+        #login-form.hide {
+            display: none;
+        }
+        .dashboard-header {
+            background: #D4FF00;
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dashboard-header h1 {
+            color: #1a1a2e;
+            font-size: 1.5em;
+        }
+        .logout-btn {
+            background: #1a1a2e;
+            color: white;
+            padding: 10px 20px;
+            width: auto;
+        }
+        .logout-btn:hover {
+            background: #2a2a4e;
+        }
+        .user-info {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .user-info h2 {
+            color: #333;
+            margin-bottom: 12px;
+        }
+        .user-info p {
+            color: #666;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .role-badge.admin {
+            background: #D4FF00;
+            color: #1a1a2e;
+        }
+        .role-badge.member {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .tool-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        .tool-card h3 {
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+        .tool-card p {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 16px;
+        }
+        .tool-card a {
+            color: #1a1a2e;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .tool-card a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Form -->
+    <div class="login-container" id="login-form">
+        <div class="logo">
+            <h1>Bevakningsverktyget</h1>
+            <p>Logga in för att komma åt dashboarden</p>
+        </div>
+
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="email">E-postadress</label>
+                <input type="email" id="email" placeholder="din@email.se" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Lösenord</label>
+                <input type="password" id="password" placeholder="Ditt lösenord" required>
+            </div>
+
+            <button type="submit" id="submit-btn">Logga in</button>
+        </form>
+
+        <div class="footer">
+            <p>Endast för auktoriserade medlemmar</p>
+        </div>
+    </div>
+
+    <!-- Dashboard (shown after login) -->
+    <div id="dashboard">
+        <div class="dashboard-header">
+            <h1>Bevakningsverktyget</h1>
+            <button class="logout-btn" onclick="handleLogout()">Logga ut</button>
+        </div>
+
+        <div class="user-info">
+            <h2>Välkommen, <span id="user-email"></span>
+                <span class="role-badge" id="user-role"></span>
+            </h2>
+            <p>Du är inloggad och har åtkomst till verktyget.</p>
+        </div>
+
+        <div class="tools-grid">
+            <div class="tool-card">
+                <h3>Företagsbevakning</h3>
+                <p>Bevaka ändringar i företagsregistret hos Bolagsverket.</p>
+                <a href="#">Öppna verktyg &rarr;</a>
+            </div>
+
+            <div class="tool-card">
+                <h3>Nyhetsredaktion</h3>
+                <p>Generera nyhetsartiklar baserat på företagshändelser.</p>
+                <a href="#">Öppna verktyg &rarr;</a>
+            </div>
+
+            <div class="tool-card">
+                <h3>Dokumentköp</h3>
+                <p>Automatiserad hämtning av årsredovisningar och protokoll.</p>
+                <a href="#">Öppna verktyg &rarr;</a>
+            </div>
+
+            <div class="tool-card" id="admin-tools" style="display:none;">
+                <h3>Admin: API-nycklar</h3>
+                <p>Hantera krypterade API-nycklar för alla tjänster.</p>
+                <a href="admin-verktyg/02-api-nycklar/public/index.html">Öppna admin &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+
+        let supabase;
+        let currentUser = null;
+
+        // Initialize Supabase
+        async function initSupabase() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                // Check if user is already logged in
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    currentUser = session.user;
+                    await showDashboard();
+                }
+            } catch (error) {
+                console.error('Supabase init error:', error);
+            }
+        }
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const submitBtn = document.getElementById('submit-btn');
+            const errorEl = document.getElementById('error');
+            const successEl = document.getElementById('success');
+
+            // Reset messages
+            errorEl.classList.remove('show');
+            successEl.classList.remove('show');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Loggar in...';
+
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                currentUser = data.user;
+                successEl.textContent = 'Inloggning lyckades!';
+                successEl.classList.add('show');
+
+                setTimeout(() => {
+                    showDashboard();
+                }, 500);
+
+            } catch (error) {
+                console.error('Login error:', error);
+                errorEl.textContent = error.message === 'Invalid login credentials'
+                    ? 'Fel e-post eller lösenord'
+                    : error.message;
+                errorEl.classList.add('show');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Logga in';
+            }
+        }
+
+        // Show dashboard
+        async function showDashboard() {
+            document.getElementById('login-form').classList.add('hide');
+            document.getElementById('dashboard').classList.add('show');
+            document.getElementById('user-email').textContent = currentUser.email;
+
+            // Get user profile/role
+            try {
+                const { data: profile, error } = await supabase
+                    .from('user_profiles')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profile) {
+                    const roleEl = document.getElementById('user-role');
+                    roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
+                    roleEl.className = 'role-badge ' + profile.role;
+
+                    // Show admin tools if admin
+                    if (profile.role === 'admin') {
+                        document.getElementById('admin-tools').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Profile fetch error:', error);
+            }
+        }
+
+        // Handle logout
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            document.getElementById('dashboard').classList.remove('show');
+            document.getElementById('login-form').classList.remove('hide');
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // Initialize on page load
+        initSupabase();
+    </script>
+</body>
+</html>
