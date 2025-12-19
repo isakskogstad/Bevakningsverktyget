@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nyhetsflöde | Bevakningsverktyg</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --border: #475569;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .logo-icon {
+            font-size: 1.5rem;
+        }
+
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        /* Search */
+        .search-container {
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            padding-left: 2.5rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Main layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar filters */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 80px;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-option:hover {
+            background: var(--bg-primary);
+        }
+
+        .filter-option.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .filter-option input[type="checkbox"] {
+            accent-color: var(--accent);
+        }
+
+        .filter-count {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: var(--bg-primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        /* Feed */
+        .feed-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .feed-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .refresh-btn.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .refresh-btn.loading .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* News cards */
+        .news-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .news-source-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .news-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .news-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .news-source {
+            font-weight: 500;
+            color: var(--accent);
+        }
+
+        .news-type {
+            padding: 0.125rem 0.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .news-type.press {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .news-type.news {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent);
+        }
+
+        .news-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-title a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .news-title a:hover {
+            color: var(--accent);
+        }
+
+        .news-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-footer {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.75rem;
+        }
+
+        .news-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .news-keywords {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .keyword-tag {
+            padding: 0.125rem 0.5rem;
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Loading state */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-tertiary);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Auto-update indicator */
+        .auto-update {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .header-content {
+                flex-wrap: wrap;
+            }
+
+            .search-container {
+                order: 3;
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .stats {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="../index.html" class="logo">
+                <span class="logo-icon">📡</span>
+                <span class="logo-text">Nyhetsflöde</span>
+            </a>
+
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="Sök nyheter, företag, nyckelord...">
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <span>Källor:</span>
+                    <span class="stat-value" id="sourceCount">-</span>
+                </div>
+                <div class="stat">
+                    <span>Artiklar:</span>
+                    <span class="stat-value" id="articleCount">-</span>
+                </div>
+                <div class="auto-update">
+                    <span class="pulse-dot"></span>
+                    <span>Live</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <aside class="sidebar">
+            <div class="filter-section">
+                <div class="filter-title">Typ</div>
+                <div class="filter-options" id="typeFilters">
+                    <label class="filter-option active">
+                        <input type="checkbox" value="all" checked>
+                        <span>Alla</span>
+                        <span class="filter-count" id="countAll">0</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="mynewsdesk">
+                        <span>📢 Pressmeddelanden</span>
+                        <span class="filter-count" id="countPress">0</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="media_rss">
+                        <span>📰 Nyheter</span>
+                        <span class="filter-count" id="countNews">0</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="website_rss">
+                        <span>🏢 Företagsbloggar</span>
+                        <span class="filter-count" id="countBlog">0</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Sektor</div>
+                <div class="filter-options" id="sectorFilters">
+                    <label class="filter-option">
+                        <input type="checkbox" value="fintech">
+                        <span>💰 Fintech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="greentech">
+                        <span>🌱 Green Tech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="ai">
+                        <span>🤖 AI / Deep Tech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="healthtech">
+                        <span>🏥 Health Tech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="gaming">
+                        <span>🎮 Gaming</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="saas">
+                        <span>☁️ SaaS</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-title">Tidsperiod</div>
+                <div class="filter-options">
+                    <label class="filter-option active">
+                        <input type="radio" name="timeFilter" value="all" checked>
+                        <span>Alla</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="timeFilter" value="today">
+                        <span>Idag</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="timeFilter" value="week">
+                        <span>Senaste veckan</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="timeFilter" value="month">
+                        <span>Senaste månaden</span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <section class="feed-container">
+            <div class="feed-header">
+                <h1 class="feed-title">Senaste nyheterna</h1>
+                <button class="refresh-btn" id="refreshBtn">
+                    <span class="refresh-icon">🔄</span>
+                    <span>Uppdatera</span>
+                </button>
+            </div>
+
+            <div id="newsFeed">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Laddar nyheter från 49 källor...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Supabase config
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+
+        // RSS2JSON API (gratis tier)
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+        // State
+        let allPressrooms = [];
+        let allArticles = [];
+        let filteredArticles = [];
+        let activeTypeFilter = 'all';
+        let activeSectorFilters = [];
+        let activeTimeFilter = 'all';
+        let searchQuery = '';
+
+        // Keywords för att kategorisera nyheter
+        const KEYWORDS = {
+            fintech: ['fintech', 'bank', 'betalning', 'payment', 'kredit', 'lån', 'investering', 'klarna', 'swish'],
+            greentech: ['hållbar', 'grön', 'klimat', 'el', 'energi', 'batteri', 'solar', 'vind', 'emission', 'carbon'],
+            ai: ['ai', 'artificiell intelligens', 'machine learning', 'ml', 'data', 'algoritm', 'automation'],
+            healthtech: ['hälsa', 'health', 'vård', 'patient', 'medicin', 'läkare', 'terapi', 'diagnos'],
+            gaming: ['spel', 'game', 'gaming', 'studio', 'release', 'dlc', 'expansion'],
+            saas: ['saas', 'cloud', 'plattform', 'subscription', 'enterprise', 'b2b']
+        };
+
+        // Highlight keywords
+        const HIGHLIGHT_KEYWORDS = [
+            'konkurs', 'likvidation', 'rekonstruktion', 'varsel',
+            'förvärv', 'uppköp', 'merger', 'fusion',
+            'nyemission', 'kapitalanskaffning', 'investering',
+            'vd', 'ceo', 'styrelse', 'avgår', 'tillträder'
+        ];
+
+        // Icons per source type
+        const SOURCE_ICONS = {
+            mynewsdesk: '📢',
+            media_rss: '📰',
+            website_rss: '🏢',
+            direct_rss: '📡',
+            cision: '📋'
+        };
+
+        // Load pressrooms from Supabase
+        async function loadPressrooms() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/company_pressrooms?is_active=eq.true&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load pressrooms');
+
+                allPressrooms = await response.json();
+                document.getElementById('sourceCount').textContent = allPressrooms.length;
+
+                return allPressrooms;
+            } catch (error) {
+                console.error('Error loading pressrooms:', error);
+                return [];
+            }
+        }
+
+        // Fetch RSS feed
+        async function fetchRssFeed(feedUrl) {
+            try {
+                const response = await fetch(RSS2JSON_API + encodeURIComponent(feedUrl));
+                if (!response.ok) return [];
+
+                const data = await response.json();
+                if (data.status !== 'ok') return [];
+
+                return data.items || [];
+            } catch (error) {
+                console.error('Error fetching feed:', feedUrl, error);
+                return [];
+            }
+        }
+
+        // Detect keywords in text
+        function detectKeywords(text) {
+            const lowerText = text.toLowerCase();
+            const found = [];
+
+            for (const keyword of HIGHLIGHT_KEYWORDS) {
+                if (lowerText.includes(keyword)) {
+                    found.push(keyword);
+                }
+            }
+
+            return found;
+        }
+
+        // Detect sector
+        function detectSector(text) {
+            const lowerText = text.toLowerCase();
+            const sectors = [];
+
+            for (const [sector, keywords] of Object.entries(KEYWORDS)) {
+                for (const keyword of keywords) {
+                    if (lowerText.includes(keyword)) {
+                        sectors.push(sector);
+                        break;
+                    }
+                }
+            }
+
+            return sectors;
+        }
+
+        // Parse date
+        function parseDate(dateStr) {
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? new Date() : date;
+        }
+
+        // Format relative time
+        function formatRelativeTime(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just nu';
+            if (diffMins < 60) return `${diffMins} min sedan`;
+            if (diffHours < 24) return `${diffHours} tim sedan`;
+            if (diffDays < 7) return `${diffDays} dagar sedan`;
+
+            return date.toLocaleDateString('sv-SE');
+        }
+
+        // Load all feeds
+        async function loadAllFeeds() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.classList.add('loading');
+
+            const newsFeed = document.getElementById('newsFeed');
+            newsFeed.innerHTML = `
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Laddar nyheter från ${allPressrooms.length} källor...</p>
+                </div>
+            `;
+
+            const articles = [];
+            const fetchPromises = allPressrooms.map(async (pressroom) => {
+                const items = await fetchRssFeed(pressroom.rss_feed_url);
+
+                return items.map(item => ({
+                    title: item.title,
+                    link: item.link,
+                    description: item.description?.replace(/<[^>]*>/g, '').substring(0, 300) || '',
+                    pubDate: parseDate(item.pubDate),
+                    source: pressroom.company_name,
+                    sourceType: pressroom.pressroom_type,
+                    sourceUrl: pressroom.pressroom_url,
+                    keywords: detectKeywords(item.title + ' ' + (item.description || '')),
+                    sectors: detectSector(item.title + ' ' + (item.description || ''))
+                }));
+            });
+
+            const results = await Promise.allSettled(fetchPromises);
+
+            for (const result of results) {
+                if (result.status === 'fulfilled') {
+                    articles.push(...result.value);
+                }
+            }
+
+            // Sort by date
+            articles.sort((a, b) => b.pubDate - a.pubDate);
+
+            allArticles = articles;
+            document.getElementById('articleCount').textContent = articles.length;
+
+            refreshBtn.classList.remove('loading');
+
+            applyFilters();
+        }
+
+        // Apply filters
+        function applyFilters() {
+            let filtered = [...allArticles];
+
+            // Type filter
+            if (activeTypeFilter !== 'all') {
+                filtered = filtered.filter(a => a.sourceType === activeTypeFilter);
+            }
+
+            // Sector filter
+            if (activeSectorFilters.length > 0) {
+                filtered = filtered.filter(a =>
+                    a.sectors.some(s => activeSectorFilters.includes(s))
+                );
+            }
+
+            // Time filter
+            const now = new Date();
+            if (activeTimeFilter === 'today') {
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                filtered = filtered.filter(a => a.pubDate >= today);
+            } else if (activeTimeFilter === 'week') {
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                filtered = filtered.filter(a => a.pubDate >= weekAgo);
+            } else if (activeTimeFilter === 'month') {
+                const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                filtered = filtered.filter(a => a.pubDate >= monthAgo);
+            }
+
+            // Search filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(a =>
+                    a.title.toLowerCase().includes(query) ||
+                    a.description.toLowerCase().includes(query) ||
+                    a.source.toLowerCase().includes(query)
+                );
+            }
+
+            filteredArticles = filtered;
+            renderArticles();
+            updateFilterCounts();
+        }
+
+        // Update filter counts
+        function updateFilterCounts() {
+            document.getElementById('countAll').textContent = allArticles.length;
+            document.getElementById('countPress').textContent = allArticles.filter(a => a.sourceType === 'mynewsdesk').length;
+            document.getElementById('countNews').textContent = allArticles.filter(a => a.sourceType === 'media_rss').length;
+            document.getElementById('countBlog').textContent = allArticles.filter(a => a.sourceType === 'website_rss' || a.sourceType === 'direct_rss').length;
+        }
+
+        // Render articles
+        function renderArticles() {
+            const newsFeed = document.getElementById('newsFeed');
+
+            if (filteredArticles.length === 0) {
+                newsFeed.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>Inga nyheter hittades med valda filter</p>
+                    </div>
+                `;
+                return;
+            }
+
+            newsFeed.innerHTML = filteredArticles.slice(0, 100).map(article => `
+                <article class="news-card" onclick="window.open('${article.link}', '_blank')">
+                    <div class="news-source-icon">${SOURCE_ICONS[article.sourceType] || '📄'}</div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-source">${article.source}</span>
+                            <span class="news-type ${article.sourceType === 'mynewsdesk' ? 'press' : 'news'}">
+                                ${article.sourceType === 'mynewsdesk' ? 'Pressmeddelande' : 'Nyhet'}
+                            </span>
+                        </div>
+                        <h3 class="news-title">
+                            <a href="${article.link}" target="_blank" onclick="event.stopPropagation()">${article.title}</a>
+                        </h3>
+                        <p class="news-description">${article.description}</p>
+                        <div class="news-footer">
+                            <span class="news-time">${formatRelativeTime(article.pubDate)}</span>
+                            ${article.keywords.length > 0 ? `
+                                <div class="news-keywords">
+                                    ${article.keywords.slice(0, 3).map(k => `<span class="keyword-tag">${k}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            applyFilters();
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', loadAllFeeds);
+
+        // Type filter
+        document.querySelectorAll('#typeFilters input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const value = e.target.value;
+
+                if (value === 'all') {
+                    document.querySelectorAll('#typeFilters input').forEach(i => {
+                        i.checked = value === 'all';
+                        i.closest('.filter-option').classList.toggle('active', value === 'all' && i.value === 'all');
+                    });
+                    activeTypeFilter = 'all';
+                } else {
+                    document.querySelector('#typeFilters input[value="all"]').checked = false;
+                    document.querySelector('#typeFilters input[value="all"]').closest('.filter-option').classList.remove('active');
+
+                    e.target.closest('.filter-option').classList.toggle('active', e.target.checked);
+
+                    if (e.target.checked) {
+                        activeTypeFilter = value;
+                    } else {
+                        activeTypeFilter = 'all';
+                        document.querySelector('#typeFilters input[value="all"]').checked = true;
+                        document.querySelector('#typeFilters input[value="all"]').closest('.filter-option').classList.add('active');
+                    }
+                }
+
+                applyFilters();
+            });
+        });
+
+        // Sector filter
+        document.querySelectorAll('#sectorFilters input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const value = e.target.value;
+                e.target.closest('.filter-option').classList.toggle('active', e.target.checked);
+
+                if (e.target.checked) {
+                    activeSectorFilters.push(value);
+                } else {
+                    activeSectorFilters = activeSectorFilters.filter(s => s !== value);
+                }
+
+                applyFilters();
+            });
+        });
+
+        // Time filter
+        document.querySelectorAll('input[name="timeFilter"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                document.querySelectorAll('input[name="timeFilter"]').forEach(i => {
+                    i.closest('.filter-option').classList.remove('active');
+                });
+                e.target.closest('.filter-option').classList.add('active');
+                activeTimeFilter = e.target.value;
+                applyFilters();
+            });
+        });
+
+        // Auto-refresh every 5 minutes
+        setInterval(loadAllFeeds, 5 * 60 * 1000);
+
+        // Initialize
+        async function init() {
+            await loadPressrooms();
+            await loadAllFeeds();
+        }
+
+        init();
+    </script>
+</body>
+</html>
