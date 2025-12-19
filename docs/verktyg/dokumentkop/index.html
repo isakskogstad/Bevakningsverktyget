@@ -366,11 +366,27 @@
         // App state - use var to allow redefinition
         var SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
         var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+        var BUDGET_FUNCTION_URL = SUPABASE_URL + '/functions/v1/budget';
 
         var sb = null; // Renamed to avoid overwriting window.supabase
         var companies = [];
         var purchases = [];
-        var budgetSettings = { monthly_limit_sek: 500 };
+        var budgetSettings = { monthly_limit_sek: 500, daily_limit_sek: 100 };
+        var budgetStats = {};
+
+        // Budget API helper
+        async function fetchBudget(endpoint = '', options = {}) {
+            const url = endpoint ? `${BUDGET_FUNCTION_URL}/${endpoint}` : BUDGET_FUNCTION_URL;
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+            return response.json();
+        }
 
         async function init() {
             sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -383,8 +399,7 @@
 
             await Promise.all([
                 loadCompanies(),
-                loadPurchases(),
-                loadBudget()
+                loadBudgetStats()
             ]);
         }
 
@@ -404,29 +419,52 @@
             document.getElementById('stat-companies').textContent = companies.length;
         }
 
-        async function loadPurchases() {
-            const { data, error } = await sb
-                .from('document_purchases')
-                .select('*')
-                .order('created_at', { ascending: false });
+        async function loadBudgetStats() {
+            try {
+                const data = await fetchBudget();
 
-            if (error) {
-                console.error('Error:', error);
+                if (data.success) {
+                    budgetStats = data;
+                    budgetSettings = data.settings;
+
+                    // Update stats
+                    document.getElementById('stat-purchases').textContent = data.totalPurchases || 0;
+                    document.getElementById('stat-spent').textContent = data.currentMonthSpending + ' kr';
+                    document.getElementById('stat-budget').textContent = data.settings.monthly_limit_sek + ' kr';
+
+                    // Update budget bar
+                    updateBudgetBar(data.currentMonthSpending);
+
+                    // Load purchase history from API
+                    await loadPurchases();
+                }
+            } catch (error) {
+                console.error('Budget API error:', error);
+                // Fallback to direct Supabase query
+                await loadBudgetFallback();
+            }
+        }
+
+        async function loadPurchases() {
+            try {
+                const data = await fetchBudget('history?limit=50');
+
+                if (data.success && data.purchases) {
+                    purchases = data.purchases;
+                    renderPurchases();
+                }
+            } catch (error) {
+                console.error('Error loading purchases:', error);
                 document.getElementById('purchases-list').innerHTML = `
                     <div class="empty-state">
                         <h3>Inga beställningar ännu</h3>
                         <p>Dina dokumentbeställningar visas här</p>
                     </div>
                 `;
-                return;
             }
-
-            purchases = data || [];
-            renderPurchases();
-            updateStats();
         }
 
-        async function loadBudget() {
+        async function loadBudgetFallback() {
             const { data, error } = await sb
                 .from('budget_settings')
                 .select('*')
@@ -437,7 +475,7 @@
                 document.getElementById('stat-budget').textContent = data.monthly_limit_sek + ' kr';
             }
 
-            updateBudgetBar();
+            updateBudgetBar(0);
         }
 
         function updateStats() {
@@ -545,47 +583,73 @@
             const companyName = document.getElementById('selected-company-name').value;
             const documentType = document.getElementById('document-type').value;
             const email = document.getElementById('email').value;
+            const amount = 60; // Standard price
 
             if (!orgnr) {
                 showAlert('Välj ett företag från listan', 'error');
                 return;
             }
 
-            // Check budget
-            const now = new Date();
-            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            const monthPurchases = purchases.filter(p => new Date(p.created_at) >= monthStart);
-            const spent = monthPurchases.reduce((sum, p) => sum + (p.amount_sek || 60), 0);
+            // Check budget via API
+            try {
+                const checkResult = await fetchBudget('check', {
+                    method: 'POST',
+                    body: JSON.stringify({ amount })
+                });
 
-            if (spent + 60 > budgetSettings.monthly_limit_sek) {
-                showAlert('Månadsbudgeten är förbrukad. Kontakta admin för att öka budgeten.', 'warning');
-                return;
+                if (!checkResult.allowed) {
+                    if (!checkResult.dailyAllowed) {
+                        showAlert(`Dagsgränsen nådd! Du har använt ${checkResult.daily.current} kr av ${checkResult.daily.limit} kr idag.`, 'warning');
+                    } else if (!checkResult.monthlyAllowed) {
+                        showAlert(`Månadsbudgeten nådd! Du har använt ${checkResult.monthly.current} kr av ${checkResult.monthly.limit} kr denna månad.`, 'warning');
+                    }
+                    return;
+                }
+            } catch (error) {
+                console.error('Budget check error:', error);
+                // Fall back to local check
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                const monthPurchases = purchases.filter(p => new Date(p.created_at) >= monthStart);
+                const spent = monthPurchases.reduce((sum, p) => sum + (p.amount_sek || 60), 0);
+
+                if (spent + amount > budgetSettings.monthly_limit_sek) {
+                    showAlert('Månadsbudgeten är förbrukad. Kontakta admin för att öka budgeten.', 'warning');
+                    return;
+                }
             }
 
-            // Create purchase record
-            const { data, error } = await sb
-                .from('document_purchases')
-                .insert([{
-                    orgnr,
-                    company_name: companyName,
-                    document_type: translateDocType(documentType),
-                    email,
-                    amount_sek: 60,
-                    payment_status: 'pending'
-                }])
-                .select();
+            // Register purchase via Budget API
+            try {
+                const purchaseResult = await fetchBudget('purchase', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        orgnr,
+                        company_name: companyName,
+                        document_type: translateDocType(documentType),
+                        amount_sek: amount,
+                        status: 'pending',
+                        notes: `Email: ${email}`
+                    })
+                });
 
-            if (error) {
+                if (purchaseResult.error) {
+                    showAlert('Fel vid beställning: ' + purchaseResult.error, 'error');
+                    return;
+                }
+
+                showAlert(`Beställning registrerad! Budget kvar: ${purchaseResult.monthlyRemaining} kr denna månad.`, 'success');
+                document.getElementById('order-form').reset();
+                document.getElementById('selected-orgnr').value = '';
+                document.getElementById('selected-company-name').value = '';
+
+                // Reload stats and purchases
+                await loadBudgetStats();
+
+            } catch (error) {
+                console.error('Purchase error:', error);
                 showAlert('Fel vid beställning: ' + error.message, 'error');
-                return;
             }
-
-            showAlert('Beställning skickad! Dokumentet kommer att skickas till din e-post.', 'success');
-            document.getElementById('order-form').reset();
-            document.getElementById('selected-orgnr').value = '';
-            document.getElementById('selected-company-name').value = '';
-
-            loadPurchases();
         }
 
         function translateDocType(type) {

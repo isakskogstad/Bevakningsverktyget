@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XBRL Parser - Årsredovisningar | Bevakningsverktyget</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <style>
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-secondary);
+            margin-bottom: 1.5rem;
+        }
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: var(--bg-hover);
+        }
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .upload-text {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .upload-hint {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .file-info {
+            display: none;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+        }
+        .file-info.visible {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .file-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        .file-size {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        .file-remove {
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+        }
+        .file-remove:hover {
+            color: var(--danger);
+        }
+
+        .parse-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .results-section {
+            display: none;
+        }
+        .results-section.visible {
+            display: block;
+        }
+
+        .result-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .result-card h3 {
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .company-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .company-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .company-orgnr {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            background: var(--bg-hover);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .info-item {
+            padding: 0.75rem 1rem;
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+        }
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+        .info-value {
+            font-size: 1.125rem;
+            font-weight: 500;
+        }
+        .info-value.positive {
+            color: var(--success);
+        }
+        .info-value.negative {
+            color: var(--danger);
+        }
+
+        .period-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .period-tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .period-tab:hover {
+            border-color: var(--primary);
+        }
+        .period-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .financials-section {
+            display: none;
+        }
+        .financials-section.active {
+            display: block;
+        }
+
+        .financial-category {
+            margin-bottom: 1.5rem;
+        }
+        .financial-category h4 {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .financial-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .financial-row:last-child {
+            border-bottom: none;
+        }
+        .financial-label {
+            color: var(--text-secondary);
+        }
+        .financial-value {
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .export-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .audit-card {
+            background: var(--bg-info);
+            border-left: 3px solid var(--info);
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .stat-badge {
+            padding: 0.5rem 1rem;
+            background: var(--bg-hover);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+        .stat-badge strong {
+            margin-left: 0.25rem;
+        }
+
+        @media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="../../" class="sidebar-logo">
+                <div class="sidebar-logo-icon">B</div>
+                <div class="sidebar-logo-text">Bevakningsverktyget</div>
+            </a>
+        </div>
+
+        <div class="sidebar-nav">
+            <a href="../../" class="sidebar-link">
+                <div class="sidebar-link-icon">🏠</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Dashboard</div>
+                    <div class="sidebar-link-desc">Översikt</div>
+                </div>
+            </a>
+            <a href="../foretagsbevakning/" class="sidebar-link">
+                <div class="sidebar-link-icon">🔔</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Företagsbevakning</div>
+                    <div class="sidebar-link-desc">Kungörelser & händelser</div>
+                </div>
+            </a>
+            <a href="../allabolag/" class="sidebar-link">
+                <div class="sidebar-link-icon">🔍</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Allabolag</div>
+                    <div class="sidebar-link-desc">Företagssökning</div>
+                </div>
+            </a>
+            <a href="../bolagsverket-api/" class="sidebar-link">
+                <div class="sidebar-link-icon">V</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Bolagsverket API</div>
+                    <div class="sidebar-link-desc">Officiell data</div>
+                </div>
+            </a>
+            <a href="./" class="sidebar-link active">
+                <div class="sidebar-link-icon">📊</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">XBRL Parser</div>
+                    <div class="sidebar-link-desc">Årsredovisningar</div>
+                </div>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="page-header">
+            <h1>XBRL Parser</h1>
+            <p class="page-description">
+                Extrahera finansiell data från svenska årsredovisningar (iXBRL-format från Bolagsverket)
+            </p>
+        </div>
+
+        <div class="content-grid">
+            <!-- Upload Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📂 Ladda upp årsredovisning</h2>
+                </div>
+                <div class="card-body">
+                    <div class="upload-zone" id="uploadZone">
+                        <input type="file" id="fileInput" accept=".zip,.xhtml,.html">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">Dra och släpp fil här eller klicka för att välja</div>
+                        <div class="upload-hint">ZIP-fil eller XHTML från Bolagsverket</div>
+                    </div>
+
+                    <div class="file-info" id="fileInfo">
+                        <span class="file-name" id="fileName"></span>
+                        <span class="file-size" id="fileSize"></span>
+                        <span class="file-remove" id="fileRemove">✕ Ta bort</span>
+                    </div>
+
+                    <button class="btn btn-primary parse-btn" id="parseBtn" disabled>
+                        ⚙️ Extrahera finansiell data
+                    </button>
+
+                    <div class="alert alert-info">
+                        <strong>📌 Tips:</strong> Ladda ner årsredovisningar från
+                        <a href="https://poit.bolagsverket.se" target="_blank">poit.bolagsverket.se</a>
+                        eller via Bolagsverket VDM API.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-section" id="resultsSection">
+                <!-- Company Info -->
+                <div class="result-card" id="companyCard">
+                    <div class="company-header">
+                        <span class="company-name" id="companyName">-</span>
+                        <span class="company-orgnr" id="companyOrgnr">-</span>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Räkenskapsår</div>
+                            <div class="info-value" id="fiscalYear">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Extraherade datapunkter</div>
+                            <div class="info-value" id="factCount">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financials -->
+                <div class="result-card">
+                    <h3>💰 Finansiell data</h3>
+
+                    <div class="period-tabs" id="periodTabs"></div>
+
+                    <div id="financialsContainer"></div>
+
+                    <div class="export-buttons">
+                        <button class="btn btn-secondary export-btn" id="exportJson">
+                            📥 Exportera JSON
+                        </button>
+                        <button class="btn btn-secondary export-btn" id="exportCsv">
+                            📥 Exportera CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Audit Info -->
+                <div class="result-card audit-card" id="auditCard" style="display: none;">
+                    <h3>🔍 Revisionsuppgifter</h3>
+                    <div class="info-grid" id="auditInfo"></div>
+                </div>
+
+                <!-- Stats -->
+                <div class="result-card">
+                    <h3>📊 Parsing-statistik</h3>
+                    <div class="stats-row" id="statsRow"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Extraherar data...</div>
+    </div>
+
+    <script>
+        // State
+        let selectedFile = null;
+        let parseResult = null;
+        let activePeriod = 'current';
+
+        // Supabase config
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+
+        // Elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileRemove = document.getElementById('fileRemove');
+        const parseBtn = document.getElementById('parseBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // Format helpers
+        function formatNumber(num) {
+            if (num === null || num === undefined) return '-';
+            return new Intl.NumberFormat('sv-SE').format(num);
+        }
+
+        function formatSEK(num) {
+            if (num === null || num === undefined) return '-';
+            const absNum = Math.abs(num);
+            let formatted;
+            if (absNum >= 1e9) {
+                formatted = (num / 1e9).toFixed(1) + ' mdr kr';
+            } else if (absNum >= 1e6) {
+                formatted = (num / 1e6).toFixed(1) + ' mkr';
+            } else if (absNum >= 1e3) {
+                formatted = (num / 1e3).toFixed(0) + ' tkr';
+            } else {
+                formatted = formatNumber(num) + ' kr';
+            }
+            return formatted;
+        }
+
+        function formatPercent(num) {
+            if (num === null || num === undefined) return '-';
+            return num.toFixed(1) + ' %';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Period labels
+        const periodLabels = {
+            'current': 'Innevarande år',
+            'previous': 'Föregående år',
+            'two_years': '2 år sedan',
+            'three_years': '3 år sedan'
+        };
+
+        // Financial field labels (Swedish)
+        const fieldLabels = {
+            // Income Statement
+            revenue: 'Nettoomsättning',
+            operatingIncome: 'Rörelseintäkter',
+            operatingCosts: 'Rörelsekostnader',
+            operatingProfit: 'Rörelseresultat',
+            profitAfterFinancial: 'Resultat efter finansiella poster',
+            profitBeforeTax: 'Resultat före skatt',
+            netProfit: 'Årets resultat',
+            otherExternalCosts: 'Övriga externa kostnader',
+            personnelCosts: 'Personalkostnader',
+            rawMaterialsCosts: 'Råvaror och förnödenheter',
+            goodsCosts: 'Handelsvaror',
+            depreciation: 'Avskrivningar',
+
+            // Assets
+            totalAssets: 'Summa tillgångar',
+            fixedAssets: 'Anläggningstillgångar',
+            intangibleAssets: 'Immateriella tillgångar',
+            tangibleAssets: 'Materiella tillgångar',
+            financialAssets: 'Finansiella tillgångar',
+            currentAssets: 'Omsättningstillgångar',
+            receivables: 'Kortfristiga fordringar',
+            cash: 'Kassa och bank',
+
+            // Equity & Liabilities
+            equity: 'Eget kapital',
+            shareCapital: 'Aktiekapital',
+            restrictedEquity: 'Bundet eget kapital',
+            unrestrictedEquity: 'Fritt eget kapital',
+            retainedEarnings: 'Balanserat resultat',
+            currentLiabilities: 'Kortfristiga skulder',
+            longTermLiabilities: 'Långfristiga skulder',
+            accountsPayable: 'Leverantörsskulder',
+
+            // Key Ratios
+            equityRatio: 'Soliditet',
+            quickRatio: 'Kassalikviditet',
+            returnOnEquity: 'Avkastning på eget kapital',
+            numEmployees: 'Medelantal anställda'
+        };
+
+        // Categories for display
+        const categories = {
+            'Resultaträkning': ['revenue', 'operatingIncome', 'operatingCosts', 'otherExternalCosts', 'personnelCosts', 'rawMaterialsCosts', 'goodsCosts', 'depreciation', 'operatingProfit', 'profitAfterFinancial', 'profitBeforeTax', 'netProfit'],
+            'Tillgångar': ['totalAssets', 'fixedAssets', 'intangibleAssets', 'tangibleAssets', 'financialAssets', 'currentAssets', 'receivables', 'cash'],
+            'Eget kapital & Skulder': ['equity', 'shareCapital', 'restrictedEquity', 'unrestrictedEquity', 'retainedEarnings', 'currentLiabilities', 'longTermLiabilities', 'accountsPayable'],
+            'Nyckeltal': ['equityRatio', 'quickRatio', 'returnOnEquity', 'numEmployees']
+        };
+
+        // File handling
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileSelect(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFileSelect(file);
+        });
+
+        fileRemove.addEventListener('click', () => {
+            selectedFile = null;
+            fileInfo.classList.remove('visible');
+            parseBtn.disabled = true;
+            fileInput.value = '';
+        });
+
+        function handleFileSelect(file) {
+            const validTypes = ['.zip', '.xhtml', '.html'];
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+            if (!validTypes.includes(ext)) {
+                alert('Ogiltigt filformat. Välj en ZIP-, XHTML- eller HTML-fil.');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.classList.add('visible');
+            parseBtn.disabled = false;
+        }
+
+        // Parse button
+        parseBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            loadingOverlay.style.display = 'flex';
+
+            try {
+                let xhtmlContent;
+
+                if (selectedFile.name.toLowerCase().endsWith('.zip')) {
+                    // Extract XHTML from ZIP using JSZip
+                    const zip = await JSZip.loadAsync(selectedFile);
+                    const xhtmlFile = Object.keys(zip.files).find(f =>
+                        (f.endsWith('.xhtml') || f.endsWith('.html')) && !f.startsWith('__MACOSX')
+                    );
+
+                    if (!xhtmlFile) {
+                        throw new Error('Ingen XHTML-fil hittades i ZIP-arkivet');
+                    }
+
+                    xhtmlContent = await zip.files[xhtmlFile].async('string');
+                } else {
+                    // Read XHTML directly
+                    xhtmlContent = await selectedFile.text();
+                }
+
+                // Send to Edge Function
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/xbrl-parser`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        xhtml: xhtmlContent,
+                        includeAllFacts: false
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Parsing misslyckades');
+                }
+
+                parseResult = result.data;
+                displayResults();
+
+            } catch (error) {
+                console.error('Parse error:', error);
+                alert('Fel vid parsing: ' + error.message);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        });
+
+        // Display results
+        function displayResults() {
+            if (!parseResult) return;
+
+            resultsSection.classList.add('visible');
+
+            // Company info
+            document.getElementById('companyName').textContent = parseResult.company.name || 'Okänt företag';
+            document.getElementById('companyOrgnr').textContent = parseResult.company.orgnr || '-';
+
+            const fiscalYear = parseResult.company.fiscalYearStart && parseResult.company.fiscalYearEnd
+                ? `${parseResult.company.fiscalYearStart} – ${parseResult.company.fiscalYearEnd}`
+                : '-';
+            document.getElementById('fiscalYear').textContent = fiscalYear;
+            document.getElementById('factCount').textContent = formatNumber(parseResult.factCount);
+
+            // Period tabs
+            const periodTabs = document.getElementById('periodTabs');
+            periodTabs.innerHTML = '';
+
+            const periods = Object.keys(parseResult.financials || {});
+            periods.forEach((period, index) => {
+                const tab = document.createElement('div');
+                tab.className = 'period-tab' + (index === 0 ? ' active' : '');
+                tab.textContent = periodLabels[period] || period;
+                tab.dataset.period = period;
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    activePeriod = period;
+                    displayFinancials(period);
+                });
+                periodTabs.appendChild(tab);
+            });
+
+            if (periods.length > 0) {
+                activePeriod = periods[0];
+                displayFinancials(periods[0]);
+            }
+
+            // Audit info
+            if (parseResult.audit) {
+                const auditCard = document.getElementById('auditCard');
+                auditCard.style.display = 'block';
+                const auditInfo = document.getElementById('auditInfo');
+                auditInfo.innerHTML = '';
+
+                const auditFields = [
+                    { label: 'Revisor', value: [parseResult.audit.auditorFirstName, parseResult.audit.auditorLastName].filter(Boolean).join(' ') },
+                    { label: 'Revisionsbolag', value: parseResult.audit.auditFirm },
+                    { label: 'Avslutad', value: parseResult.audit.auditCompletionDate }
+                ];
+
+                auditFields.forEach(field => {
+                    if (field.value) {
+                        const item = document.createElement('div');
+                        item.className = 'info-item';
+                        item.innerHTML = `
+                            <div class="info-label">${field.label}</div>
+                            <div class="info-value">${field.value}</div>
+                        `;
+                        auditInfo.appendChild(item);
+                    }
+                });
+            } else {
+                document.getElementById('auditCard').style.display = 'none';
+            }
+
+            // Stats
+            const statsRow = document.getElementById('statsRow');
+            statsRow.innerHTML = `
+                <div class="stat-badge">Perioder:<strong>${periods.length}</strong></div>
+                <div class="stat-badge">Datapunkter:<strong>${parseResult.factCount}</strong></div>
+                <div class="stat-badge">Namespaces:<strong>${(parseResult.namespaces || []).length}</strong></div>
+            `;
+        }
+
+        function displayFinancials(period) {
+            const financials = parseResult.financials[period];
+            if (!financials) return;
+
+            const container = document.getElementById('financialsContainer');
+            container.innerHTML = '';
+
+            Object.entries(categories).forEach(([categoryName, fields]) => {
+                const hasData = fields.some(f => financials[f] !== undefined && financials[f] !== null);
+                if (!hasData) return;
+
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'financial-category';
+                categoryDiv.innerHTML = `<h4>${categoryName}</h4>`;
+
+                fields.forEach(field => {
+                    const value = financials[field];
+                    if (value === undefined || value === null) return;
+
+                    const row = document.createElement('div');
+                    row.className = 'financial-row';
+
+                    let displayValue;
+                    if (field === 'numEmployees') {
+                        displayValue = formatNumber(value) + ' st';
+                    } else if (['equityRatio', 'quickRatio', 'returnOnEquity'].includes(field)) {
+                        displayValue = formatPercent(value);
+                    } else {
+                        displayValue = formatSEK(value);
+                    }
+
+                    const valueClass = typeof value === 'number' && value < 0 ? 'negative' : (value > 0 ? 'positive' : '');
+
+                    row.innerHTML = `
+                        <span class="financial-label">${fieldLabels[field] || field}</span>
+                        <span class="financial-value ${valueClass}">${displayValue}</span>
+                    `;
+                    categoryDiv.appendChild(row);
+                });
+
+                container.appendChild(categoryDiv);
+            });
+        }
+
+        // Export functions
+        document.getElementById('exportJson').addEventListener('click', () => {
+            if (!parseResult) return;
+
+            const blob = new Blob([JSON.stringify(parseResult, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `xbrl-${parseResult.company.orgnr || 'export'}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('exportCsv').addEventListener('click', () => {
+            if (!parseResult || !parseResult.financials) return;
+
+            const rows = [['Fält', 'Värde', 'Period']];
+
+            Object.entries(parseResult.financials).forEach(([period, data]) => {
+                Object.entries(data).forEach(([key, value]) => {
+                    if (key !== 'periodType' && key !== 'extra' && value !== null && value !== undefined) {
+                        rows.push([fieldLabels[key] || key, value, periodLabels[period] || period]);
+                    }
+                });
+            });
+
+            const csv = rows.map(r => r.join(';')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `xbrl-${parseResult.company.orgnr || 'export'}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>

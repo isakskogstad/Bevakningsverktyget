@@ -1,478 +1,144 @@
-# Bevakningsverktyg - Dokumentation
+# Bevakningsverktyg - Frontend Dashboard
 
-**Komplett dokumentation för backend-arkitektur och journalist-dashboard**
+Statisk HTML-frontend för bevakningsverktyget. Hostas via GitHub Pages.
 
----
+## Struktur
 
-## DOKUMENTATION ÖVERSIKT
+```
+docs/
+├── index.html                # Huvuddashboard
+├── assets/                   # CSS, JS, bilder
+│   ├── css/
+│   │   ├── style.css        # Huvudstil
+│   │   └── variables.css    # CSS-variabler
+│   └── js/
+│       └── main.js          # Gemensam JS
+│
+├── verktyg/                  # IMPLEMENTERADE VERKTYG (10 st)
+│   ├── allabolag/           # #1 Allabolag-sökning
+│   ├── bolagsverket-api/    # #2 VDM API-sökning
+│   ├── foretagsbevakning/   # #3 POIT-bevakning
+│   ├── xbrl-parser/         # #4 Årsredovisningsparser
+│   ├── artikelgenerator/    # #5 AI-artikelgenerering
+│   ├── pdf-parser/          # #6 PDF-analys
+│   ├── dokumentkop/         # #9 Protokollköp med budgetkontroll
+│   └── cli-verktyg/         # #10 CLI-verktyg (dokumentation)
+│
+├── nyhetsverktyg/           # Nyhetsredaktion
+│   └── pressbevakning/      # Pressrumsbevakning
+│
+├── admin/                   # Admin-sidor
+│   └── api-nycklar/         # API-nyckelhantering
+│
+├── installningar/           # Inställningar
+│   └── budget/              # Budgetinställningar
+│
+├── bevakning/              # Bevakningslistor
+└── sms-notiser/            # SMS-notifikationer
+```
 
-### För Implementation
+## Implementerade verktyg
 
-| Dokument | Beskrivning | Användning |
-|----------|-------------|------------|
-| **[Implementation Checklist](./IMPLEMENTATION-CHECKLIST.md)** | Steg-för-steg implementationsguide med checkboxar | ⭐ Börja här |
-| **[Edge Functions Design](./SUPABASE-EDGE-FUNCTIONS-DESIGN.md)** | Komplett teknisk specifikation med kod | Full referens |
-| **[Quick Reference](./EDGE-FUNCTIONS-QUICK-REFERENCE.md)** | Snabbreferens för dagligt bruk | Daglig användning |
-| **[Architecture Summary](./BACKEND-ARCHITECTURE-SUMMARY.md)** | Executive summary för overview | Management |
+| # | Verktyg | Sida | Status |
+|---|---------|------|--------|
+| 1 | Allabolag Scraper | `/verktyg/allabolag/` | ✅ Klar |
+| 2 | Bolagsverket VDM | `/verktyg/bolagsverket-api/` | ✅ Klar |
+| 3 | POIT Monitor | `/verktyg/foretagsbevakning/` | ✅ Klar |
+| 4 | XBRL Parser | `/verktyg/xbrl-parser/` | ✅ Klar |
+| 5 | Artikelgenerator | `/verktyg/artikelgenerator/` | ✅ Klar |
+| 6 | PDF Parser | `/verktyg/pdf-parser/` | ✅ Klar |
+| 7 | Pressbilder | Integrerad i #5 | ✅ Klar |
+| 8 | Budget Manager | Backend (Edge Function) | ✅ Klar |
+| 9 | Dokumentköp | `/verktyg/dokumentkop/` | ✅ Klar |
+| 10 | CLI-verktyg | `/verktyg/cli-verktyg/` | ✅ Klar |
 
-### För Drift
+## Supabase Edge Functions
 
-| Resurs | Sökväg |
-|--------|--------|
-| **SQL Migration** | `/supabase/migrations/001_edge_functions_schema.sql` |
-| **Edge Functions** | `/supabase/functions/*/index.ts` |
-| **Test Scripts** | `/scripts/test-edge-functions.sh` |
+Dashboard kommunicerar med följande Edge Functions:
 
----
+| Function | Endpoint | Användning |
+|----------|----------|------------|
+| `budget` | `/functions/v1/budget` | Budgethantering |
+| `poit-kungorelse` | `/functions/v1/poit-kungorelse` | POIT-proxy |
+| `rss-proxy` | `/functions/v1/rss-proxy` | RSS-aggregering (designad) |
+| `mynewsdesk-proxy` | `/functions/v1/mynewsdesk-proxy` | Pressrum-scraping (designad) |
+| `send-sms` | `/functions/v1/send-sms` | SMS-notifieringar (designad) |
 
-## SNABBSTART
-
-### 1. Database Setup
+## Köra lokalt
 
 ```bash
-# Apply schema migration
-cd /Users/isak/Desktop/CLAUDE_CODE\ /projects/bevakningsverktyg/
-supabase link --project-ref wzkohritxdrstsmwopco
-supabase db push supabase/migrations/001_edge_functions_schema.sql
+# Enklast - öppna direkt i webbläsare
+open docs/index.html
+
+# Eller med lokal HTTP-server
+cd docs && python -m http.server 8080
+# Öppna http://localhost:8080
 ```
 
-### 2. Deploy Edge Functions
+## Design
+
+- **Färger:** Definierade i `assets/css/variables.css`
+- **Layout:** Sidebar + huvudinnehåll
+- **Responsivt:** Fungerar på desktop och mobil
+- **Dark mode:** Stöds via CSS-variabler
+
+## Supabase-konfiguration
+
+Alla sidor använder Supabase JS SDK. URL och anon key:
+
+```javascript
+const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIs...'; // Anon key (säker att exponera)
+```
+
+## API-dokumentation
+
+### Budget API
 
 ```bash
-# Deploy all functions
-supabase functions deploy rss-proxy
-supabase functions deploy mynewsdesk-proxy
-supabase functions deploy send-sms
+# Hämta status
+GET /functions/v1/budget
 
-# Set Twilio secrets
-supabase secrets set TWILIO_ACCOUNT_SID=xxx
-supabase secrets set TWILIO_AUTH_TOKEN=xxx
-supabase secrets set TWILIO_PHONE_NUMBER=+46xxx
+# Kontrollera köp
+POST /functions/v1/budget/check
+{"amount": 60}
+
+# Registrera köp
+POST /functions/v1/budget/purchase
+{"orgnr": "5591628660", "amount_sek": 60, "document_type": "Protokoll"}
+
+# Hämta historik
+GET /functions/v1/budget/history
 ```
 
-### 3. Test Endpoints
+### POIT API
 
 ```bash
-# Test RSS proxy
-curl -X POST https://wzkohritxdrstsmwopco.supabase.co/functions/v1/rss-proxy \
-  -H "Authorization: Bearer [ANON_KEY]" \
-  -H "Content-Type: application/json" \
-  -d '{"forceRefresh":true}'
-
-# Expected: JSON with feeds and articles
+# Sök kungörelser
+POST /functions/v1/poit-kungorelse
+{"searchType": "orgnr", "searchTerm": "5591628660"}
 ```
 
----
+## Deployment
 
-## ARKITEKTUR OVERVIEW
+Frontenden hostas via GitHub Pages:
 
-```
-GitHub Pages (Frontend)
-        ↓
-Supabase Edge Functions (3 functions)
-  - rss-proxy (30min cache)
-  - mynewsdesk-proxy (24h cache)
-  - send-sms (Twilio)
-        ↓
-PostgreSQL (8 nya tabeller + RLS)
-```
+1. Pusha ändringar till `main`
+2. GitHub Actions bygger och deployar automatiskt
+3. Tillgänglig på: `https://[username].github.io/bevakningsverktyg/`
 
-### Edge Functions
+## Teknisk dokumentation
 
-| Function | Syfte | Cache | Rate Limit |
-|----------|-------|-------|------------|
-| `rss-proxy` | RSS-aggregering med keyword matching | 30 min | 30 req/h |
-| `mynewsdesk-proxy` | Scrapa pressreleaser + bilder | 24h | 10 req/h |
-| `send-sms` | SMS via Twilio | N/A | 10/h, 50/dag |
+Ytterligare dokumentation finns i docs-mappen:
 
-### Databas-schema
+| Dokument | Beskrivning |
+|----------|-------------|
+| `SUPABASE-EDGE-FUNCTIONS-DESIGN.md` | Full teknisk specifikation |
+| `EDGE-FUNCTIONS-QUICK-REFERENCE.md` | Snabbreferens |
+| `EDGE-FUNCTIONS-BATCH-2-3-DESIGN.md` | BATCH 2-3 design |
+| `BACKEND-ARCHITECTURE-SUMMARY.md` | Arkitekturöversikt |
+| `IMPLEMENTATION-CHECKLIST.md` | Implementationschecklista |
 
-| Tabell | Syfte | RLS |
-|--------|-------|-----|
-| `rss_feeds` | RSS-feed konfiguration | Admin write, all read |
-| `rss_articles` | Cachade artiklar | All read, system write |
-| `bookmarks` | Användarens bokmärken | User own data |
-| `keyword_alerts` | Nyckelordsbevakning | User own data |
-| `keyword_alert_matches` | Alert-matchningar | Via alerts |
-| `sms_logs` | SMS audit log | User own logs |
-| `pressroom_cache` | MyNewsdesk cache | All read, system write |
-| `rate_limits` | Rate limiting | System only |
+## Senast uppdaterad
 
----
-
-## API ENDPOINTS
-
-### RSS Proxy
-
-**Request:**
-```bash
-POST https://[PROJECT].supabase.co/functions/v1/rss-proxy
-Authorization: Bearer [ANON_KEY]
-Content-Type: application/json
-
-{
-  "feedId": "uuid-optional",
-  "forceRefresh": false,
-  "keywords": ["keyword1", "keyword2"]
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [{
-    "feed": { "id": "...", "name": "Dagens Industri", "url": "..." },
-    "articles": [
-      {
-        "id": "...",
-        "title": "Företag X lanserar ny produkt",
-        "link": "https://...",
-        "matchedKeywords": ["produkt"],
-        "relevanceScore": 0.75
-      }
-    ],
-    "metadata": {
-      "fetchedAt": "2025-12-19T12:34:56Z",
-      "cacheHit": true,
-      "articleCount": 42
-    }
-  }]
-}
-```
-
----
-
-### MyNewsdesk Proxy
-
-**Request:**
-```bash
-POST https://[PROJECT].supabase.co/functions/v1/mynewsdesk-proxy
-Authorization: Bearer [ANON_KEY]
-Content-Type: application/json
-
-{
-  "companyId": "uuid-optional",
-  "pressroomUrl": "https://www.mynewsdesk.com/se/company-name",
-  "includeImages": true,
-  "forceRefresh": false
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "company": { "id": "...", "name": "Company X", "pressroomUrl": "..." },
-    "pressReleases": [
-      {
-        "title": "Pressrelease titel",
-        "url": "https://...",
-        "publishedAt": "2025-12-19",
-        "summary": "Kort sammanfattning...",
-        "image": "https://..."
-      }
-    ],
-    "images": [
-      {
-        "url": "https://...",
-        "caption": "Bildtext",
-        "downloadUrl": "https://..."
-      }
-    ],
-    "metadata": {
-      "fetchedAt": "2025-12-19T12:34:56Z",
-      "cacheHit": false,
-      "expiresAt": "2025-12-20T12:34:56Z"
-    }
-  }
-}
-```
-
----
-
-### Send SMS
-
-**Request:**
-```bash
-POST https://[PROJECT].supabase.co/functions/v1/send-sms
-Authorization: Bearer [USER_JWT_TOKEN]
-Content-Type: application/json
-
-{
-  "to": "+46700000000",
-  "message": "Nytt alert: Företag X publicerade pressrelease",
-  "alertId": "uuid-optional"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "sid": "SM...",
-    "status": "queued",
-    "to": "+46700000000",
-    "sentAt": "2025-12-19T12:34:56Z"
-  }
-}
-```
-
-**Error (Rate Limit):**
-```json
-{
-  "success": false,
-  "error": {
-    "code": "RATE_LIMIT_EXCEEDED_HOURLY",
-    "message": "Maximum 10 SMS per hour"
-  }
-}
-```
-
----
-
-## FRONTEND INTEGRATION
-
-### Supabase Client Setup
-
-```typescript
-// src/lib/supabase.ts
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://wzkohritxdrstsmwopco.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export async function callEdgeFunction<T>(
-  functionName: string,
-  data?: unknown
-): Promise<{ success: boolean; data?: T; error?: any }> {
-  const { data: session } = await supabase.auth.getSession();
-  const token = session?.session?.access_token;
-
-  const response = await fetch(
-    `${supabaseUrl}/functions/v1/${functionName}`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token || supabaseAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: data ? JSON.stringify(data) : undefined,
-    }
-  );
-
-  return await response.json();
-}
-```
-
-### Example: Fetch RSS Feeds
-
-```typescript
-import { callEdgeFunction } from './lib/supabase';
-
-async function fetchRSSFeeds() {
-  const result = await callEdgeFunction('rss-proxy', {
-    forceRefresh: false
-  });
-
-  if (result.success) {
-    console.log('Feeds:', result.data);
-  } else {
-    console.error('Error:', result.error);
-  }
-}
-```
-
----
-
-## MONITORING
-
-### Key Metrics SQL Queries
-
-**RSS Feed Health:**
-```sql
-SELECT
-  name,
-  url,
-  error_count,
-  last_error,
-  last_fetched_at
-FROM rss_feeds
-WHERE enabled = true
-  AND error_count > 0
-ORDER BY error_count DESC;
-```
-
-**SMS Usage Today:**
-```sql
-SELECT
-  COUNT(*) as sms_count,
-  SUM(cost_sek) as total_cost,
-  COUNT(DISTINCT user_id) as unique_users
-FROM sms_logs
-WHERE sent_at::date = CURRENT_DATE;
-```
-
-**Cache Hit Rate:**
-```sql
-SELECT
-  'RSS' as type,
-  COUNT(*) as total,
-  COUNT(*) FILTER (WHERE last_fetched_at < fetched_at) as cache_hits,
-  (COUNT(*) FILTER (WHERE last_fetched_at < fetched_at) * 100.0 / COUNT(*))::DECIMAL(5,2) as hit_rate_pct
-FROM rss_articles
-WHERE fetched_at > NOW() - INTERVAL '24 hours';
-```
-
----
-
-## TROUBLESHOOTING
-
-### Problem: RSS Feed Not Updating
-
-**Diagnos:**
-```sql
-SELECT name, last_fetched_at, last_error, error_count
-FROM rss_feeds
-WHERE id = 'feed-uuid';
-```
-
-**Lösning:**
-```typescript
-// Force refresh
-await callEdgeFunction('rss-proxy', {
-  feedId: 'feed-uuid',
-  forceRefresh: true
-});
-```
-
----
-
-### Problem: Rate Limit Exceeded
-
-**Diagnos:**
-```sql
-SELECT * FROM rate_limits
-WHERE key = 'user:user-uuid'
-  AND endpoint = 'send-sms'
-  AND window_end > NOW();
-```
-
-**Lösning:**
-- Vänta tills `window_end` passerat
-- Eller öka rate limit i Edge Function kod
-
----
-
-### Problem: MyNewsdesk Scraping Failed
-
-**Diagnos:**
-```sql
-SELECT * FROM pressroom_cache
-WHERE pressroom_url = 'https://www.mynewsdesk.com/se/company'
-ORDER BY fetched_at DESC
-LIMIT 1;
-```
-
-**Lösning:**
-- Kontrollera `fetch_error` kolumn
-- Validera pressroom URL i browser
-- Force refresh om URL är korrekt
-
----
-
-## KOSTNAD
-
-### Månadskostnad (uppskattad)
-
-| Tjänst | Kostnad |
-|--------|---------|
-| Supabase Pro | $25 |
-| Twilio SMS (1000/månad) | $50 |
-| **Total** | **$75/månad** |
-
-### Inkluderat i Supabase Pro
-
-- 8 GB database
-- 250 GB bandwidth
-- 2M Edge Function invocations
-- 50 GB Edge Function bandwidth
-
-**Nuvarande användning:** Väl inom gränserna
-
----
-
-## SECURITY
-
-### RLS Policies
-
-Alla tabeller har Row Level Security aktiverat:
-
-- **User-owned data:** Användare ser bara sin egen data
-- **Shared read:** Alla kan läsa, bara system kan skriva
-- **Admin-only:** Endast admins kan hantera feeds
-
-### Input Validation
-
-- Phone numbers: E.164 format (`+46700000000`)
-- URLs: Valid HTTP/HTTPS
-- HTML: Sanitized (scripts removed)
-
-### CORS
-
-Production origins endast:
-```typescript
-const ALLOWED_ORIGINS = [
-  'https://your-dashboard.github.io'
-];
-```
-
----
-
-## NÄSTA STEG
-
-### Phase 1: Implementation (12-20 timmar)
-1. ✅ Database setup (1-2h)
-2. ⏳ Edge Functions development (4-6h)
-3. ⏳ Frontend integration (4-6h)
-4. ⏳ Testing & optimization (2-4h)
-5. ⏳ Production readiness (1-2h)
-
-### Phase 2: Launch
-- Monitor metrics
-- Adjust rate limits if needed
-- Optimize cache TTLs
-- Gather user feedback
-
-### Phase 3: Enhancements
-- Additional RSS sources
-- Email notifications
-- Keyword alert UI
-- Analytics dashboard
-
----
-
-## SUPPORT
-
-### Dokumentation
-- **Full Design:** [SUPABASE-EDGE-FUNCTIONS-DESIGN.md](./SUPABASE-EDGE-FUNCTIONS-DESIGN.md)
-- **Quick Reference:** [EDGE-FUNCTIONS-QUICK-REFERENCE.md](./EDGE-FUNCTIONS-QUICK-REFERENCE.md)
-- **Implementation:** [IMPLEMENTATION-CHECKLIST.md](./IMPLEMENTATION-CHECKLIST.md)
-- **Summary:** [BACKEND-ARCHITECTURE-SUMMARY.md](./BACKEND-ARCHITECTURE-SUMMARY.md)
-
-### Projektmapp
-```
-/Users/isak/Desktop/CLAUDE_CODE /projects/bevakningsverktyg/
-```
-
-### Kontakt
-- Backend Architect: backend-architect
-- Datum: 2025-12-19
-
----
-
-**Status:** Design Complete - Ready for Implementation
+2025-12-19 - 10 verktyg implementerade, projekt städat

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI-verktyg - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #D4FF00;
+            --black: #000000;
+            --dark: #111111;
+            --gray-700: #404040;
+            --gray-500: #6b6b6b;
+            --gray-300: #d1d1d1;
+            --gray-100: #f5f5f5;
+            --white: #ffffff;
+            --error: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --blue: #3b82f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--gray-100);
+            color: var(--dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-300);
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--dark);
+        }
+        .nav-brand span { font-weight: 700; font-size: 1.1rem; }
+        .back-link {
+            color: var(--gray-500);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-link:hover { color: var(--dark); }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .page-header {
+            margin-bottom: 32px;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .page-subtitle { color: var(--gray-500); }
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--gray-300);
+            margin-bottom: 24px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        .card-title { font-size: 1.1rem; font-weight: 600; }
+        .card-body { padding: 24px; }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 24px 0 12px;
+        }
+        h3:first-child { margin-top: 0; }
+        p { margin-bottom: 12px; }
+        code {
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: var(--dark);
+            color: var(--gray-100);
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        .highlight { color: var(--accent); }
+        .comment { color: #6a9955; }
+        ul, ol {
+            margin: 12px 0;
+            padding-left: 24px;
+        }
+        li { margin-bottom: 8px; }
+        .tool-grid {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .tool-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: var(--gray-100);
+            border-radius: 8px;
+        }
+        .tool-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--dark);
+            color: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .tool-info h4 {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .tool-info p {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            margin: 0;
+        }
+        .requirements {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .req-tag {
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .warning-box h4 {
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+        .warning-box p {
+            color: #78350f;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            .nav { padding: 0 20px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="../../" class="nav-brand">
+                <span>Bevakningsverktyget</span>
+            </a>
+            <a href="../../" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 12L6 8l4-4"/>
+                </svg>
+                Tillbaka till dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">CLI-verktyg</h1>
+            <p class="page-subtitle">Lokala verktyg som kräver browser-automation</p>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ Kräver lokal installation</h4>
+            <p>Dessa verktyg kan inte köras i molnet (Edge Functions) eftersom de kräver browser-automation. De måste köras lokalt på din dator med Node.js och Puppeteer installerat.</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Tillgängliga verktyg</h2>
+            </div>
+            <div class="card-body">
+                <div class="tool-grid">
+                    <div class="tool-item">
+                        <div class="tool-icon">🔐</div>
+                        <div class="tool-info">
+                            <h4>Auto CAPTCHA Solver</h4>
+                            <p>Automatisk CAPTCHA-lösning med NopeCHA, nodriver eller 2captcha</p>
+                            <div class="requirements">
+                                <span class="req-tag">Node.js 18+</span>
+                                <span class="req-tag">Puppeteer</span>
+                                <span class="req-tag">NopeCHA Extension</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tool-item">
+                        <div class="tool-icon">📄</div>
+                        <div class="tool-info">
+                            <h4>Protokoll Scraper</h4>
+                            <p>Köp bolagsstämmoprotokoll från Bolagsverket automatiskt</p>
+                            <div class="requirements">
+                                <span class="req-tag">Node.js 18+</span>
+                                <span class="req-tag">Puppeteer</span>
+                                <span class="req-tag">Betalmetod</span>
+                                <span class="req-tag">Twilio (OTP)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Installation</h2>
+                <span class="badge badge-info">Engångssetup</span>
+            </div>
+            <div class="card-body">
+                <h3>1. Klona projektet</h3>
+                <pre><code><span class="comment"># Navigera till projektet</span>
+cd bevakningsverktyg
+
+<span class="comment"># Installera dependencies</span>
+npm install</code></pre>
+
+                <h3>2. Installera NopeCHA Extension</h3>
+                <p>NopeCHA är ett gratis Chrome-tillägg som löser CAPTCHA automatiskt (100 requests/dag utan API-nyckel).</p>
+                <pre><code><span class="comment"># Extension finns redan i projektet</span>
+ls lib/nopecha-extension/</code></pre>
+
+                <h3>3. Konfigurera miljövariabler</h3>
+                <pre><code><span class="comment"># Skapa .env fil</span>
+cp .env.example .env
+
+<span class="comment"># Redigera .env med dina värden</span>
+SUPABASE_URL=https://wzkohritxdrstsmwopco.supabase.co
+SUPABASE_SERVICE_KEY=din-service-key
+
+<span class="comment"># För protokollköp med Twilio SMS (OTP)</span>
+TWILIO_ACCOUNT_SID=din-account-sid
+TWILIO_AUTH_TOKEN=din-auth-token
+TWILIO_PHONE_NUMBER=+46...</code></pre>
+
+                <h3>4. Konfigurera betalmetod (för protokollköp)</h3>
+                <p>Protokollscrapern kräver ett registrerat betalkort. Lägg till kortuppgifter i <code>.env</code>:</p>
+                <pre><code><span class="comment"># Betalkortsuppgifter (säkra!)</span>
+CARD_NUMBER=din-kortnummer
+CARD_EXPIRY=MM/YY
+CARD_CVV=123</code></pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Auto CAPTCHA Solver</h2>
+                <span class="badge badge-success">Gratis (100/dag)</span>
+            </div>
+            <div class="card-body">
+                <p>Multi-metod CAPTCHA-lösare med automatisk fallback:</p>
+                <ol>
+                    <li><strong>NopeCHA Extension</strong> (prioritet 1) - Snabbast, gratis</li>
+                    <li><strong>nodriver</strong> (prioritet 2) - Python-baserad, bäst stealth</li>
+                    <li><strong>undetected-chromedriver</strong> (prioritet 3) - Python fallback</li>
+                    <li><strong>2captcha API</strong> (prioritet 4) - Betaltjänst, garanterad</li>
+                </ol>
+
+                <h3>Fil</h3>
+                <pre><code>src/services/auto_captcha_solver.js</code></pre>
+
+                <h3>Användning i kod</h3>
+                <pre><code><span class="highlight">const</span> { solveCaptcha } = require('./services/auto_captcha_solver');
+
+<span class="comment">// Använd i Puppeteer-kontext</span>
+<span class="highlight">const</span> result = await solveCaptcha(page, {
+  type: 'recaptcha',    <span class="comment">// eller 'hcaptcha', 'funcaptcha'</span>
+  sitekey: 'abc123...',
+  pageUrl: 'https://example.com'
+});
+
+<span class="highlight">if</span> (result.success) {
+  console.log('CAPTCHA löst:', result.token);
+}</code></pre>
+
+                <h3>Stödda CAPTCHA-typer</h3>
+                <ul>
+                    <li>reCAPTCHA v2 / v3</li>
+                    <li>hCaptcha</li>
+                    <li>FunCAPTCHA</li>
+                    <li>AWS WAF Captcha</li>
+                    <li>Cloudflare Turnstile</li>
+                    <li>Text CAPTCHA</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Protokoll Scraper</h2>
+                <span class="badge badge-warning">Kostar 60 kr/dokument</span>
+            </div>
+            <div class="card-body">
+                <p>Automatiserad köpprocess för bolagsstämmoprotokoll från Bolagsverket:</p>
+                <ol>
+                    <li>Navigerar till Bolagsverkets e-tjänst</li>
+                    <li>Söker företag på organisationsnummer</li>
+                    <li>Löser CAPTCHA automatiskt (med NopeCHA)</li>
+                    <li>Lägger dokument i kundvagn</li>
+                    <li>Genomför betalning med 3D Secure</li>
+                    <li>Läser OTP-kod via Twilio SMS</li>
+                    <li>Laddar ner PDF och sparar till Supabase Storage</li>
+                </ol>
+
+                <h3>Fil</h3>
+                <pre><code>src/scrapers/protokoll-scraper.js</code></pre>
+
+                <h3>CLI-användning</h3>
+                <pre><code><span class="comment"># Köp protokoll för ett företag</span>
+node src/scrapers/protokoll-scraper.js --orgnr 5560125790
+
+<span class="comment"># Med anpassad dokumenttyp</span>
+node src/scrapers/protokoll-scraper.js --orgnr 5560125790 --type arsredovisning
+
+<span class="comment"># Dry run (testar utan att köpa)</span>
+node src/scrapers/protokoll-scraper.js --orgnr 5560125790 --dry-run</code></pre>
+
+                <h3>Programmatisk användning</h3>
+                <pre><code><span class="highlight">const</span> { ProtokollScraper } = require('./scrapers/protokoll-scraper');
+
+<span class="highlight">const</span> scraper = new ProtokollScraper({
+  headless: false,  <span class="comment">// Visa browser för debugging</span>
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseKey: process.env.SUPABASE_SERVICE_KEY
+});
+
+<span class="comment">// Köp protokoll</span>
+<span class="highlight">const</span> result = await scraper.purchaseProtocol({
+  orgnr: '5560125790',
+  documentType: 'protokoll',
+  email: 'din@email.se'
+});
+
+<span class="highlight">if</span> (result.success) {
+  console.log('PDF sparad:', result.fileUrl);
+}</code></pre>
+
+                <h3>Budget-integration</h3>
+                <p>Scrapern integrerar med Budget API för att:</p>
+                <ul>
+                    <li>Kontrollera budget innan köp (<code>/budget/check</code>)</li>
+                    <li>Registrera köp efter lyckad betalning (<code>/budget/purchase</code>)</li>
+                    <li>Respektera dags- och månadsgränser</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Twilio SMS OTP-läsare</h2>
+                <span class="badge badge-info">För 3D Secure</span>
+            </div>
+            <div class="card-body">
+                <p>Läser engångslösenord (OTP) från SMS för 3D Secure-autentisering vid kortbetalningar.</p>
+
+                <h3>Fil</h3>
+                <pre><code>src/services/twilio_sms_node.js</code></pre>
+
+                <h3>Konfiguration</h3>
+                <pre><code><span class="comment"># I .env</span>
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_PHONE_NUMBER=+46701234567</code></pre>
+
+                <h3>Användning</h3>
+                <pre><code><span class="highlight">const</span> { waitForOTP } = require('./services/twilio_sms_node');
+
+<span class="comment">// Vänta på OTP-kod (timeout 60 sekunder)</span>
+<span class="highlight">const</span> otp = await waitForOTP({
+  timeout: 60000,
+  pattern: /\d{6}/  <span class="comment">// 6-siffrig kod</span>
+});
+
+console.log('OTP-kod:', otp);</code></pre>
+
+                <h3>Hur det fungerar</h3>
+                <ol>
+                    <li>Twilio tar emot SMS till ditt virtuella nummer</li>
+                    <li>Webhook triggas och sparar meddelandet</li>
+                    <li>Skriptet pollar efter nya meddelanden</li>
+                    <li>Extraherar OTP-kod med regex</li>
+                    <li>Returnerar koden till protokollscrapern</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Felsökning</h2>
+            </div>
+            <div class="card-body">
+                <h3>CAPTCHA löses inte</h3>
+                <ul>
+                    <li>Kontrollera att NopeCHA-tillägget är korrekt laddat</li>
+                    <li>Kör med <code>headless: false</code> för att se vad som händer</li>
+                    <li>Om NopeCHA misslyckas, försöker systemet automatiskt 2captcha</li>
+                </ul>
+
+                <h3>3D Secure misslyckas</h3>
+                <ul>
+                    <li>Verifiera Twilio-credentials i <code>.env</code></li>
+                    <li>Kontrollera att telefonnumret är rätt format (+46...)</li>
+                    <li>Testa med <code>--dry-run</code> först</li>
+                </ul>
+
+                <h3>Timeout-fel</h3>
+                <ul>
+                    <li>Bolagsverket kan vara långsamt - öka timeout</li>
+                    <li>Kontrollera internetanslutning</li>
+                    <li>Kör med visible browser för debugging</li>
+                </ul>
+
+                <h3>Budget-fel</h3>
+                <ul>
+                    <li>Kontrollera budget-status på <a href="../admin/budget/">Budget-sidan</a></li>
+                    <li>Öka gränser om nödvändigt</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

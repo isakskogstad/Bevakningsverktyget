@@ -5,6 +5,75 @@
 Detta är ett verktyg för att bevaka svenska företag, köpa dokument från Bolagsverket,
 och generera nyhetsartiklar baserat på företagshändelser.
 
+**Frontend:** Statisk HTML i `docs/` (GitHub Pages)
+**Backend:** Supabase Edge Functions
+**CLI-verktyg:** Lokala scripts för CAPTCHA-skyddade sidor
+
+---
+
+## MAPPSTRUKTUR
+
+```
+bevakningsverktyg/
+├── INSTRUKTIONER.md          # Denna fil - LÄS ALLTID FÖRST!
+├── PROJECT.md                # Projektöversikt med alla verktyg
+├── .env.example              # Miljövariabler (kopiera till .env)
+│
+├── docs/                     # FRONTEND (GitHub Pages)
+│   ├── index.html           # Huvuddashboard
+│   ├── assets/              # CSS, JS, bilder
+│   ├── verktyg/             # Verktygsidor
+│   │   ├── allabolag/       # Allabolag-sökning
+│   │   ├── bolagsverket-api/# VDM API-sökning
+│   │   ├── foretagsbevakning/# POIT-bevakning
+│   │   ├── xbrl-parser/     # Årsredovisningsparser
+│   │   ├── artikelgenerator/# AI-artikelgenerering
+│   │   ├── pdf-parser/      # PDF-analys
+│   │   ├── dokumentkop/     # Protokollköp
+│   │   └── cli-verktyg/     # Lokala CLI-verktyg (dokumentation)
+│   ├── nyhetsverktyg/       # Nyhetsredaktion
+│   │   └── pressbevakning/  # Pressrumsbevakning
+│   ├── admin/               # Admin-sidor
+│   └── installningar/       # Inställningar
+│
+├── supabase/                 # SUPABASE
+│   ├── functions/           # Edge Functions
+│   │   ├── budget/          # Budgethantering (DEPLOYAD)
+│   │   ├── poit-kungorelse/ # POIT-proxy (DEPLOYAD)
+│   │   ├── rss-proxy/       # RSS-aggregering
+│   │   ├── mynewsdesk-proxy/# Pressrum-scraping
+│   │   └── send-sms/        # SMS-notifieringar
+│   └── migrations/          # SQL-migrationer
+│
+├── src/                      # KÄLLKOD
+│   ├── scrapers/            # Web scrapers
+│   │   ├── allabolag-scraper.js
+│   │   ├── poit-scraper.js
+│   │   └── protokoll-scraper.js
+│   ├── services/            # Tjänster
+│   │   ├── auto_captcha_solver.js
+│   │   ├── pdf_parser.js
+│   │   └── news_article_generator_v2.js
+│   ├── api/                 # FastAPI routes (legacy)
+│   └── models/              # Pydantic-modeller (legacy)
+│
+├── lib/                      # EXTERNA BIBLIOTEK
+│   ├── nopecha-extension/   # NopeCHA CAPTCHA-lösare
+│   ├── captcha-solvers/     # CAPTCHA-verktyg
+│   └── browser-automation/  # Browser-verktyg
+│
+├── scripts/                  # CLI-SCRIPTS
+│   ├── poit-purchase-stealth.js  # Stealth protokollköp
+│   └── discover-pressrooms.ts    # Pressrum-discovery
+│
+├── data/                     # LOKAL DATA
+│   ├── successful-methods/  # Sparade framgångsrika metoder
+│   ├── purchase-logs/       # Köploggar
+│   └── purchase_log.json    # Aktuell köphistorik
+│
+└── backups/                  # AUTOMATISKA BACKUPS
+```
+
 ---
 
 ## OBLIGATORISKA REGLER
@@ -15,7 +84,7 @@ När du stöter på CAPTCHA, använd ALLTID dessa verktyg i denna ordning:
 
 1. **NopeCHA Extension** (`lib/nopecha-extension/`)
    - Automatisk CAPTCHA-lösning via browser extension
-   - Gratis, snabbast
+   - Gratis 100 req/dag
    - Stödjer reCAPTCHA, hCaptcha, Turnstile
 
 2. **nodriver** (Python: `import nodriver`)
@@ -31,28 +100,7 @@ När du stöter på CAPTCHA, använd ALLTID dessa verktyg i denna ordning:
    - Betalservice, använd som sista utväg
    - Kräver API-nyckel i .env: `TWOCAPTCHA_API_KEY`
 
-### 2. BROWSER AUTOMATION
-
-**ALLTID** använd stealth-verktyg när du navigerar online:
-
-```javascript
-// JavaScript - Puppeteer Extra med Stealth
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-puppeteer.use(StealthPlugin());
-```
-
-```python
-# Python - nodriver (föredras)
-import nodriver as uc
-browser = await uc.start()
-
-# Python - undetected-chromedriver (fallback)
-import undetected_chromedriver as uc
-driver = uc.Chrome()
-```
-
-### 3. FEL OCH RETRY
+### 2. FEL OCH RETRY
 
 **VÄNTA ALDRIG PÅ MANUELL LÖSNING!**
 
@@ -62,144 +110,49 @@ Vid misslyckande:
 3. Prova alternativ approach (annan URL, annat sökord)
 4. Spara framgångsrik metod till `data/successful-methods/`
 
-### 4. SPARA FRAMGÅNGSRIKA METODER
-
-När något fungerar, spara det:
-
-```javascript
-// Exempel på att spara lyckad metod
-const method = {
-    date: new Date().toISOString(),
-    site: 'foretagsinfo.bolagsverket.se',
-    action: 'bypass_captcha',
-    tool: 'nodriver',
-    config: { headless: false, timeout: 30000 },
-    success: true
-};
-fs.writeFileSync('data/successful-methods/[site]-[action].json', JSON.stringify(method, null, 2));
-```
-
----
-
-## MAPPSTRUKTUR
-
-```
-bevakningsverktyg/
-├── INSTRUKTIONER.md          # Denna fil - LÄS ALLTID FÖRST!
-├── PROJECT.md                # Projektöversikt
-├── .env.example              # Miljövariabler (kopiera till .env)
-│
-├── verktyg-dashboard/        # DASHBOARD-VERKTYG
-│   ├── 01-nyhetsredaktion/   # Generera nyhetsartiklar
-│   ├── 02-bolagsbevakning/   # Bevaka företagsändringar
-│   ├── 03-dokumentkop/       # Köp dokument från Bolagsverket
-│   ├── 04-poit-sokning/      # Sök kungörelser på POIT
-│   └── 05-budget-hantering/  # Hantera daglig budget
-│
-├── admin-verktyg/            # ADMIN-VERKTYG
-│   ├── 01-billing/           # Betalningshantering
-│   ├── 02-api-nycklar/       # API-nyckelhantering
-│   ├── 03-loggverktyg/       # Köploggar och aktivitet
-│   ├── 04-backup/            # Backup-rutiner
-│   └── 05-systemstatus/      # Hälsokontroller
-│
-├── lib/                      # EXTERNA BIBLIOTEK
-│   ├── nopecha-extension/    # NopeCHA CAPTCHA-lösare
-│   ├── captcha-solvers/      # CAPTCHA-verktyg
-│   └── browser-automation/   # Browser-verktyg
-│
-├── src/                      # KÄLLKOD
-│   ├── scrapers/             # Web scrapers
-│   │   ├── bolagsverket-navigator.js
-│   │   ├── poit-scraper.js
-│   │   └── protokoll-scraper.js
-│   ├── services/             # Tjänster
-│   │   ├── auto_captcha_solver.js
-│   │   ├── pdf_parser.js
-│   │   ├── news_article_generator.js
-│   │   ├── purchase_logger.js
-│   │   └── twilio_sms_node.js
-│   ├── dashboard/            # Dashboard-server
-│   └── api/                  # API-routes
-│
-├── data/                     # DATA
-│   ├── successful-methods/   # Sparade framgångsrika metoder
-│   └── purchase-logs/        # Köploggar
-│
-├── scripts/                  # STANDALONE SCRIPTS
-│   └── poit-purchase-stealth.js
-│
-├── dashboard/                # SEPARAT DASHBOARD
-│   ├── server.js
-│   └── public/
-│
-└── backups/                  # BACKUPS
-```
-
 ---
 
 ## STEG-FÖR-STEG: VANLIGA UPPGIFTER
 
-### A. Navigera på Bolagsverket
+### A. Köra frontend lokalt
 
-```javascript
-// 1. Importera verktyg
-const { createBrowser, navigateWithRetry } = require('./src/scrapers/bolagsverket-navigator');
+```bash
+# Öppna direkt i webbläsare
+open docs/index.html
 
-// 2. Skapa browser med stealth
-const { browser, page } = await createBrowser(false); // headless=false för debugging
-
-// 3. Navigera med automatisk CAPTCHA-hantering
-await navigateWithRetry(page, 'https://foretagsinfo.bolagsverket.se/sok-foretagsinformation-web/foretag', {
-    maxRetries: 5,
-    captchaHandler: true
-});
-
-// 4. Sök företag
-await page.type('#orgnr', '5591628660');
-await page.click('button[type="submit"]');
+# Eller med lokal server
+cd docs && python -m http.server 8080
+# Öppna http://localhost:8080
 ```
 
-### B. Köpa dokument
+### B. Köpa dokument (CLI)
 
-```javascript
-// 1. Använd protokoll-scraper
-const { purchaseProtokoll } = require('./src/scrapers/protokoll-scraper');
-
-// 2. Köp med budgetkontroll
-const result = await purchaseProtokoll({
-    orgnr: '5591628660',
-    documentType: 'PROT',
-    maxPrice: 50 // SEK
-});
-
-// 3. 3D Secure hanteras automatiskt via Twilio SMS
+```bash
+# Kräver lokal Chrome med NopeCHA-extension
+node scripts/poit-purchase-stealth.js 5591628660
 ```
 
-### C. Söka på POIT
+### C. Testa Budget API
 
-```javascript
-// 1. Använd poit-scraper
-const { searchPOIT } = require('./src/scrapers/poit-scraper');
+```bash
+# Hämta status
+curl "https://wzkohritxdrstsmwopco.supabase.co/functions/v1/budget" \
+  -H "Authorization: Bearer ANON_KEY"
 
-// 2. Sök kungörelser
-const results = await searchPOIT({
-    orgnr: '5591628660',
-    dateFrom: '2024-01-01'
-});
+# Registrera köp
+curl -X POST "https://wzkohritxdrstsmwopco.supabase.co/functions/v1/budget/purchase" \
+  -H "Authorization: Bearer ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"orgnr":"5591628660","amount_sek":60}'
 ```
 
-### D. Generera nyhetsartikel
+### D. Söka på POIT via Edge Function
 
-```javascript
-// 1. Använd news generator
-const { generateArticle } = require('./src/services/news_article_generator');
-
-// 2. Generera artikel från PDF
-const article = await generateArticle({
-    pdfPath: './output/protokoll_5591628660.pdf',
-    style: 'di' // Dagens Industri stil
-});
+```bash
+curl -X POST "https://wzkohritxdrstsmwopco.supabase.co/functions/v1/poit-kungorelse" \
+  -H "Authorization: Bearer ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"searchType":"orgnr","searchTerm":"5591628660"}'
 ```
 
 ---
@@ -209,28 +162,28 @@ const article = await generateArticle({
 ### Miljövariabler (.env)
 
 ```bash
-# CAPTCHA-tjänster
-TWOCAPTCHA_API_KEY=din-nyckel-här
-ANTICAPTCHA_API_KEY=din-nyckel-här
+# Supabase
+SUPABASE_URL=https://wzkohritxdrstsmwopco.supabase.co
+SUPABASE_KEY=anon-key-här
+SUPABASE_SERVICE_KEY=service-key-här
 
-# Twilio för 3D Secure SMS
+# CAPTCHA-tjänster (valfritt)
+TWOCAPTCHA_API_KEY=din-nyckel-här
+
+# Twilio för SMS (valfritt)
 TWILIO_ACCOUNT_SID=din-sid
 TWILIO_AUTH_TOKEN=din-token
 TWILIO_PHONE_NUMBER=+46xxxxxxxxx
 
-# Supabase
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=din-nyckel
-
-# Budget
-DAILY_BUDGET_SEK=100
+# AI
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### Daglig budget
 
-- Standard: 100 SEK/dag
-- Spåras i `data/purchase-logs/`
-- Använd `src/services/budget_manager.js` för kontroll
+- Standard: 100 SEK/dag, 500 SEK/månad
+- Hanteras via Budget Edge Function
+- Kontrollera i dashboarden: `docs/verktyg/dokumentkop/`
 
 ---
 
@@ -239,21 +192,21 @@ DAILY_BUDGET_SEK=100
 ### CAPTCHA blockerar
 
 1. Kontrollera att NopeCHA extension är installerad: `lib/nopecha-extension/`
-2. Prova nodriver istället för puppeteer
+2. Kör med `headless: false` för debugging
 3. Vänta 30 sekunder mellan försök
-4. Byt IP (VPN) om möjligt
+4. Prova nodriver istället för puppeteer
 
-### Sida laddar inte
+### Edge Function fungerar inte
 
-1. Öka timeout: `page.setDefaultTimeout(60000)`
-2. Vänta på rätt selector: `await page.waitForSelector('#orgnr', { timeout: 30000 })`
-3. Ta skärmdump för debugging: `await page.screenshot({ path: '/tmp/debug.png' })`
+1. Kontrollera att funktionen är deployad: `supabase functions list`
+2. Kolla loggar: `supabase functions logs budget`
+3. Verifiera Authorization-header
 
-### 3D Secure misslyckas
+### Frontend visar fel
 
-1. Kontrollera Twilio-konfiguration
-2. Verifiera att telefonnummer är korrekt
-3. Se loggar i `data/purchase-logs/`
+1. Öppna DevTools → Console
+2. Kontrollera att SUPABASE_URL är korrekt i HTML
+3. Verifiera CORS-headers på Edge Functions
 
 ---
 
@@ -261,19 +214,19 @@ DAILY_BUDGET_SEK=100
 
 | Fil | Syfte |
 |-----|-------|
-| `src/services/auto_captcha_solver.js` | Automatisk CAPTCHA-lösning |
-| `src/scrapers/bolagsverket-navigator.js` | Navigering på Bolagsverket |
-| `src/scrapers/protokoll-scraper.js` | Köp av protokoll med betalning |
-| `src/scrapers/poit-scraper.js` | Sökning på POIT |
-| `src/services/pdf_parser.js` | PDF-analys med Claude |
-| `src/services/news_article_generator.js` | Generera nyhetsartiklar |
-| `src/services/purchase_logger.js` | Logga köp |
-| `src/services/twilio_sms_node.js` | SMS för 3D Secure |
+| `docs/index.html` | Huvuddashboard |
+| `docs/verktyg/dokumentkop/index.html` | Protokollköp med budgetkontroll |
+| `supabase/functions/budget/index.ts` | Budget Edge Function |
+| `supabase/functions/poit-kungorelse/index.ts` | POIT-proxy |
+| `src/scrapers/protokoll-scraper.js` | Lokal protokoll-scraper |
+| `scripts/poit-purchase-stealth.js` | Stealth-köp CLI |
 
 ---
 
 ## CHANGELOG
 
-- 2024-12-19: Lade till nodriver, undetected-chromedriver, NopeCHA
-- 2024-12-19: Skapade mappstruktur för verktyg och admin
-- 2024-12-19: Skapade denna instruktionsfil
+- **2025-12-19:** Städat projekt, uppdaterat dokumentation
+- **2025-12-19:** Implementerat 10 verktyg i dashboard
+- **2025-12-19:** Budget Edge Function deployad och testad
+- **2024-12-19:** Lade till nodriver, undetected-chromedriver, NopeCHA
+- **2024-12-19:** Skapade denna instruktionsfil
