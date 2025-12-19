@@ -1125,8 +1125,9 @@
 
         async function loadMoreEvents() {
             currentOffset += pageSize;
+            // Använd loop_poit_events view för ENDAST bevakade företag
             const { data } = await sb
-                .from('poit_announcements')
+                .from('loop_poit_events')
                 .select('*')
                 .order('announcement_date', { ascending: false })
                 .range(currentOffset, currentOffset + pageSize - 1);
