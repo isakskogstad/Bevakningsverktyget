@@ -1,36 +1,37 @@
 /**
- * Company List Service - Hanterar företagslistan från Excel
+ * Company List Service - Hanterar företagslistan
+ *
+ * OBS: xlsx-paketet har tagits bort pga säkerhetssårbarheter.
+ * Företagslistan finns nu i Supabase (loop_table med 1214 företag).
+ *
+ * För att konvertera Excel till JSON, använd online-verktyg eller:
+ * - Öppna Excel i Google Sheets
+ * - Exportera som JSON
+ * - Spara till data/companies_cache.json
  */
 
-const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 
-const EXCEL_PATH = '/Users/isak/Desktop/Bevakaren.Företagslista.xlsx';
 const CACHE_PATH = path.join(__dirname, '../../data/companies_cache.json');
 
 let companiesCache = null;
 
-// Ladda företagslista från Excel
-function loadCompaniesFromExcel() {
-    if (!fs.existsSync(EXCEL_PATH)) {
-        console.error(`Excel-fil saknas: ${EXCEL_PATH}`);
+// Ladda företagslista från JSON-cache
+function loadCompaniesFromCache() {
+    if (!fs.existsSync(CACHE_PATH)) {
+        console.error(`Cache-fil saknas: ${CACHE_PATH}`);
+        console.error('Företagslistan finns i Supabase (loop_table). Använd Supabase-klienten istället.');
         return [];
     }
 
-    const workbook = XLSX.readFile(EXCEL_PATH);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
-
-    return data.map((row, index) => ({
-        id: index + 1,
-        orgnr: String(row.orgnr || '').padStart(10, '0'),
-        orgnrFormatted: formatOrgnr(String(row.orgnr || '')),
-        companyName: row.company_name || row['Företagsnamn'] || '',
-        createdAt: row.created_at || null,
-        updatedAt: row.updated_at || null
-    }));
+    try {
+        const cacheData = JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'));
+        return cacheData.companies || cacheData;
+    } catch (error) {
+        console.error('Kunde inte läsa cache:', error.message);
+        return [];
+    }
 }
 
 // Formatera organisationsnummer (XXXXXX-XXXX)
@@ -45,31 +46,8 @@ function getAllCompanies() {
         return companiesCache;
     }
 
-    // Försök ladda från cache först
-    if (fs.existsSync(CACHE_PATH)) {
-        const cacheData = JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'));
-        const cacheAge = Date.now() - cacheData.timestamp;
-
-        // Använd cache om den är mindre än 1 timme gammal
-        if (cacheAge < 3600000) {
-            companiesCache = cacheData.companies;
-            return companiesCache;
-        }
-    }
-
-    // Ladda från Excel
-    companiesCache = loadCompaniesFromExcel();
-
-    // Spara till cache
-    const dataDir = path.dirname(CACHE_PATH);
-    if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-    }
-    fs.writeFileSync(CACHE_PATH, JSON.stringify({
-        timestamp: Date.now(),
-        companies: companiesCache
-    }));
-
+    // Ladda från JSON-cache
+    companiesCache = loadCompaniesFromCache();
     return companiesCache;
 }
 
