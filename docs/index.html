@@ -233,15 +233,15 @@
         <div class="error" id="error"></div>
         <div class="success" id="success"></div>
 
-        <form onsubmit="handleLogin(event)">
+        <form id="login-form-element">
             <div class="form-group">
                 <label for="email">E-postadress</label>
-                <input type="email" id="email" placeholder="din@email.se" required>
+                <input type="email" id="email" placeholder="din@email.se" required autocomplete="email">
             </div>
 
             <div class="form-group">
                 <label for="password">Lösenord</label>
-                <input type="password" id="password" placeholder="Ditt lösenord" required>
+                <input type="password" id="password" placeholder="Ditt lösenord" required autocomplete="current-password">
             </div>
 
             <button type="submit" id="submit-btn">Logga in</button>
@@ -256,7 +256,7 @@
     <div id="dashboard">
         <div class="dashboard-header">
             <h1>Bevakningsverktyget</h1>
-            <button class="logout-btn" onclick="handleLogout()">Logga ut</button>
+            <button class="logout-btn" id="logout-btn">Logga ut</button>
         </div>
 
         <div class="user-info">
@@ -294,114 +294,133 @@
     </div>
 
     <script>
-        // Supabase configuration
-        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+        (function() {
+            'use strict';
 
-        let supabase;
-        let currentUser = null;
+            // Supabase configuration
+            const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
 
-        // Initialize Supabase
-        async function initSupabase() {
-            try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            let supabaseClient = null;
+            let currentUser = null;
 
-                // Check if user is already logged in
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session) {
-                    currentUser = session.user;
-                    await showDashboard();
-                }
-            } catch (error) {
-                console.error('Supabase init error:', error);
-            }
-        }
+            // Initialize Supabase
+            async function initSupabase() {
+                try {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Handle login
-        async function handleLogin(event) {
-            event.preventDefault();
-
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const submitBtn = document.getElementById('submit-btn');
-            const errorEl = document.getElementById('error');
-            const successEl = document.getElementById('success');
-
-            // Reset messages
-            errorEl.classList.remove('show');
-            successEl.classList.remove('show');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Loggar in...';
-
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (error) throw error;
-
-                currentUser = data.user;
-                successEl.textContent = 'Inloggning lyckades!';
-                successEl.classList.add('show');
-
-                setTimeout(() => {
-                    showDashboard();
-                }, 500);
-
-            } catch (error) {
-                console.error('Login error:', error);
-                errorEl.textContent = error.message === 'Invalid login credentials'
-                    ? 'Fel e-post eller lösenord'
-                    : error.message;
-                errorEl.classList.add('show');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Logga in';
-            }
-        }
-
-        // Show dashboard
-        async function showDashboard() {
-            document.getElementById('login-form').classList.add('hide');
-            document.getElementById('dashboard').classList.add('show');
-            document.getElementById('user-email').textContent = currentUser.email;
-
-            // Get user profile/role
-            try {
-                const { data: profile, error } = await supabase
-                    .from('user_profiles')
-                    .select('role')
-                    .eq('id', currentUser.id)
-                    .single();
-
-                if (profile) {
-                    const roleEl = document.getElementById('user-role');
-                    roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
-                    roleEl.className = 'role-badge ' + profile.role;
-
-                    // Show admin tools if admin
-                    if (profile.role === 'admin') {
-                        document.getElementById('admin-tools').style.display = 'block';
+                    // Check if user is already logged in
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    if (session) {
+                        currentUser = session.user;
+                        await showDashboard();
                     }
+                } catch (error) {
+                    console.error('Supabase init error:', error);
                 }
-            } catch (error) {
-                console.error('Profile fetch error:', error);
             }
-        }
 
-        // Handle logout
-        async function handleLogout() {
-            await supabase.auth.signOut();
-            currentUser = null;
-            document.getElementById('dashboard').classList.remove('show');
-            document.getElementById('login-form').classList.remove('hide');
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
-        }
+            // Handle login
+            async function handleLogin(event) {
+                event.preventDefault();
 
-        // Initialize on page load
-        initSupabase();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const submitBtn = document.getElementById('submit-btn');
+                const errorEl = document.getElementById('error');
+                const successEl = document.getElementById('success');
+
+                // Reset messages
+                errorEl.classList.remove('show');
+                successEl.classList.remove('show');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Loggar in...';
+
+                try {
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email: email,
+                        password: password
+                    });
+
+                    if (error) throw error;
+
+                    currentUser = data.user;
+                    successEl.textContent = 'Inloggning lyckades!';
+                    successEl.classList.add('show');
+
+                    setTimeout(() => {
+                        showDashboard();
+                    }, 500);
+
+                } catch (error) {
+                    console.error('Login error:', error);
+                    errorEl.textContent = error.message === 'Invalid login credentials'
+                        ? 'Fel e-post eller lösenord'
+                        : error.message;
+                    errorEl.classList.add('show');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Logga in';
+                }
+            }
+
+            // Show dashboard
+            async function showDashboard() {
+                document.getElementById('login-form').classList.add('hide');
+                document.getElementById('dashboard').classList.add('show');
+                document.getElementById('user-email').textContent = currentUser.email;
+
+                // Get user profile/role
+                try {
+                    const { data: profile, error } = await supabaseClient
+                        .from('user_profiles')
+                        .select('role')
+                        .eq('id', currentUser.id)
+                        .single();
+
+                    if (profile) {
+                        const roleEl = document.getElementById('user-role');
+                        roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
+                        roleEl.className = 'role-badge ' + profile.role;
+
+                        // Show admin tools if admin
+                        if (profile.role === 'admin') {
+                            document.getElementById('admin-tools').style.display = 'block';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Profile fetch error:', error);
+                }
+            }
+
+            // Handle logout
+            async function handleLogout() {
+                await supabaseClient.auth.signOut();
+                currentUser = null;
+                document.getElementById('dashboard').classList.remove('show');
+                document.getElementById('login-form').classList.remove('hide');
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+            }
+
+            // Initialize on DOM ready
+            document.addEventListener('DOMContentLoaded', function() {
+                // Set up form submit handler
+                const loginForm = document.getElementById('login-form-element');
+                if (loginForm) {
+                    loginForm.addEventListener('submit', handleLogin);
+                }
+
+                // Set up logout handler
+                const logoutBtn = document.getElementById('logout-btn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', handleLogout);
+                }
+
+                // Initialize Supabase
+                initSupabase();
+            });
+        })();
     </script>
 </body>
 </html>
