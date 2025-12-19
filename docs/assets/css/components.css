@@ -539,3 +539,594 @@
     background: var(--gray-300);
     margin: var(--spacing-2) 0;
 }
+
+/* --------------------------------------------------------------------------
+   BOLAGSHÄNDELSER - Grupperad feed
+   -------------------------------------------------------------------------- */
+
+/* Grupperad händelse-container */
+.feed-item-group {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-300);
+    margin-bottom: var(--spacing-4);
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.feed-item-group:hover {
+    border-color: var(--gray-400);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Gruppheader med företagsinfo */
+.feed-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-4) var(--spacing-5);
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    cursor: pointer;
+}
+
+.feed-group-header:hover {
+    background: var(--gray-100);
+}
+
+.feed-group-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.feed-group-company {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--dark);
+}
+
+.feed-group-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+
+.feed-group-orgnr {
+    font-family: var(--font-mono, monospace);
+}
+
+.feed-group-date {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.event-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 var(--spacing-2);
+    background: var(--dark);
+    color: var(--white);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
+.event-count.multiple {
+    background: var(--accent);
+    color: var(--dark);
+}
+
+/* Händelselista inom grupp */
+.feed-group-events {
+    padding: 0;
+    list-style: none;
+    margin: 0;
+}
+
+.feed-event-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3) var(--spacing-5);
+    border-bottom: 1px solid var(--gray-100);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.feed-event-item:last-child {
+    border-bottom: none;
+}
+
+.feed-event-item:hover {
+    background: var(--gray-50);
+}
+
+.feed-event-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    flex: 1;
+}
+
+.feed-event-category {
+    flex-shrink: 0;
+}
+
+.feed-event-text {
+    flex: 1;
+    font-size: var(--font-size-base);
+    color: var(--gray-700);
+    line-height: 1.4;
+}
+
+.feed-event-text strong {
+    color: var(--dark);
+}
+
+.feed-event-time {
+    font-size: var(--font-size-xs);
+    color: var(--gray-500);
+    white-space: nowrap;
+}
+
+/* Gruppens actions */
+.feed-group-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3) var(--spacing-5);
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+}
+
+/* --------------------------------------------------------------------------
+   HÄNDELSEDETALJER - Modal content
+   -------------------------------------------------------------------------- */
+
+.event-detail-section {
+    margin-bottom: var(--spacing-5);
+}
+
+.event-detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.event-detail-section h4 {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-3);
+}
+
+.detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.detail-row {
+    display: flex;
+    gap: var(--spacing-3);
+    padding: var(--spacing-2) 0;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    flex-shrink: 0;
+    width: 120px;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-600);
+}
+
+.detail-value {
+    flex: 1;
+    font-size: var(--font-size-base);
+    color: var(--dark);
+}
+
+.detail-value a {
+    color: var(--blue);
+    text-decoration: none;
+}
+
+.detail-value a:hover {
+    text-decoration: underline;
+}
+
+/* Kungörelsetext */
+.announcement-text {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-4);
+    font-size: var(--font-size-base);
+    line-height: 1.6;
+    color: var(--gray-700);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.announcement-text::-webkit-scrollbar {
+    width: 6px;
+}
+
+.announcement-text::-webkit-scrollbar-track {
+    background: var(--gray-100);
+    border-radius: 3px;
+}
+
+.announcement-text::-webkit-scrollbar-thumb {
+    background: var(--gray-400);
+    border-radius: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   BOLAGSDETALJ-MODAL - Företagsinformation
+   -------------------------------------------------------------------------- */
+
+.company-detail-modal .modal-content {
+    max-width: 800px;
+}
+
+.company-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-6);
+}
+
+.company-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--gray-500);
+    flex-shrink: 0;
+}
+
+.company-info {
+    flex: 1;
+}
+
+.company-name {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--dark);
+    margin-bottom: var(--spacing-1);
+}
+
+.company-orgnr {
+    font-size: var(--font-size-base);
+    color: var(--gray-600);
+    font-family: var(--font-mono, monospace);
+}
+
+.company-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-top: var(--spacing-2);
+}
+
+/* Tabs för bolagsdetalj */
+.company-tabs {
+    display: flex;
+    gap: var(--spacing-1);
+    border-bottom: 1px solid var(--gray-300);
+    margin-bottom: var(--spacing-5);
+}
+
+.company-tab {
+    padding: var(--spacing-3) var(--spacing-4);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-600);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: all var(--transition-fast);
+}
+
+.company-tab:hover {
+    color: var(--dark);
+}
+
+.company-tab.active {
+    color: var(--dark);
+    border-bottom-color: var(--dark);
+}
+
+.company-tab-content {
+    display: none;
+}
+
+.company-tab-content.active {
+    display: block;
+}
+
+/* Företagets händelselista */
+.company-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.company-event-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3);
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.company-event-item:hover {
+    background: var(--gray-100);
+}
+
+.company-event-date {
+    flex-shrink: 0;
+    width: 80px;
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+}
+
+.company-event-content {
+    flex: 1;
+}
+
+.company-event-type {
+    font-weight: var(--font-weight-semibold);
+    color: var(--dark);
+    margin-bottom: var(--spacing-1);
+}
+
+.company-event-desc {
+    font-size: var(--font-size-sm);
+    color: var(--gray-600);
+    line-height: 1.4;
+}
+
+/* Dokumentlista */
+.document-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.document-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3) var(--spacing-4);
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.document-item:hover {
+    border-color: var(--gray-400);
+    background: var(--gray-50);
+}
+
+.document-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    background: var(--error-bg);
+    color: var(--error);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.document-icon.pdf {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.document-icon.xbrl {
+    background: var(--blue-bg);
+    color: var(--blue);
+}
+
+.document-info {
+    flex: 1;
+}
+
+.document-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--dark);
+    margin-bottom: 2px;
+}
+
+.document-meta {
+    font-size: var(--font-size-xs);
+    color: var(--gray-500);
+}
+
+.document-action {
+    color: var(--gray-400);
+    font-size: 1.25rem;
+}
+
+/* Finansiell data-tabell */
+.financial-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.financial-table th,
+.financial-table td {
+    padding: var(--spacing-3);
+    text-align: left;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.financial-table th {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-600);
+    background: var(--gray-50);
+}
+
+.financial-table td {
+    font-size: var(--font-size-base);
+    color: var(--dark);
+}
+
+.financial-table .number {
+    text-align: right;
+    font-family: var(--font-mono, monospace);
+}
+
+.financial-table .positive {
+    color: var(--success);
+}
+
+.financial-table .negative {
+    color: var(--error);
+}
+
+/* --------------------------------------------------------------------------
+   LINK BUTTONS
+   -------------------------------------------------------------------------- */
+
+.btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--blue);
+    font-size: var(--font-size-base);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+}
+
+.poit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    color: var(--blue);
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+}
+
+.poit-link:hover {
+    text-decoration: underline;
+}
+
+.poit-link::after {
+    content: '↗';
+    font-size: 0.875em;
+}
+
+/* --------------------------------------------------------------------------
+   SECTION HEADERS
+   -------------------------------------------------------------------------- */
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-4);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--dark);
+}
+
+.section-title .live-dot {
+    margin-right: 0;
+}
+
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+/* Filter chips */
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--white);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+    border-color: var(--gray-400);
+    background: var(--gray-50);
+}
+
+.filter-chip.active {
+    background: var(--dark);
+    border-color: var(--dark);
+    color: var(--white);
+}
+
+.filter-chip .count {
+    background: var(--gray-200);
+    color: var(--gray-600);
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+}
+
+.filter-chip.active .count {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--white);
+}

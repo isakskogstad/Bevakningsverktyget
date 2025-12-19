@@ -330,7 +330,7 @@
     <div class="login-page" id="login-form">
         <div class="login-hero">
             <h1>Bevaka.<br>Analysera.<br>Publicera.</h1>
-            <p>1214 impact-företag under bevakning. Realtidsnotifikationer från POIT. Nyhetsbevakning för journalister.</p>
+            <p>1214 impact-företag under bevakning. Realtidsnotifikationer om bolagshändelser. Nyhetsbevakning för journalister.</p>
         </div>
         <div class="login-form-container">
             <div class="login-logo">
@@ -413,9 +413,9 @@
                 <div class="sidebar-section">
                     <div class="sidebar-section-title">Företagsbevakning</div>
                     <a href="verktyg/foretagsbevakning/" class="sidebar-link active">
-                        <div class="sidebar-link-icon">!</div>
+                        <div class="sidebar-link-icon">B</div>
                         <div class="sidebar-link-text">
-                            <div class="sidebar-link-title">POIT-händelser</div>
+                            <div class="sidebar-link-title">Bolagshändelser</div>
                             <div class="sidebar-link-desc">Konkurser, kallelser, m.m.</div>
                         </div>
                         <span class="sidebar-link-badge" id="poit-badge">0</span>
@@ -439,6 +439,17 @@
                         </div>
                     </a>
                 </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Konto</div>
+                    <a href="installningar/" class="sidebar-link">
+                        <div class="sidebar-link-icon">I</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Inställningar</div>
+                            <div class="sidebar-link-desc">Profil och preferenser</div>
+                        </div>
+                    </a>
+                </div>
             </aside>
 
             <!-- Main Content -->
@@ -450,7 +461,7 @@
                         <div class="stat-value" id="stat-companies">1214</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">POIT-händelser idag</div>
+                        <div class="stat-label">Bolagshändelser idag</div>
                         <div class="stat-value" id="stat-poit">0</div>
                     </div>
                     <div class="stat-card">
@@ -478,20 +489,42 @@
                     </a>
                     <a href="verktyg/foretagsbevakning/" class="quick-action-card">
                         <div class="quick-action-icon">→</div>
-                        <div class="quick-action-title">Se POIT-händelser</div>
+                        <div class="quick-action-title">Se Bolagshändelser</div>
                         <div class="quick-action-desc">Konkurser, likvidationer, kallelser och skulder för bevakade företag</div>
                     </a>
                 </div>
 
-                <!-- POIT Feed Section -->
+                <!-- Bolagshändelser Feed Section -->
                 <section class="feed-section">
                     <div class="section-header">
                         <h2 class="section-title">
                             <span class="live-dot"></span>
-                            Senaste POIT-händelser
+                            Bolagshändelser
                         </h2>
-                        <button class="btn btn-secondary btn-sm" onclick="refreshFeed()">Uppdatera</button>
+                        <div class="section-actions">
+                            <button class="btn btn-ghost btn-sm" onclick="refreshFeed()">↻ Uppdatera</button>
+                        </div>
                     </div>
+
+                    <!-- Kategorifilter -->
+                    <div class="filter-chips" id="category-filters">
+                        <button class="filter-chip active" data-category="all" onclick="filterByCategory('all', this)">
+                            Alla <span class="count" id="count-all">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="konkurs" onclick="filterByCategory('konkurs', this)">
+                            Konkurser <span class="count" id="count-konkurs">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="kallelse" onclick="filterByCategory('kallelse', this)">
+                            Kallelser <span class="count" id="count-kallelse">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="likvidation" onclick="filterByCategory('likvidation', this)">
+                            Likvidationer <span class="count" id="count-likvidation">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="skuld" onclick="filterByCategory('skuld', this)">
+                            Skuld <span class="count" id="count-skuld">0</span>
+                        </button>
+                    </div>
+
                     <div id="feed-list" class="feed-list">
                         <div class="empty-state">
                             <div class="loader"></div>
@@ -527,7 +560,7 @@
                             <strong>SMS-varningar:</strong> Konfigurera SMS-notiser för att få varningar vid konkurser eller andra viktiga händelser.
                         </p>
                         <p class="text-sm text-muted">
-                            <strong>1214 företag:</strong> Alla Loop Impact-företag bevakas automatiskt i POIT.
+                            <strong>1214 företag:</strong> Alla Loop Impact-företag bevakas automatiskt för bolagshändelser.
                         </p>
                     </div>
                 </div>
@@ -540,7 +573,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Undersök händelse</h3>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeModal()" aria-label="Stäng modal">&times;</button>
             </div>
             <div class="modal-body" id="modal-body">
                 <div id="event-details"></div>
@@ -562,10 +595,12 @@
         var sb = null;
         var currentUser = null;
         var events = [];
+        var allEvents = []; // Alla händelser för filtrering
         var currentOffset = 0;
-        var pageSize = 10;
+        var pageSize = 20;
         var watchedOrgnrs = [];
         var companyNames = {};
+        var activeFilter = 'all';
 
         // =========================================================================
         // INITIALIZATION
@@ -692,7 +727,7 @@
         async function loadStats() {
             const today = new Date().toISOString().split('T')[0];
 
-            // POIT events today - ENDAST för Loop's bevakade företag
+            // Bolagshändelser idag - ENDAST för Loop's bevakade företag
             const { count: poitCount } = await sb
                 .from('loop_poit_events')
                 .select('*', { count: 'exact', head: true })
@@ -704,7 +739,7 @@
         }
 
         async function loadPoitEvents() {
-            // Hämta ENDAST POIT-händelser för Loop's 1214 bevakade företag
+            // Hämta ENDAST bolagshändelser för Loop's 1214 bevakade företag
             const { data, error } = await sb
                 .from('loop_poit_events')
                 .select('*')
@@ -716,12 +751,65 @@
                 return;
             }
 
-            events = data || [];
-            renderEvents();
+            allEvents = data || [];
+            updateCategoryCounts();
+            applyFilter();
 
-            if (events.length === pageSize) {
+            if (allEvents.length === pageSize) {
                 document.getElementById('load-more-btn').style.display = 'inline-flex';
             }
+        }
+
+        // Räkna händelser per kategori
+        function updateCategoryCounts() {
+            const counts = {
+                all: allEvents.length,
+                konkurs: 0,
+                kallelse: 0,
+                likvidation: 0,
+                skuld: 0
+            };
+
+            allEvents.forEach(e => {
+                const cat = (e.category || '').toLowerCase();
+                if (cat.includes('konkurs')) counts.konkurs++;
+                else if (cat.includes('kallelse')) counts.kallelse++;
+                else if (cat.includes('likvidation')) counts.likvidation++;
+                else if (cat.includes('skuld')) counts.skuld++;
+            });
+
+            // Uppdatera badge-räknare
+            document.getElementById('count-all').textContent = counts.all;
+            document.getElementById('count-konkurs').textContent = counts.konkurs;
+            document.getElementById('count-kallelse').textContent = counts.kallelse;
+            document.getElementById('count-likvidation').textContent = counts.likvidation;
+            document.getElementById('count-skuld').textContent = counts.skuld;
+        }
+
+        // Filtrera efter kategori
+        function filterByCategory(category, button) {
+            activeFilter = category;
+
+            // Uppdatera aktiv chip
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            button.classList.add('active');
+
+            applyFilter();
+        }
+
+        // Tillämpa aktivt filter
+        function applyFilter() {
+            if (activeFilter === 'all') {
+                events = [...allEvents];
+            } else {
+                events = allEvents.filter(e => {
+                    const cat = (e.category || '').toLowerCase();
+                    return cat.includes(activeFilter);
+                });
+            }
+            renderEvents();
         }
 
         // =========================================================================
@@ -735,7 +823,7 @@
                 container.innerHTML = `
                     <div class="empty-state">
                         <h3>Inga händelser hittade</h3>
-                        <p>Nya POIT-händelser visas här i realtid</p>
+                        <p>Nya bolagshändelser visas här i realtid</p>
                     </div>
                 `;
                 return;
@@ -1146,7 +1234,7 @@
                 <div class="event-detail-section">
                     <h4 class="detail-section-title">Källa</h4>
                     <a href="${poitUrl}" target="_blank" rel="noopener" class="poit-link">
-                        Öppna på POIT (Bolagsverket)
+                        Öppna på Bolagsverket
                     </a>
                 </div>
                 ` : ''}
@@ -1163,54 +1251,201 @@
             document.getElementById('investigate-modal').classList.add('show');
         }
 
-        // Undersök ett företag (alla händelser)
-        function investigateCompany(orgnr, companyName) {
+        // Undersök ett företag (alla händelser) - förbättrad modal med tabs
+        async function investigateCompany(orgnr, companyName) {
             // Hitta alla händelser för detta företag
             const companyEvents = events.filter(e =>
                 e.orgnr === orgnr || e.matched_company_name === companyName
             );
 
+            // Hämta företagsdata från loop_table om tillgängligt
+            let companyData = null;
+            if (orgnr) {
+                const { data } = await sb
+                    .from('loop_table')
+                    .select('*')
+                    .eq('orgnr', orgnr.replace(/-/g, ''))
+                    .single();
+                companyData = data;
+            }
+
+            // Skapa initial för logotyp
+            const initial = companyName ? companyName.charAt(0).toUpperCase() : '?';
+
             document.getElementById('event-details').innerHTML = `
-                <div class="event-detail-section">
-                    <h4 class="detail-section-title">Företagsöversikt</h4>
-                    <dl class="detail-list">
-                        <dt>Företag</dt>
-                        <dd>${escapeHtml(companyName)}</dd>
-
-                        ${orgnr ? `
-                        <dt>Org.nummer</dt>
-                        <dd>${orgnr}</dd>
-                        ` : ''}
-
-                        <dt>Antal händelser</dt>
-                        <dd>${companyEvents.length} st</dd>
-                    </dl>
+                <!-- Företagsheader -->
+                <div class="company-header">
+                    <div class="company-logo">${initial}</div>
+                    <div class="company-info">
+                        <div class="company-name">${escapeHtml(companyName)}</div>
+                        ${orgnr ? `<div class="company-orgnr">${orgnr}</div>` : ''}
+                        <div class="company-status">
+                            ${companyEvents.length > 0 ? `
+                                <span class="badge badge-member">${companyEvents.length} händelse${companyEvents.length > 1 ? 'r' : ''}</span>
+                            ` : ''}
+                            ${companyData?.website ? `
+                                <a href="${companyData.website}" target="_blank" class="btn-link" style="font-size: var(--font-size-sm);">
+                                    Webbplats ↗
+                                </a>
+                            ` : ''}
+                        </div>
+                    </div>
                 </div>
 
-                <div class="event-detail-section">
-                    <h4 class="detail-section-title">Händelser</h4>
-                    <div class="company-events-list">
-                        ${companyEvents.map(e => {
-                            let kungorelseId = '';
-                            if (e.content) {
-                                const match = e.content.match(/K(\d+)\/(\d+)/);
-                                if (match) kungorelseId = `K${match[1]}-${match[2]}`;
-                            }
-                            const poitUrl = kungorelseId
-                                ? `https://poit.bolagsverket.se/poit-app/kungorelse/${kungorelseId}`
-                                : '';
+                <!-- Tabs -->
+                <div class="company-tabs">
+                    <button class="company-tab active" onclick="showCompanyTab('events', this)">Händelser</button>
+                    <button class="company-tab" onclick="showCompanyTab('documents', this)">Dokument</button>
+                    <button class="company-tab" onclick="showCompanyTab('financials', this)">Ekonomi</button>
+                    <button class="company-tab" onclick="showCompanyTab('info', this)">Information</button>
+                </div>
 
-                            return `
-                                <div class="company-event-item">
-                                    <div class="company-event-header">
-                                        <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
-                                        <span class="feed-time">${formatDate(e.announcement_date)}</span>
+                <!-- Tab: Händelser -->
+                <div id="tab-events" class="company-tab-content active">
+                    ${companyEvents.length > 0 ? `
+                        <div class="company-events-list">
+                            ${companyEvents.map(e => {
+                                let kungorelseId = '';
+                                if (e.content) {
+                                    const match = e.content.match(/K(\d+)\/(\d+)/);
+                                    if (match) kungorelseId = `K${match[1]}-${match[2]}`;
+                                }
+                                const poitUrl = kungorelseId
+                                    ? `https://poit.bolagsverket.se/poit-app/kungorelse/${kungorelseId}`
+                                    : '';
+
+                                return `
+                                    <div class="company-event-item" onclick="showEventDetails('${e.id}')">
+                                        <div class="company-event-date">${formatDate(e.announcement_date)}</div>
+                                        <div class="company-event-content">
+                                            <div class="company-event-type">
+                                                <span class="tag tag-${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
+                                            </div>
+                                            <p class="company-event-desc">${escapeHtml(truncate(e.title || e.content || '', 100))}</p>
+                                        </div>
+                                        ${poitUrl ? `
+                                            <a href="${poitUrl}" target="_blank" class="btn-link" onclick="event.stopPropagation()">
+                                                POIT ↗
+                                            </a>
+                                        ` : ''}
                                     </div>
-                                    <p class="company-event-title">${escapeHtml(e.title || '')}</p>
-                                    ${poitUrl ? `<a href="${poitUrl}" target="_blank" class="btn-link">Visa på POIT</a>` : ''}
-                                </div>
-                            `;
-                        }).join('')}
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : `
+                        <div class="empty-state" style="padding: var(--spacing-6);">
+                            <p>Inga händelser registrerade för detta företag.</p>
+                        </div>
+                    `}
+                </div>
+
+                <!-- Tab: Dokument -->
+                <div id="tab-documents" class="company-tab-content">
+                    <div class="document-list">
+                        <p style="color: var(--gray-500); margin-bottom: var(--spacing-4);">
+                            Årsredovisningar och andra dokument hämtas automatiskt via Bolagsverkets VDM-API.
+                        </p>
+                        <div class="document-item" onclick="fetchAnnualReport('${orgnr}')">
+                            <div class="document-icon pdf">📄</div>
+                            <div class="document-info">
+                                <div class="document-name">Senaste årsredovisning</div>
+                                <div class="document-meta">Klicka för att hämta från Bolagsverket</div>
+                            </div>
+                            <div class="document-action">→</div>
+                        </div>
+                        <div class="document-item" style="opacity: 0.6; cursor: not-allowed;">
+                            <div class="document-icon xbrl">📊</div>
+                            <div class="document-info">
+                                <div class="document-name">XBRL-data</div>
+                                <div class="document-meta">Parsad finansiell data (kommer snart)</div>
+                            </div>
+                            <div class="document-action">→</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Ekonomi -->
+                <div id="tab-financials" class="company-tab-content">
+                    ${companyData && (companyData.revenue || companyData.employees) ? `
+                        <table class="financial-table">
+                            <thead>
+                                <tr>
+                                    <th>Nyckeltal</th>
+                                    <th class="number">Värde</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${companyData.revenue ? `
+                                    <tr>
+                                        <td>Omsättning</td>
+                                        <td class="number">${formatNumber(companyData.revenue)} kr</td>
+                                    </tr>
+                                ` : ''}
+                                ${companyData.employees ? `
+                                    <tr>
+                                        <td>Anställda</td>
+                                        <td class="number">${companyData.employees}</td>
+                                    </tr>
+                                ` : ''}
+                                ${companyData.profit ? `
+                                    <tr>
+                                        <td>Resultat</td>
+                                        <td class="number ${companyData.profit >= 0 ? 'positive' : 'negative'}">
+                                            ${formatNumber(companyData.profit)} kr
+                                        </td>
+                                    </tr>
+                                ` : ''}
+                            </tbody>
+                        </table>
+                    ` : `
+                        <div class="empty-state" style="padding: var(--spacing-6);">
+                            <p>Ingen finansiell data tillgänglig ännu.</p>
+                            <p style="font-size: var(--font-size-sm); color: var(--gray-500);">
+                                Hämta årsredovisningen för att extrahera ekonomiska nyckeltal.
+                            </p>
+                        </div>
+                    `}
+                </div>
+
+                <!-- Tab: Information -->
+                <div id="tab-info" class="company-tab-content">
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-label">Företagsnamn</span>
+                            <span class="detail-value">${escapeHtml(companyName)}</span>
+                        </div>
+                        ${orgnr ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Org.nummer</span>
+                                <span class="detail-value">${orgnr}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.address ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Adress</span>
+                                <span class="detail-value">${escapeHtml(companyData.address)}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.ceo_name ? `
+                            <div class="detail-row">
+                                <span class="detail-label">VD</span>
+                                <span class="detail-value">${escapeHtml(companyData.ceo_name)}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.chairman_name ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Ordförande</span>
+                                <span class="detail-value">${escapeHtml(companyData.chairman_name)}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.website ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Webbplats</span>
+                                <span class="detail-value">
+                                    <a href="${companyData.website}" target="_blank">${companyData.website}</a>
+                                </span>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -1223,6 +1458,33 @@
             `;
 
             document.getElementById('investigate-modal').classList.add('show');
+        }
+
+        // Visa specifik tab i bolagsmodalen
+        function showCompanyTab(tabId, button) {
+            // Dölj alla tabs
+            document.querySelectorAll('.company-tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.company-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Visa vald tab
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            button.classList.add('active');
+        }
+
+        // Hämta årsredovisning via VDM API (placeholder)
+        async function fetchAnnualReport(orgnr) {
+            alert(`Hämtar årsredovisning för ${orgnr}...\n\nDetta skulle anropa Bolagsverkets VDM-API för att ladda ner dokumentet.`);
+            // TODO: Implementera anrop till Edge Function för VDM API
+        }
+
+        // Formatera nummer med tusentalsavgränsare
+        function formatNumber(num) {
+            if (!num) return '-';
+            return new Intl.NumberFormat('sv-SE').format(num);
         }
 
         function createArticleForCompany(orgnr, companyName) {
