@@ -435,8 +435,8 @@
         let keywords = Utils.getStorage('rss-keywords', ['startup', 'greentech', 'cleantech', 'klimat']);
         let readArticles = Utils.getStorage('rss-read', []);
 
-        // RSS proxy URL - använder en publik CORS proxy
-        const CORS_PROXY = 'https://corsproxy.io/?';
+        // RSS proxy URL - använder rss2json API som konverterar och proxar RSS
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
         // =========================================================================
         // FETCH RSS
@@ -444,17 +444,47 @@
 
         async function fetchFeed(feed) {
             try {
-                const proxyUrl = CORS_PROXY + encodeURIComponent(feed.url);
-                const response = await fetch(proxyUrl);
+                // Använd rss2json API som returnerar JSON direkt
+                const apiUrl = RSS2JSON_API + encodeURIComponent(feed.url);
+                const response = await fetch(apiUrl);
 
                 if (!response.ok) throw new Error('Fetch failed');
 
-                const text = await response.text();
-                return parseRSS(text, feed);
+                const data = await response.json();
+
+                if (data.status !== 'ok') {
+                    throw new Error(data.message || 'RSS parse failed');
+                }
+
+                return parseRss2JsonResponse(data, feed);
             } catch (error) {
                 console.error(`Error fetching ${feed.name}:`, error);
                 return [];
             }
+        }
+
+        // Parsa rss2json response format
+        function parseRss2JsonResponse(data, feed) {
+            const articles = [];
+
+            (data.items || []).forEach((item, index) => {
+                const cleanDesc = (item.description || '').replace(/<[^>]+>/g, '').trim();
+
+                articles.push({
+                    id: `${feed.id}-${index}-${Date.now()}`,
+                    title: item.title || '',
+                    link: item.link || '',
+                    description: cleanDesc.substring(0, 300) + (cleanDesc.length > 300 ? '...' : ''),
+                    pubDate: item.pubDate || '',
+                    author: item.author || feed.name,
+                    image: item.thumbnail || item.enclosure?.link || '',
+                    source: feed.name,
+                    sourceId: feed.id,
+                    category: feed.category
+                });
+            });
+
+            return articles;
         }
 
         function parseRSS(xml, feed) {

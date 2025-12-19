@@ -352,8 +352,8 @@
             { id: 'volvo', name: 'Volvo Group', url: 'https://www.mynewsdesk.com/se/volvogroup', logo: '🚛' }
         ];
 
-        // CORS proxy
-        const CORS_PROXY = 'https://corsproxy.io/?';
+        // RSS2JSON API - konverterar RSS till JSON och hanterar CORS
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
         // State
         let pressrooms = Utils.getStorage('pressrooms', DEFAULT_PRESSROOMS);
@@ -368,22 +368,49 @@
         async function fetchPressroom(pressroom) {
             try {
                 // MyNewsdesk har RSS feeds på /rss/current_news/{id}
-                // Vi måste först hämta pressrum-sidan för att få ID
                 const rssUrl = pressroom.url.includes('/rss/')
                     ? pressroom.url
                     : `${pressroom.url}/rss/pressreleases`;
 
-                const proxyUrl = CORS_PROXY + encodeURIComponent(rssUrl);
-                const response = await fetch(proxyUrl);
+                const apiUrl = RSS2JSON_API + encodeURIComponent(rssUrl);
+                const response = await fetch(apiUrl);
 
                 if (!response.ok) throw new Error('Fetch failed');
 
-                const text = await response.text();
-                return parseRSS(text, pressroom);
+                const data = await response.json();
+
+                if (data.status !== 'ok') {
+                    throw new Error(data.message || 'RSS parse failed');
+                }
+
+                return parseRss2JsonResponse(data, pressroom);
             } catch (error) {
                 console.error(`Error fetching ${pressroom.name}:`, error);
                 return [];
             }
+        }
+
+        // Parsa rss2json response format
+        function parseRss2JsonResponse(data, pressroom) {
+            const releases = [];
+
+            (data.items || []).forEach((item, index) => {
+                const cleanDesc = (item.description || '').replace(/<[^>]+>/g, '').trim();
+
+                releases.push({
+                    id: `${pressroom.id}-${index}-${Date.now()}`,
+                    title: (item.title || '').trim(),
+                    link: (item.link || '').trim(),
+                    description: cleanDesc.substring(0, 300),
+                    pubDate: item.pubDate ? new Date(item.pubDate) : new Date(),
+                    image: item.thumbnail || item.enclosure?.link || '',
+                    source: pressroom.name,
+                    sourceId: pressroom.id,
+                    sourceLogo: pressroom.logo
+                });
+            });
+
+            return releases;
         }
 
         function parseRSS(xml, pressroom) {
