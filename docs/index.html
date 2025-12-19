@@ -427,6 +427,13 @@
                             <div class="sidebar-link-desc">1214 bevakade företag</div>
                         </div>
                     </a>
+                    <a href="verktyg/allabolag/" class="sidebar-link">
+                        <div class="sidebar-link-icon">A</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Allabolag Sökning</div>
+                            <div class="sidebar-link-desc">Styrelse, ledning, ekonomi</div>
+                        </div>
+                    </a>
                 </div>
 
                 <div class="sidebar-section">
@@ -461,12 +468,12 @@
                         <div class="stat-value" id="stat-companies">1214</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Bolagshändelser idag</div>
+                        <div class="stat-label">Bolagshändelser denna vecka</div>
                         <div class="stat-value" id="stat-poit">0</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">Pressreleaser</div>
-                        <div class="stat-value" id="stat-press">-</div>
+                        <div class="stat-label">Totalt antal händelser</div>
+                        <div class="stat-value" id="stat-total">0</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">RSS-artiklar</div>
@@ -522,6 +529,12 @@
                         </button>
                         <button class="filter-chip" data-category="skuld" onclick="filterByCategory('skuld', this)">
                             Skuld <span class="count" id="count-skuld">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="styrelse" onclick="filterByCategory('styrelse', this)">
+                            Styrelsebyte <span class="count" id="count-styrelse">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="fusion" onclick="filterByCategory('fusion', this)">
+                            Fusion <span class="count" id="count-fusion">0</span>
                         </button>
                     </div>
 
@@ -711,31 +724,46 @@
         async function loadWatchedCompanies() {
             const { data } = await sb
                 .from('loop_table')
-                .select('orgnr, company_name')
+                .select('orgnr, company_name, sector, turnover_2024_sek')
                 .limit(1500);
             watchedOrgnrs = (data || []).map(c => c.orgnr);
-            // Skapa lookup-map för företagsnamn
+            // Skapa lookup-map för företagsnamn, sektor och omsättning
             companyNames = {};
             (data || []).forEach(c => {
                 if (c.orgnr && c.company_name) {
-                    companyNames[c.orgnr] = c.company_name;
+                    companyNames[c.orgnr] = {
+                        name: c.company_name,
+                        sector: c.sector,
+                        turnover: c.turnover_2024_sek
+                    };
                 }
             });
             document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
         }
 
         async function loadStats() {
-            const today = new Date().toISOString().split('T')[0];
+            const today = new Date();
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-            // Bolagshändelser idag - ENDAST för Loop's bevakade företag
-            const { count: poitCount } = await sb
+            // Bolagshändelser denna vecka - ENDAST för Loop's bevakade företag
+            const { count: poitWeekCount } = await sb
                 .from('loop_poit_events')
                 .select('*', { count: 'exact', head: true })
-                .gte('announcement_date', today);
+                .gte('announcement_date', sevenDaysAgoStr);
 
-            const poitValue = poitCount || 0;
-            document.getElementById('stat-poit').textContent = poitValue;
-            document.getElementById('poit-badge').textContent = poitValue;
+            // Totalt antal händelser
+            const { count: poitTotalCount } = await sb
+                .from('loop_poit_events')
+                .select('*', { count: 'exact', head: true });
+
+            const weekValue = poitWeekCount || 0;
+            const totalValue = poitTotalCount || 0;
+
+            document.getElementById('stat-poit').textContent = weekValue;
+            document.getElementById('stat-total').textContent = totalValue;
+            document.getElementById('poit-badge').textContent = weekValue;
         }
 
         async function loadPoitEvents() {
@@ -767,7 +795,9 @@
                 konkurs: 0,
                 kallelse: 0,
                 likvidation: 0,
-                skuld: 0
+                skuld: 0,
+                styrelse: 0,
+                fusion: 0
             };
 
             allEvents.forEach(e => {
@@ -776,6 +806,8 @@
                 else if (cat.includes('kallelse')) counts.kallelse++;
                 else if (cat.includes('likvidation')) counts.likvidation++;
                 else if (cat.includes('skuld')) counts.skuld++;
+                else if (cat.includes('styrelse')) counts.styrelse++;
+                else if (cat.includes('fusion')) counts.fusion++;
             });
 
             // Uppdatera badge-räknare
@@ -784,6 +816,8 @@
             document.getElementById('count-kallelse').textContent = counts.kallelse;
             document.getElementById('count-likvidation').textContent = counts.likvidation;
             document.getElementById('count-skuld').textContent = counts.skuld;
+            document.getElementById('count-styrelse').textContent = counts.styrelse;
+            document.getElementById('count-fusion').textContent = counts.fusion;
         }
 
         // Filtrera efter kategori
@@ -836,6 +870,9 @@
                 const eventCount = group.events.length;
                 const isMultiple = eventCount > 1;
 
+                const sector = getCompanySector(group.orgnr);
+                const turnover = getCompanyTurnover(group.orgnr);
+
                 if (isMultiple) {
                     // Flera händelser för samma företag/dag - grupperad vy
                     return `
@@ -846,7 +883,11 @@
                                     <span class="event-count">${eventCount} händelser</span>
                                 </div>
                                 <div class="feed-company">${escapeHtml(group.companyName)}</div>
-                                ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+                                    ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                                    ${sector ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• ${escapeHtml(sector)}</span>` : ''}
+                                    ${turnover ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• Oms: ${formatNumber(turnover)} kr</span>` : ''}
+                                </div>
                             </div>
                             <div class="feed-group-events">
                                 ${group.events.map(e => `
@@ -881,7 +922,11 @@
                                 <span class="feed-time">${formatDate(e.announcement_date)}</span>
                             </div>
                             <div class="feed-company">${escapeHtml(group.companyName)}</div>
-                            ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+                                ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                                ${sector ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• ${escapeHtml(sector)}</span>` : ''}
+                                ${turnover ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• Oms: ${formatNumber(turnover)} kr</span>` : ''}
+                            </div>
                             <div class="feed-description">${escapeHtml(e.title || '')}</div>
                             <div class="feed-actions">
                                 <button class="btn btn-accent btn-sm" onclick="showEventDetails('${e.id}')">
@@ -931,7 +976,7 @@
         function getCompanyNameFromEvent(event) {
             // Om vi har orgnr och det finns i vår lookup, använd det
             if (event.orgnr && companyNames[event.orgnr]) {
-                return companyNames[event.orgnr];
+                return companyNames[event.orgnr].name;
             }
 
             // Försök extrahera företagsnamn från content
@@ -957,6 +1002,20 @@
 
             // Fallback till title om inget annat fungerar
             return event.title || 'Okänt företag';
+        }
+
+        function getCompanySector(orgnr) {
+            if (orgnr && companyNames[orgnr] && companyNames[orgnr].sector) {
+                return companyNames[orgnr].sector;
+            }
+            return null;
+        }
+
+        function getCompanyTurnover(orgnr) {
+            if (orgnr && companyNames[orgnr] && companyNames[orgnr].turnover) {
+                return companyNames[orgnr].turnover;
+            }
+            return null;
         }
 
         function getCategoryClass(category) {
