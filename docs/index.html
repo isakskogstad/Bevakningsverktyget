@@ -562,7 +562,7 @@
         var SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
         var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
 
-        var supabase = null;
+        var sb = null; // Renamed from 'supabase' to avoid overwriting window.supabase
         var currentUser = null;
         var events = [];
         var currentOffset = 0;
@@ -571,8 +571,8 @@
 
         async function initSupabase() {
             try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                const { data: { session } } = await supabase.auth.getSession();
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                const { data: { session } } = await sb.auth.getSession();
                 if (session) {
                     currentUser = session.user;
                     await showDashboard();
@@ -596,7 +596,7 @@
             submitBtn.textContent = 'Loggar in...';
 
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                const { data, error } = await sb.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 currentUser = data.user;
                 successEl.textContent = 'Inloggning lyckades!';
@@ -928,7 +928,7 @@
         }
 
         async function handleLogout() {
-            await supabase.auth.signOut();
+            await sb.auth.signOut();
             currentUser = null;
             document.getElementById('dashboard').classList.remove('show');
             document.getElementById('login-form').classList.remove('hide');

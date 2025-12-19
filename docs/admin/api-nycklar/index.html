@@ -345,14 +345,14 @@
         var SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
         var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
 
-        var supabase = null;
+        var sb = null; // Renamed to avoid overwriting window.supabase
         var keys = [];
 
         async function init() {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
             // Check auth
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await sb.auth.getSession();
             if (!session) {
                 window.location.href = '../../';
                 return;
@@ -523,7 +523,7 @@
         async function deleteKey(id) {
             if (!confirm('Är du säker på att du vill ta bort denna nyckel? Detta går inte att ångra.')) return;
 
-            const { error } = await supabase.from('api_keys').delete().eq('id', id);
+            const { error } = await sb.from('api_keys').delete().eq('id', id);
 
             if (error) {
                 showAlert('Fel vid borttagning: ' + error.message, 'error');
