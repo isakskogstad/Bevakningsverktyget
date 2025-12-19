@@ -767,7 +767,7 @@
 
         async function loadMoreEvents() {
             currentOffset += pageSize;
-            const { data } = await supabase
+            const { data } = await sb
                 .from('poit_announcements')
                 .select('*')
                 .order('announcement_date', { ascending: false })

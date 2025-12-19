@@ -389,7 +389,7 @@
         }
 
         async function loadCompanies() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('loop_table')
                 .select('orgnr, company_name')
                 .order('company_name')
@@ -405,7 +405,7 @@
         }
 
         async function loadPurchases() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('document_purchases')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -427,7 +427,7 @@
         }
 
         async function loadBudget() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('budget_settings')
                 .select('*')
                 .single();
@@ -563,7 +563,7 @@
             }
 
             // Create purchase record
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('document_purchases')
                 .insert([{
                     orgnr,

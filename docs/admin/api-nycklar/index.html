@@ -359,7 +359,7 @@
             }
 
             // Check if admin
-            const { data: profile } = await supabase
+            const { data: profile } = await sb
                 .from('user_profiles')
                 .select('role')
                 .eq('id', session.user.id)
@@ -375,7 +375,7 @@
         }
 
         async function loadKeys() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('api_keys')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -494,14 +494,14 @@
             let result;
             if (id) {
                 // Update existing
-                result = await supabase
+                result = await sb
                     .from('api_keys')
                     .update({ name, email, status })
                     .eq('id', id);
             } else {
                 // Create new with generated API key
                 const api_key = generateApiKey();
-                result = await supabase
+                result = await sb
                     .from('api_keys')
                     .insert([{ api_key, name, email, status }]);
             }

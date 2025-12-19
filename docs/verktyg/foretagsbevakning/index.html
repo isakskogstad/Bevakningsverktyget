@@ -361,7 +361,7 @@
         }
 
         async function loadCompanies() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('loop_table')
                 .select('orgnr, company_name, sector, city, turnover_2024_sek, investment_status')
                 .order('company_name');
@@ -379,7 +379,7 @@
         }
 
         async function loadSectors() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('loop_sectors')
                 .select('sector_name')
                 .order('sector_name');
@@ -402,7 +402,7 @@
         async function loadStats() {
             // Get POIT announcements from today
             const today = new Date().toISOString().split('T')[0];
-            const { count: poitCount } = await supabase
+            const { count: poitCount } = await sb
                 .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
                 .gte('announcement_date', today);
@@ -410,7 +410,7 @@
             document.getElementById('stat-alerts').textContent = poitCount || 0;
 
             // Get company events from today
-            const { count: eventCount } = await supabase
+            const { count: eventCount } = await sb
                 .from('company_events')
                 .select('*', { count: 'exact', head: true })
                 .gte('event_date', today);

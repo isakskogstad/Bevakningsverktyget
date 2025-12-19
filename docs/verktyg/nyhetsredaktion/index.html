@@ -421,7 +421,7 @@
         }
 
         async function loadArticles() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('news_articles')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -437,7 +437,7 @@
         }
 
         async function loadCompanies() {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('loop_table')
                 .select('orgnr, company_name')
                 .order('company_name')
@@ -454,7 +454,7 @@
 
         async function loadStats() {
             const today = new Date().toISOString().split('T')[0];
-            const { count } = await supabase
+            const { count } = await sb
                 .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
                 .gte('announcement_date', today);
@@ -545,7 +545,7 @@
         }
 
         async function loadPoitData(orgnr) {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('poit_announcements')
                 .select('*')
                 .or(`orgnr.eq.${orgnr},extracted_orgnrs.cs.{${orgnr}}`)
@@ -642,7 +642,7 @@
                 return;
             }
 
-            const { error } = await supabase
+            const { error } = await sb
                 .from('news_articles')
                 .update({ status: 'published', published_at: new Date().toISOString() })
                 .eq('id', id);
