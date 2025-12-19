@@ -179,27 +179,260 @@ async function searchMultiple(orgnrList, options = {}) {
     return results;
 }
 
-// CLI-läge
+/**
+ * Hämtar detaljerad information om en specifik kungörelse
+ * @param {string} kungorelseId - Kungörelse-ID (t.ex. "K967902/25" eller "K967902-25")
+ * @param {object} options - Alternativ (headless, timeout)
+ * @returns {object} Detaljerad kungörelse-information
+ */
+async function getKungorelseDetails(kungorelseId, options = {}) {
+    const { headless = true, timeout = 60000 } = options;
+
+    // Normalisera ID: K967902/25 -> K967902-25
+    const normalizedId = kungorelseId.replace('/', '-');
+    const url = `https://poit.bolagsverket.se/poit-app/kungorelse/${normalizedId}`;
+
+    const browser = await puppeteer.launch({
+        headless: headless ? 'new' : false,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--lang=sv-SE'
+        ]
+    });
+
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1400, height: 900 });
+    await page.setExtraHTTPHeaders({ 'Accept-Language': 'sv-SE,sv;q=0.9' });
+
+    try {
+        console.error(`Hämtar kungörelse: ${url}`);
+
+        await page.goto(url, {
+            waitUntil: 'networkidle2',
+            timeout: timeout
+        });
+        await sleep(3000);
+
+        // Acceptera cookies
+        await acceptCookies(page, 10000);
+        await sleep(2000);
+
+        // Extrahera all information från sidan
+        const details = await page.evaluate(() => {
+            const result = {
+                kungorelseText: '',
+                typ: '',
+                uppgiftslamnare: '',
+                foretag: '',
+                orgnummer: '',
+                datum: '',
+                forvaltare: null,
+                adress: null,
+                telefon: null,
+                epost: null,
+                domstol: null,
+                diarienummer: null,
+                andringar: [],
+                rawText: ''
+            };
+
+            // Hämta hela texten på sidan
+            const bodyText = document.body.innerText;
+            result.rawText = bodyText;
+
+            // Försök hitta huvudinnehållet
+            const mainContent = document.querySelector('main, .content, .kungorelse-content, article');
+            if (mainContent) {
+                result.kungorelseText = mainContent.innerText.trim();
+            } else {
+                result.kungorelseText = bodyText;
+            }
+
+            // Extrahera organisationsnummer (format: 556890-8288)
+            const orgnrMatch = bodyText.match(/\b(\d{6}-\d{4})\b/);
+            if (orgnrMatch) {
+                result.orgnummer = orgnrMatch[1];
+            }
+
+            // Extrahera företagsnamn (vanligtvis före orgnumret)
+            if (result.orgnummer) {
+                const beforeOrgnr = bodyText.split(result.orgnummer)[0];
+                const lines = beforeOrgnr.split('\n').filter(l => l.trim());
+                // Ta sista icke-tomma raden före orgnumret
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i].trim();
+                    if (line.length > 3 && line.length < 200 && !line.match(/^\d/) && !line.includes('Kungörelse')) {
+                        result.foretag = line;
+                        break;
+                    }
+                }
+            }
+
+            // Extrahera förvaltare (konkursfall)
+            const forvaltareMatch = bodyText.match(/[Ff]örvaltare\s*(?:är|:)?\s*(?:advokat\s*)?([^,\n]+?)(?:,|\.|telefon|tel|$)/i);
+            if (forvaltareMatch) {
+                result.forvaltare = forvaltareMatch[1].trim();
+            }
+
+            // Extrahera telefonnummer
+            const telefonMatch = bodyText.match(/(?:telefon|tel\.?|tfn\.?)[\s:]*([0-9\s\-+()]{8,20})/i);
+            if (telefonMatch) {
+                result.telefon = telefonMatch[1].trim();
+            }
+
+            // Extrahera e-post
+            const epostMatch = bodyText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+            if (epostMatch) {
+                result.epost = epostMatch[1];
+            }
+
+            // Extrahera domstol/tingsrätt
+            const domstolMatch = bodyText.match(/(\w+\s+tingsrätt)/i);
+            if (domstolMatch) {
+                result.domstol = domstolMatch[1];
+            }
+
+            // Extrahera datum
+            const datumMatch = bodyText.match(/(\d{4}-\d{2}-\d{2})/);
+            if (datumMatch) {
+                result.datum = datumMatch[1];
+            }
+
+            // Bestäm typ av kungörelse
+            const lowerText = bodyText.toLowerCase();
+            if (lowerText.includes('konkursbeslut') || lowerText.includes('försatt i konkurs')) {
+                result.typ = 'Konkursbeslut';
+            } else if (lowerText.includes('likvidation')) {
+                result.typ = 'Likvidation';
+            } else if (lowerText.includes('fusion')) {
+                result.typ = 'Fusion';
+            } else if (lowerText.includes('kallelse') && lowerText.includes('borgenär')) {
+                result.typ = 'Kallelse på okända borgenärer';
+            } else if (lowerText.includes('aktiebolagsregistret')) {
+                result.typ = 'Aktiebolagsregistret';
+            } else if (lowerText.includes('nyemission') || lowerText.includes('aktiekapital')) {
+                result.typ = 'Nyemission';
+            } else if (lowerText.includes('styrelse')) {
+                result.typ = 'Styrelseändring';
+            } else if (lowerText.includes('bolagsordning')) {
+                result.typ = 'Bolagsordningsändring';
+            } else {
+                result.typ = 'Kungörelse';
+            }
+
+            // Extrahera ändringar (för Aktiebolagsregistret)
+            const andringarSection = bodyText.match(/Ändringar som har registrerats[:\s]*([^]*?)(?=Uppgiftslämnare|$)/i);
+            if (andringarSection) {
+                const andringarText = andringarSection[1];
+                const andringarLines = andringarText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                result.andringar = andringarLines;
+            }
+
+            // Extrahera uppgiftslämnare
+            const uppgiftslamnareMatch = bodyText.match(/Uppgiftslämnare[:\s]*([^\n]+)/i);
+            if (uppgiftslamnareMatch) {
+                result.uppgiftslamnare = uppgiftslamnareMatch[1].trim();
+            }
+
+            return result;
+        });
+
+        return {
+            success: true,
+            kungorelse_id: normalizedId,
+            url: url,
+            ...details,
+            fetched_at: new Date().toISOString()
+        };
+
+    } catch (error) {
+        return {
+            success: false,
+            kungorelse_id: normalizedId,
+            url: url,
+            error: error.message
+        };
+    } finally {
+        await browser.close();
+    }
+}
+
+/**
+ * Hämtar detaljer för flera kungörelser
+ * @param {string[]} kungorelseIds - Lista med kungörelse-IDs
+ * @param {object} options - Alternativ
+ * @returns {object[]} Lista med detaljerade kungörelser
+ */
+async function getMultipleKungorelseDetails(kungorelseIds, options = {}) {
+    const results = [];
+
+    for (const id of kungorelseIds) {
+        console.error(`Hämtar detaljer för: ${id}`);
+        const result = await getKungorelseDetails(id, options);
+        results.push(result);
+
+        // Vänta lite mellan förfrågningar
+        await sleep(2000);
+    }
+
+    return results;
+}
+
+// CLI-läge - utökat med --details flagga
 if (require.main === module) {
     const args = process.argv.slice(2);
 
     if (args.length === 0) {
-        console.error('Användning: node poit-scraper.js <orgnr> [--visible]');
-        console.error('Exempel: node poit-scraper.js 5593220048');
+        console.error('Användning:');
+        console.error('  Sökning:  node poit-scraper.js <orgnr> [--visible]');
+        console.error('  Detaljer: node poit-scraper.js --details <kungörelse-id> [--visible]');
+        console.error('');
+        console.error('Exempel:');
+        console.error('  node poit-scraper.js 5593220048');
+        console.error('  node poit-scraper.js --details K967902-25');
         process.exit(1);
     }
 
-    const orgnr = args[0];
     const headless = !args.includes('--visible');
+    const isDetails = args.includes('--details');
 
-    searchByOrgnr(orgnr, { headless })
-        .then(result => {
-            console.log(JSON.stringify(result, null, 2));
-        })
-        .catch(err => {
-            console.error('Fel:', err.message);
+    if (isDetails) {
+        const detailsIndex = args.indexOf('--details');
+        const kungorelseId = args[detailsIndex + 1];
+
+        if (!kungorelseId || kungorelseId.startsWith('--')) {
+            console.error('Fel: Ange kungörelse-ID efter --details');
             process.exit(1);
-        });
+        }
+
+        getKungorelseDetails(kungorelseId, { headless })
+            .then(result => {
+                console.log(JSON.stringify(result, null, 2));
+            })
+            .catch(err => {
+                console.error('Fel:', err.message);
+                process.exit(1);
+            });
+    } else {
+        const orgnr = args[0];
+
+        searchByOrgnr(orgnr, { headless })
+            .then(result => {
+                console.log(JSON.stringify(result, null, 2));
+            })
+            .catch(err => {
+                console.error('Fel:', err.message);
+                process.exit(1);
+            });
+    }
 }
 
-module.exports = { searchByOrgnr, searchMultiple, acceptCookies };
+module.exports = {
+    searchByOrgnr,
+    searchMultiple,
+    getKungorelseDetails,
+    getMultipleKungorelseDetails,
+    acceptCookies
+};

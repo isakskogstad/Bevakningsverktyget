@@ -335,6 +335,222 @@
     gap: var(--spacing-2);
 }
 
+.feed-orgnr {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+    margin-bottom: var(--spacing-2);
+}
+
+/* Grupperad feed-item (flera händelser per företag/dag) */
+.feed-item-group {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-300);
+    padding: var(--spacing-5);
+    transition: all var(--transition-base);
+}
+
+.feed-item-group:hover {
+    border-color: var(--dark);
+    box-shadow: var(--shadow-md);
+}
+
+.feed-group-header {
+    margin-bottom: var(--spacing-4);
+}
+
+.feed-group-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-2);
+}
+
+.event-count {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--gray-600);
+    background: var(--gray-200);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.feed-group-events {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+    margin-bottom: var(--spacing-4);
+}
+
+.feed-event-item {
+    padding: var(--spacing-3);
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    transition: background var(--transition-fast);
+}
+
+.feed-event-item:hover {
+    background: var(--gray-100);
+}
+
+.feed-event-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-2);
+}
+
+.feed-event-title {
+    font-size: var(--font-size-sm);
+    color: var(--gray-700);
+    margin: 0;
+}
+
+.feed-group-actions {
+    display: flex;
+    gap: var(--spacing-2);
+    padding-top: var(--spacing-3);
+    border-top: 1px solid var(--gray-200);
+}
+
+/* Länk-knapp */
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--dark);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    padding: 0;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: color var(--transition-fast);
+}
+
+.btn-link:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+/* Detaljvy i modal */
+.event-detail-section {
+    margin-bottom: var(--spacing-6);
+    padding-bottom: var(--spacing-6);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.event-detail-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.detail-section-title {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: var(--spacing-4);
+    color: var(--dark);
+}
+
+.detail-list {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: var(--spacing-2);
+    row-gap: var(--spacing-3);
+}
+
+.detail-list dt {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--gray-500);
+}
+
+.detail-list dd {
+    font-size: var(--font-size-sm);
+    color: var(--dark);
+    margin: 0;
+}
+
+.announcement-text {
+    background: var(--gray-50);
+    padding: var(--spacing-4);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-relaxed);
+    white-space: pre-wrap;
+    color: var(--gray-700);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.poit-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    color: var(--blue);
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+    padding: var(--spacing-2) var(--spacing-3);
+    background: var(--blue-bg);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+}
+
+.poit-link:hover {
+    background: var(--blue-border);
+}
+
+/* Företagshändelser i modal */
+.company-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.company-event-item {
+    padding: var(--spacing-3);
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+}
+
+.company-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-2);
+}
+
+.company-event-title {
+    font-size: var(--font-size-sm);
+    color: var(--gray-700);
+    margin: 0 0 var(--spacing-2) 0;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .detail-list {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-1);
+    }
+
+    .detail-list dt {
+        font-weight: var(--font-weight-semibold);
+    }
+
+    .feed-group-actions {
+        flex-direction: column;
+    }
+
+    .feed-group-actions .btn {
+        width: 100%;
+    }
+}
+
 /* --------------------------------------------------------------------------
    SIDEBAR
    -------------------------------------------------------------------------- */

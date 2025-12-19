@@ -741,30 +741,103 @@
                 return;
             }
 
-            container.innerHTML = events.map(e => {
-                // Använd matched_company_name från loop_poit_events view
-                // Alla händelser här är för Loop's bevakade företag
-                const companyName = e.matched_company_name || getCompanyNameFromEvent(e);
+            // Gruppera händelser per företag och dag
+            const grouped = groupEventsByCompanyAndDate(events);
 
-                return `
-                    <div class="feed-item" data-id="${e.id}">
-                        <div class="feed-item-header">
-                            <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
-                            <span class="feed-time">${formatDate(e.announcement_date)}</span>
+            container.innerHTML = Object.values(grouped).map(group => {
+                const eventCount = group.events.length;
+                const isMultiple = eventCount > 1;
+
+                if (isMultiple) {
+                    // Flera händelser för samma företag/dag - grupperad vy
+                    return `
+                        <div class="feed-item-group" data-group-key="${group.key}">
+                            <div class="feed-group-header">
+                                <div class="feed-group-meta">
+                                    <span class="feed-time">${formatDate(group.date)}</span>
+                                    <span class="event-count">${eventCount} händelser</span>
+                                </div>
+                                <div class="feed-company">${escapeHtml(group.companyName)}</div>
+                                ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                            </div>
+                            <div class="feed-group-events">
+                                ${group.events.map(e => `
+                                    <div class="feed-event-item" data-event-id="${e.id}">
+                                        <div class="feed-event-row">
+                                            <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
+                                            <button class="btn-link" onclick="showEventDetails('${e.id}')">
+                                                Se detaljer
+                                            </button>
+                                        </div>
+                                        <p class="feed-event-title">${escapeHtml(e.title || '')}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="feed-group-actions">
+                                <button class="btn btn-accent btn-sm" onclick="investigateCompany('${group.orgnr}', '${escapeHtml(group.companyName)}')">
+                                    Undersök företaget
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="ignoreGroup('${group.key}')">
+                                    Bortse
+                                </button>
+                            </div>
                         </div>
-                        <div class="feed-company">${escapeHtml(companyName)}</div>
-                        <div class="feed-description">${escapeHtml(e.title || '')}</div>
-                        <div class="feed-actions">
-                            <button class="btn btn-accent btn-sm" onclick="investigateEvent('${e.id}')">
-                                Undersök mer
-                            </button>
-                            <button class="btn btn-secondary btn-sm" onclick="ignoreEvent('${e.id}')">
-                                Bortse
-                            </button>
+                    `;
+                } else {
+                    // Enskild händelse - standard vy
+                    const e = group.events[0];
+                    return `
+                        <div class="feed-item" data-id="${e.id}">
+                            <div class="feed-item-header">
+                                <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
+                                <span class="feed-time">${formatDate(e.announcement_date)}</span>
+                            </div>
+                            <div class="feed-company">${escapeHtml(group.companyName)}</div>
+                            ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                            <div class="feed-description">${escapeHtml(e.title || '')}</div>
+                            <div class="feed-actions">
+                                <button class="btn btn-accent btn-sm" onclick="showEventDetails('${e.id}')">
+                                    Se detaljer
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="ignoreEvent('${e.id}')">
+                                    Bortse
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             }).join('');
+        }
+
+        // Gruppera händelser per företag och datum
+        function groupEventsByCompanyAndDate(eventList) {
+            const groups = {};
+
+            eventList.forEach(e => {
+                const companyName = e.matched_company_name || getCompanyNameFromEvent(e);
+                const date = e.announcement_date ? e.announcement_date.split('T')[0] : 'unknown';
+                const orgnr = e.orgnr || '';
+
+                // Skapa unik nyckel per företag och dag
+                const key = `${orgnr || companyName}_${date}`;
+
+                if (!groups[key]) {
+                    groups[key] = {
+                        key: key,
+                        companyName: companyName,
+                        orgnr: orgnr,
+                        date: date,
+                        events: []
+                    };
+                }
+
+                groups[key].events.push(e);
+            });
+
+            // Sortera grupper efter datum (nyast först)
+            return Object.fromEntries(
+                Object.entries(groups).sort((a, b) => b[1].date.localeCompare(a[1].date))
+            );
         }
 
         function getCompanyNameFromEvent(event) {
@@ -1000,6 +1073,14 @@
             }
         }
 
+        function ignoreGroup(groupKey) {
+            const group = document.querySelector(`.feed-item-group[data-group-key="${groupKey}"]`);
+            if (group) {
+                group.style.opacity = '0.5';
+                group.style.pointerEvents = 'none';
+            }
+        }
+
         function ignoreEventFromModal() {
             ignoreEvent(currentEventId);
             closeModal();
@@ -1008,6 +1089,148 @@
         function closeModal() {
             document.getElementById('investigate-modal').classList.remove('show');
             currentEventId = null;
+        }
+
+        // Visa detaljer för en specifik händelse
+        function showEventDetails(eventId) {
+            currentEventId = eventId;
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            const companyName = event.matched_company_name || getCompanyNameFromEvent(event);
+
+            // Extrahera kungörelse-ID från content eller title
+            let kungorelseId = '';
+            if (event.content) {
+                const match = event.content.match(/K(\d+)\/(\d+)/);
+                if (match) {
+                    kungorelseId = `K${match[1]}-${match[2]}`;
+                }
+            }
+
+            const poitUrl = kungorelseId
+                ? `https://poit.bolagsverket.se/poit-app/kungorelse/${kungorelseId}`
+                : '';
+
+            document.getElementById('event-details').innerHTML = `
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Kungörelsedetaljer</h4>
+                    <dl class="detail-list">
+                        <dt>Typ</dt>
+                        <dd><span class="feed-category ${getCategoryClass(event.category)}">${escapeHtml(event.category || 'Okänd')}</span></dd>
+
+                        <dt>Företag</dt>
+                        <dd>${escapeHtml(companyName)}</dd>
+
+                        ${event.orgnr ? `
+                        <dt>Org.nummer</dt>
+                        <dd>${event.orgnr}</dd>
+                        ` : ''}
+
+                        <dt>Datum</dt>
+                        <dd>${formatDate(event.announcement_date)}</dd>
+
+                        ${kungorelseId ? `
+                        <dt>Kungörelse-ID</dt>
+                        <dd>${kungorelseId}</dd>
+                        ` : ''}
+                    </dl>
+                </div>
+
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Kungörelsetext</h4>
+                    <div class="announcement-text">${escapeHtml(event.content || event.title || 'Ingen text tillgänglig')}</div>
+                </div>
+
+                ${poitUrl ? `
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Källa</h4>
+                    <a href="${poitUrl}" target="_blank" rel="noopener" class="poit-link">
+                        Öppna på POIT (Bolagsverket)
+                    </a>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('investigation-steps').innerHTML = '';
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
+                <button class="btn btn-secondary" onclick="ignoreEventFromModal()">Bortse</button>
+                <button class="btn btn-accent" onclick="investigateEvent('${eventId}')">Undersök vidare</button>
+            `;
+
+            document.getElementById('investigate-modal').classList.add('show');
+        }
+
+        // Undersök ett företag (alla händelser)
+        function investigateCompany(orgnr, companyName) {
+            // Hitta alla händelser för detta företag
+            const companyEvents = events.filter(e =>
+                e.orgnr === orgnr || e.matched_company_name === companyName
+            );
+
+            document.getElementById('event-details').innerHTML = `
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Företagsöversikt</h4>
+                    <dl class="detail-list">
+                        <dt>Företag</dt>
+                        <dd>${escapeHtml(companyName)}</dd>
+
+                        ${orgnr ? `
+                        <dt>Org.nummer</dt>
+                        <dd>${orgnr}</dd>
+                        ` : ''}
+
+                        <dt>Antal händelser</dt>
+                        <dd>${companyEvents.length} st</dd>
+                    </dl>
+                </div>
+
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Händelser</h4>
+                    <div class="company-events-list">
+                        ${companyEvents.map(e => {
+                            let kungorelseId = '';
+                            if (e.content) {
+                                const match = e.content.match(/K(\d+)\/(\d+)/);
+                                if (match) kungorelseId = `K${match[1]}-${match[2]}`;
+                            }
+                            const poitUrl = kungorelseId
+                                ? `https://poit.bolagsverket.se/poit-app/kungorelse/${kungorelseId}`
+                                : '';
+
+                            return `
+                                <div class="company-event-item">
+                                    <div class="company-event-header">
+                                        <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
+                                        <span class="feed-time">${formatDate(e.announcement_date)}</span>
+                                    </div>
+                                    <p class="company-event-title">${escapeHtml(e.title || '')}</p>
+                                    ${poitUrl ? `<a href="${poitUrl}" target="_blank" class="btn-link">Visa på POIT</a>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('investigation-steps').innerHTML = '';
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
+                <button class="btn btn-accent" onclick="createArticleForCompany('${orgnr}', '${escapeHtml(companyName)}')">Ta fram artikel</button>
+            `;
+
+            document.getElementById('investigate-modal').classList.add('show');
+        }
+
+        function createArticleForCompany(orgnr, companyName) {
+            const params = new URLSearchParams({
+                orgnr: orgnr || '',
+                company: companyName || ''
+            });
+            window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
         }
 
         // =========================================================================
