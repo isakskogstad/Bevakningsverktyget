@@ -3,313 +3,660 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bevakningsverktyget - Logga in</title>
+    <title>Bevakningsverktyget</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --accent: #D4FF00;
+            --accent-hover: #c4ef00;
+            --black: #000000;
+            --dark: #111111;
+            --gray-900: #1a1a1a;
+            --gray-700: #404040;
+            --gray-500: #6b6b6b;
+            --gray-300: #d1d1d1;
+            --gray-100: #f5f5f5;
+            --white: #ffffff;
+            --error: #ef4444;
+            --success: #22c55e;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: var(--white);
+            color: var(--dark);
             min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============ LOGIN PAGE ============ */
+        .login-page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        @media (max-width: 900px) {
+            .login-page {
+                grid-template-columns: 1fr;
+            }
+            .login-hero {
+                display: none;
+            }
+        }
+
+        .login-hero {
+            background: var(--accent);
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
-            padding: 20px;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
         }
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+
+        .login-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
             width: 100%;
-            max-width: 420px;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
         }
-        .logo {
-            text-align: center;
-            margin-bottom: 32px;
+
+        .login-hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--black);
+            line-height: 1.1;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
         }
-        .logo h1 {
-            font-size: 1.8em;
-            color: #1a1a2e;
+
+        .login-hero p {
+            font-size: 1.25rem;
+            color: var(--gray-700);
+            max-width: 400px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-form-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+            max-width: 480px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .login-logo {
+            margin-bottom: 48px;
+        }
+
+        .login-logo span {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            letter-spacing: -0.02em;
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--dark);
             margin-bottom: 8px;
         }
-        .logo p {
-            color: #666;
-            font-size: 0.95em;
+
+        .login-subtitle {
+            color: var(--gray-500);
+            margin-bottom: 40px;
         }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
-        label {
+
+        .form-group label {
             display: block;
+            font-size: 0.875rem;
             font-weight: 500;
+            color: var(--gray-700);
             margin-bottom: 8px;
-            color: #333;
         }
-        input {
-            width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1em;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        input:focus {
-            outline: none;
-            border-color: #D4FF00;
-            box-shadow: 0 0 0 3px rgba(212, 255, 0, 0.2);
-        }
-        button {
+
+        .form-group input {
             width: 100%;
             padding: 16px;
-            background: #D4FF00;
-            color: #1a1a2e;
-            border: none;
-            border-radius: 10px;
-            font-size: 1.05em;
+            font-size: 1rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--dark);
+            transition: all 0.2s ease;
+        }
+
+        .form-group input::placeholder {
+            color: var(--gray-500);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--dark);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 32px;
+            font-size: 1rem;
             font-weight: 600;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.2s ease;
+            text-decoration: none;
         }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(212, 255, 0, 0.3);
+
+        .btn-primary {
+            width: 100%;
+            background: var(--dark);
+            color: var(--white);
         }
-        button:disabled {
-            opacity: 0.6;
+
+        .btn-primary:hover {
+            background: var(--black);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
-        .error {
-            background: #fee;
-            color: #c00;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            display: none;
-        }
-        .error.show {
-            display: block;
-        }
-        .success {
-            background: #efe;
-            color: #060;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            display: none;
-        }
-        .success.show {
-            display: block;
-        }
-        .footer {
-            text-align: center;
-            margin-top: 24px;
-            color: #999;
-            font-size: 0.85em;
-        }
-        .footer a {
-            color: #666;
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--dark);
+            border: 1px solid var(--gray-300);
         }
 
-        /* Dashboard styles (hidden initially) */
-        #dashboard {
-            display: none;
-            width: 100%;
-            max-width: 1200px;
+        .btn-secondary:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-700);
         }
-        #dashboard.show {
+
+        .btn-accent {
+            background: var(--accent);
+            color: var(--dark);
+        }
+
+        .btn-accent:hover {
+            background: var(--accent-hover);
+        }
+
+        .alert {
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .alert.show {
             display: block;
         }
+
+        .alert-error {
+            background: #fef2f2;
+            color: var(--error);
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: var(--success);
+            border: 1px solid #bbf7d0;
+        }
+
+        .login-footer {
+            margin-top: 40px;
+            text-align: center;
+            color: var(--gray-500);
+            font-size: 0.875rem;
+        }
+
+        /* ============ DASHBOARD ============ */
         #login-form.hide {
             display: none;
         }
-        .dashboard-header {
-            background: #D4FF00;
-            padding: 20px 30px;
-            border-radius: 12px;
-            margin-bottom: 24px;
+
+        #dashboard {
+            display: none;
+            min-height: 100vh;
+            background: var(--gray-100);
+        }
+
+        #dashboard.show {
+            display: block;
+        }
+
+        .dashboard-nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-300);
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            height: 72px;
         }
-        .dashboard-header h1 {
-            color: #1a1a2e;
-            font-size: 1.5em;
+
+        .nav-brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+            letter-spacing: -0.02em;
         }
-        .logout-btn {
-            background: #1a1a2e;
-            color: white;
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: var(--gray-100);
+            border-radius: 100px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--dark);
+        }
+
+        .user-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .role-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .role-badge.admin {
+            background: var(--accent);
+            color: var(--dark);
+        }
+
+        .role-badge.member {
+            background: var(--gray-300);
+            color: var(--gray-700);
+        }
+
+        .btn-logout {
             padding: 10px 20px;
-            width: auto;
+            font-size: 0.875rem;
         }
-        .logout-btn:hover {
-            background: #2a2a4e;
+
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 48px 40px;
         }
-        .user-info {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
+
+        .welcome-section {
+            margin-bottom: 48px;
+        }
+
+        .welcome-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.125rem;
+            color: var(--gray-500);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 24px;
         }
-        .user-info h2 {
-            color: #333;
-            margin-bottom: 12px;
-        }
-        .user-info p {
-            color: #666;
-        }
-        .role-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
+
+        .section-title {
+            font-size: 1.25rem;
             font-weight: 600;
-            margin-left: 8px;
+            color: var(--dark);
         }
-        .role-badge.admin {
-            background: #D4FF00;
-            color: #1a1a2e;
-        }
-        .role-badge.member {
-            background: #e0e0e0;
-            color: #333;
-        }
+
         .tools-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
         }
+
         .tool-card {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid var(--gray-300);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gray-300);
+            transition: background 0.3s ease;
+        }
+
         .tool-card:hover {
+            border-color: var(--dark);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
             transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
+
+        .tool-card:hover::before {
+            background: var(--accent);
+        }
+
+        .tool-card.admin-card::before {
+            background: var(--accent);
+        }
+
+        .tool-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gray-100);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
         .tool-card h3 {
-            color: #1a1a2e;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
             margin-bottom: 8px;
         }
+
         .tool-card p {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 16px;
+            color: var(--gray-500);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+            line-height: 1.6;
         }
-        .tool-card a {
-            color: #1a1a2e;
+
+        .tool-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             font-weight: 600;
+            color: var(--dark);
             text-decoration: none;
+            font-size: 0.95rem;
+            transition: gap 0.2s ease;
         }
-        .tool-card a:hover {
-            text-decoration: underline;
+
+        .tool-link:hover {
+            gap: 12px;
+        }
+
+        .tool-link svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--gray-300);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .dashboard-nav {
+                padding: 0 20px;
+            }
+            .dashboard-content {
+                padding: 32px 20px;
+            }
+            .welcome-title {
+                font-size: 1.75rem;
+            }
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+            .nav-right {
+                gap: 12px;
+            }
+            .user-name {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Login Form -->
-    <div class="login-container" id="login-form">
-        <div class="logo">
-            <h1>Bevakningsverktyget</h1>
-            <p>Logga in för att komma åt dashboarden</p>
+    <!-- Login Page -->
+    <div class="login-page" id="login-form">
+        <div class="login-hero">
+            <h1>Bevaka.<br>Analysera.<br>Agera.</h1>
+            <p>Automatiserad bevakning av svenska företag med realtidsnotifikationer och AI-driven analys.</p>
         </div>
-
-        <div class="error" id="error"></div>
-        <div class="success" id="success"></div>
-
-        <form id="login-form-element">
-            <div class="form-group">
-                <label for="email">E-postadress</label>
-                <input type="email" id="email" placeholder="din@email.se" required autocomplete="email">
+        <div class="login-form-container">
+            <div class="login-logo">
+                <span>Bevakningsverktyget</span>
             </div>
 
-            <div class="form-group">
-                <label for="password">Lösenord</label>
-                <input type="password" id="password" placeholder="Ditt lösenord" required autocomplete="current-password">
+            <h2 class="login-title">Välkommen tillbaka</h2>
+            <p class="login-subtitle">Logga in för att fortsätta</p>
+
+            <div class="alert alert-error" id="error"></div>
+            <div class="alert alert-success" id="success"></div>
+
+            <form id="login-form-element">
+                <div class="form-group">
+                    <label for="email">E-postadress</label>
+                    <input type="email" id="email" placeholder="namn@foretag.se" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Lösenord</label>
+                    <input type="password" id="password" placeholder="Ange lösenord" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submit-btn">Logga in</button>
+            </form>
+
+            <div class="login-footer">
+                <p>Endast för auktoriserade användare</p>
             </div>
-
-            <button type="submit" id="submit-btn">Logga in</button>
-        </form>
-
-        <div class="footer">
-            <p>Endast för auktoriserade medlemmar</p>
         </div>
     </div>
 
-    <!-- Dashboard (shown after login) -->
+    <!-- Dashboard -->
     <div id="dashboard">
-        <div class="dashboard-header">
-            <h1>Bevakningsverktyget</h1>
-            <button class="logout-btn" id="logout-btn">Logga ut</button>
-        </div>
-
-        <div class="user-info">
-            <h2>Välkommen, <span id="user-email"></span>
-                <span class="role-badge" id="user-role"></span>
-            </h2>
-            <p>Du är inloggad och har åtkomst till verktyget.</p>
-        </div>
-
-        <div class="tools-grid">
-            <div class="tool-card">
-                <h3>Företagsbevakning</h3>
-                <p>Bevaka ändringar i företagsregistret hos Bolagsverket.</p>
-                <a href="#">Öppna verktyg &rarr;</a>
+        <nav class="dashboard-nav">
+            <div class="nav-inner">
+                <div class="nav-brand">Bevakningsverktyget</div>
+                <div class="nav-right">
+                    <div class="user-pill">
+                        <div class="user-avatar" id="user-avatar">IS</div>
+                        <span class="user-name" id="user-email-display"></span>
+                        <span class="role-badge" id="user-role"></span>
+                    </div>
+                    <button class="btn btn-secondary btn-logout" id="logout-btn">Logga ut</button>
+                </div>
             </div>
+        </nav>
 
-            <div class="tool-card">
-                <h3>Nyhetsredaktion</h3>
-                <p>Generera nyhetsartiklar baserat på företagshändelser.</p>
-                <a href="#">Öppna verktyg &rarr;</a>
-            </div>
+        <main class="dashboard-content">
+            <section class="welcome-section">
+                <h1 class="welcome-title">God morgon, <span id="user-first-name">Användare</span></h1>
+                <p class="welcome-subtitle">Här är dina verktyg för företagsbevakning</p>
+            </section>
 
-            <div class="tool-card">
-                <h3>Dokumentköp</h3>
-                <p>Automatiserad hämtning av årsredovisningar och protokoll.</p>
-                <a href="#">Öppna verktyg &rarr;</a>
-            </div>
+            <section class="stats-bar">
+                <div class="stat-card">
+                    <div class="stat-label">Bevakade företag</div>
+                    <div class="stat-value">247</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Ändringar denna vecka</div>
+                    <div class="stat-value">12</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Dokument hämtade</div>
+                    <div class="stat-value">1,432</div>
+                </div>
+            </section>
 
-            <div class="tool-card" id="admin-tools" style="display:none;">
-                <h3>Admin: API-nycklar</h3>
-                <p>Hantera krypterade API-nycklar för alla tjänster.</p>
-                <a href="admin-verktyg/02-api-nycklar/public/index.html">Öppna admin &rarr;</a>
-            </div>
-        </div>
+            <section>
+                <div class="section-header">
+                    <h2 class="section-title">Verktyg</h2>
+                </div>
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div class="tool-icon">📊</div>
+                        <h3>Företagsbevakning</h3>
+                        <p>Övervaka ändringar i företagsregistret hos Bolagsverket. Få notifikationer vid styrelseändringar, adressbyten och mer.</p>
+                        <a href="#" class="tool-link">
+                            Öppna verktyg
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 8h10M9 4l4 4-4 4"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="tool-card">
+                        <div class="tool-icon">📰</div>
+                        <h3>Nyhetsredaktion</h3>
+                        <p>Generera nyhetsartiklar automatiskt baserat på företagshändelser. AI-assisterad research och skrivning.</p>
+                        <a href="#" class="tool-link">
+                            Öppna verktyg
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 8h10M9 4l4 4-4 4"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="tool-card">
+                        <div class="tool-icon">📁</div>
+                        <h3>Dokumentköp</h3>
+                        <p>Automatiserad hämtning av årsredovisningar, bolagsordningar och protokoll från Bolagsverket.</p>
+                        <a href="#" class="tool-link">
+                            Öppna verktyg
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 8h10M9 4l4 4-4 4"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="tool-card admin-card" id="admin-tools" style="display:none;">
+                        <div class="tool-icon">🔐</div>
+                        <h3>Admin: API-nycklar</h3>
+                        <p>Hantera krypterade API-nycklar och autentiseringsuppgifter för alla integrerade tjänster.</p>
+                        <a href="admin-verktyg/02-api-nycklar/public/index.html" class="tool-link">
+                            Öppna admin
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 8h10M9 4l4 4-4 4"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
         (function() {
             'use strict';
 
-            // Supabase configuration
             const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
 
             let supabaseClient = null;
             let currentUser = null;
 
-            // Initialize Supabase
             async function initSupabase() {
                 try {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-                    // Check if user is already logged in
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     if (session) {
                         currentUser = session.user;
@@ -320,7 +667,6 @@
                 }
             }
 
-            // Handle login
             async function handleLogin(event) {
                 event.preventDefault();
 
@@ -330,7 +676,6 @@
                 const errorEl = document.getElementById('error');
                 const successEl = document.getElementById('success');
 
-                // Reset messages
                 errorEl.classList.remove('show');
                 successEl.classList.remove('show');
                 submitBtn.disabled = true;
@@ -350,7 +695,7 @@
 
                     setTimeout(() => {
                         showDashboard();
-                    }, 500);
+                    }, 300);
 
                 } catch (error) {
                     console.error('Login error:', error);
@@ -364,13 +709,39 @@
                 }
             }
 
-            // Show dashboard
+            function getInitials(email) {
+                const parts = email.split('@')[0].split('.');
+                if (parts.length >= 2) {
+                    return (parts[0][0] + parts[1][0]).toUpperCase();
+                }
+                return email.substring(0, 2).toUpperCase();
+            }
+
+            function getFirstName(email) {
+                const name = email.split('@')[0].split('.')[0];
+                return name.charAt(0).toUpperCase() + name.slice(1);
+            }
+
+            function getGreeting() {
+                const hour = new Date().getHours();
+                if (hour < 10) return 'God morgon';
+                if (hour < 18) return 'Hej';
+                return 'God kväll';
+            }
+
             async function showDashboard() {
                 document.getElementById('login-form').classList.add('hide');
                 document.getElementById('dashboard').classList.add('show');
-                document.getElementById('user-email').textContent = currentUser.email;
 
-                // Get user profile/role
+                const email = currentUser.email;
+                document.getElementById('user-email-display').textContent = email;
+                document.getElementById('user-avatar').textContent = getInitials(email);
+                document.getElementById('user-first-name').textContent = getFirstName(email);
+
+                // Update greeting based on time
+                const welcomeTitle = document.querySelector('.welcome-title');
+                welcomeTitle.innerHTML = `${getGreeting()}, <span id="user-first-name">${getFirstName(email)}</span>`;
+
                 try {
                     const { data: profile, error } = await supabaseClient
                         .from('user_profiles')
@@ -383,7 +754,6 @@
                         roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
                         roleEl.className = 'role-badge ' + profile.role;
 
-                        // Show admin tools if admin
                         if (profile.role === 'admin') {
                             document.getElementById('admin-tools').style.display = 'block';
                         }
@@ -393,31 +763,27 @@
                 }
             }
 
-            // Handle logout
             async function handleLogout() {
                 await supabaseClient.auth.signOut();
                 currentUser = null;
                 document.getElementById('dashboard').classList.remove('show');
                 document.getElementById('login-form').classList.remove('hide');
+                document.getElementById('admin-tools').style.display = 'none';
                 document.getElementById('email').value = '';
                 document.getElementById('password').value = '';
             }
 
-            // Initialize on DOM ready
             document.addEventListener('DOMContentLoaded', function() {
-                // Set up form submit handler
                 const loginForm = document.getElementById('login-form-element');
                 if (loginForm) {
                     loginForm.addEventListener('submit', handleLogin);
                 }
 
-                // Set up logout handler
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', handleLogout);
                 }
 
-                // Initialize Supabase
                 initSupabase();
             });
         })();
