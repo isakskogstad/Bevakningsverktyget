@@ -14,7 +14,8 @@ Automatiskt bevakningsverktyg som övervakar **1217 specifika svenska företag**
 - **Scraping:** undetected-chromedriver + NopeCHA (CAPTCHA-lösning)
 - **Scheduler:** APScheduler (inbyggd)
 - **Container:** Docker med Chrome
-- **Databas:** Supabase (optional, för persistent lagring)
+- **Databas:** Supabase PostgreSQL + Edge Functions (Deno)
+- **Frontend:** GitHub Pages (statisk HTML/JS/CSS)
 
 ## Datakällor
 | Källa | Status | Beskrivning |
@@ -126,8 +127,69 @@ Verktyget använder två strategier för att hantera CAPTCHA:
 - **Format:** Organisationsnummer (10 siffror) + företagsnamn
 - **Typ:** Svenska techbolag/scaleups
 
+## Supabase Edge Functions (Journalist Dashboard Backend)
+
+### Översikt
+3 Serverless Edge Functions som fungerar som CORS-proxy och backend för journalist-dashboardet:
+
+| Function | Syfte | Cache TTL | Rate Limit |
+|----------|-------|-----------|------------|
+| `rss-proxy` | Aggregera RSS-feeds med keyword matching | 30 min | 30 req/h per user |
+| `mynewsdesk-proxy` | Scrapa MyNewsdesk pressreleaser + bilder | 24h | 10 req/h per pressrum |
+| `send-sms` | Twilio SMS-notifikationer | N/A | 10/h, 50/dag per user |
+
+### Databas-schema (8 nya tabeller)
+- **rss_feeds** - RSS-feed konfiguration
+- **rss_articles** - Cachade RSS-artiklar
+- **bookmarks** - Användarens bokmärken
+- **keyword_alerts** - Nyckelordsbevakning
+- **keyword_alert_matches** - Alert-matchningar
+- **sms_logs** - SMS audit log
+- **pressroom_cache** - MyNewsdesk cache
+- **rate_limits** - Rate limiting tracking
+
+### Dokumentation
+- **Full Design:** `/docs/SUPABASE-EDGE-FUNCTIONS-DESIGN.md`
+- **Snabbreferens:** `/docs/EDGE-FUNCTIONS-QUICK-REFERENCE.md`
+- **Implementation Checklist:** `/docs/IMPLEMENTATION-CHECKLIST.md`
+- **SQL Migration:** `/supabase/migrations/001_edge_functions_schema.sql`
+
+### Deploy Edge Functions
+```bash
+# Deploy alla functions
+supabase functions deploy rss-proxy
+supabase functions deploy mynewsdesk-proxy
+supabase functions deploy send-sms
+
+# Set Twilio secrets
+supabase secrets set TWILIO_ACCOUNT_SID=xxx
+supabase secrets set TWILIO_AUTH_TOKEN=xxx
+supabase secrets set TWILIO_PHONE_NUMBER=+46xxx
+```
+
+### Test Endpoints
+```bash
+# RSS Proxy
+curl -X POST https://[PROJECT].supabase.co/functions/v1/rss-proxy \
+  -H "Authorization: Bearer [ANON_KEY]" \
+  -d '{"forceRefresh":true}'
+
+# MyNewsdesk Proxy
+curl -X POST https://[PROJECT].supabase.co/functions/v1/mynewsdesk-proxy \
+  -H "Authorization: Bearer [ANON_KEY]" \
+  -d '{"pressroomUrl":"https://www.mynewsdesk.com/se/company"}'
+
+# Send SMS (requires user token)
+curl -X POST https://[PROJECT].supabase.co/functions/v1/send-sms \
+  -H "Authorization: Bearer [USER_TOKEN]" \
+  -d '{"to":"+46700000000","message":"Test"}'
+```
+
 ## Notes
 - Projekt skapat: 2025-12-19
 - POIT-scraper behöver finjusteras efter faktisk HTML-struktur
 - Scheduler körs var 60:e minut som default
 - Chrome i Docker kräver `shm_size: '2gb'` och `SYS_ADMIN` capability
+- **Backend-arkitektur designad:** 2025-12-19 (3 Edge Functions + 8 nya tabeller)
+- **RLS policies:** Aktiverade på alla tabeller för säkerhet
+- **Caching:** Multi-layer (30min - 24h) för optimal performance

@@ -1,0 +1,98 @@
+/* ==========================================================================
+   CSS RESET - Modern Minimal Reset
+   ========================================================================== */
+
+/* Box sizing */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* Reset margins och paddings */
+* {
+    margin: 0;
+    padding: 0;
+}
+
+/* Prevent font size inflation */
+html {
+    -moz-text-size-adjust: none;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+}
+
+/* Remove list styles (bullets/numbers) */
+ul, ol {
+    list-style: none;
+}
+
+/* Core body defaults */
+body {
+    min-height: 100vh;
+    line-height: var(--line-height-normal, 1.5);
+    font-family: var(--font-family, 'Inter', -apple-system, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+    overflow-wrap: break-word;
+}
+
+/* Improve media defaults */
+img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+}
+
+/* Form elements inherit font */
+input, button, textarea, select {
+    font: inherit;
+}
+
+/* Textarea resize */
+textarea:not([rows]) {
+    min-height: 10em;
+}
+
+/* Anchors */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Buttons reset */
+button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+}
+
+/* Focus styles - lägg till visible outline */
+:focus-visible {
+    outline: 2px solid var(--accent, #D4FF00);
+    outline-offset: 2px;
+}
+
+/* Remove animations for people who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Smooth scrolling for anchor links */
+html:focus-within {
+    scroll-behavior: smooth;
+}
+
+/* Tables */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}

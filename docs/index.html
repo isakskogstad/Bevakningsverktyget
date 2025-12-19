@@ -8,391 +8,320 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/utilities.css">
     <style>
-        :root {
-            --accent: #D4FF00;
-            --accent-hover: #c4ef00;
-            --black: #000000;
-            --dark: #111111;
-            --gray-900: #1a1a1a;
-            --gray-700: #404040;
-            --gray-500: #6b6b6b;
-            --gray-300: #d1d1d1;
-            --gray-100: #f5f5f5;
-            --white: #ffffff;
-            --error: #ef4444;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --blue: #3b82f6;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--white);
-            color: var(--dark);
-            min-height: 100vh;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
+        /* Page-specific overrides */
+        .dashboard-main {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: var(--spacing-6);
+            min-height: calc(100vh - 64px);
         }
 
-        /* LOGIN PAGE */
-        .login-page {
-            min-height: 100vh;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        @media (max-width: 1400px) {
+            .dashboard-main {
+                grid-template-columns: 260px 1fr;
+            }
+            .dashboard-sidebar-right { display: none; }
         }
+
         @media (max-width: 900px) {
-            .login-page { grid-template-columns: 1fr; }
-            .login-hero { display: none; }
+            .dashboard-main {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-sidebar-left { display: none; }
         }
-        .login-hero {
-            background: var(--accent);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 60px;
-            position: relative;
-            overflow: hidden;
-        }
-        .login-hero::before {
-            content: '';
-            position: absolute;
-            top: -50%; right: -50%;
-            width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        }
-        .login-hero h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: var(--black);
-            line-height: 1.1;
-            margin-bottom: 24px;
-            position: relative;
-            z-index: 1;
-        }
-        .login-hero p {
-            font-size: 1.25rem;
-            color: var(--gray-700);
-            max-width: 400px;
-            position: relative;
-            z-index: 1;
-        }
-        .login-form-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 60px;
-            max-width: 480px;
-            margin: 0 auto;
-            width: 100%;
-        }
-        .login-logo { margin-bottom: 48px; }
-        .login-logo span { font-size: 1.5rem; font-weight: 700; color: var(--dark); }
-        .login-title { font-size: 2rem; font-weight: 600; color: var(--dark); margin-bottom: 8px; }
-        .login-subtitle { color: var(--gray-500); margin-bottom: 40px; }
-        .form-group { margin-bottom: 24px; }
-        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; color: var(--gray-700); margin-bottom: 8px; }
-        .form-group input {
-            width: 100%;
-            padding: 16px;
-            font-size: 1rem;
-            border: 1px solid var(--gray-300);
-            border-radius: 8px;
-            background: var(--white);
-            color: var(--dark);
-            transition: all 0.2s;
-        }
-        .form-group input:focus { outline: none; border-color: var(--dark); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 14px 24px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .btn-primary { width: 100%; background: var(--dark); color: var(--white); }
-        .btn-primary:hover { background: var(--black); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-secondary { background: transparent; color: var(--dark); border: 1px solid var(--gray-300); }
-        .btn-secondary:hover { background: var(--gray-100); }
-        .btn-accent { background: var(--accent); color: var(--dark); }
-        .btn-accent:hover { background: var(--accent-hover); }
-        .btn-sm { padding: 8px 16px; font-size: 0.8rem; }
-        .alert {
-            padding: 14px 16px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
-            display: none;
-        }
-        .alert.show { display: block; }
-        .alert-error { background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
-        .alert-success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
-        .login-footer { margin-top: 40px; text-align: center; color: var(--gray-500); font-size: 0.875rem; }
 
-        /* DASHBOARD */
-        #login-form.hide { display: none; }
-        #dashboard { display: none; min-height: 100vh; background: var(--gray-100); }
-        #dashboard.show { display: block; }
-        .dashboard-nav {
+        /* Left sidebar - Tools navigation */
+        .dashboard-sidebar-left {
             background: var(--white);
-            border-bottom: 1px solid var(--gray-300);
-            padding: 0 40px;
+            border-right: 1px solid var(--gray-200);
+            padding: var(--spacing-4);
             position: sticky;
-            top: 0;
-            z-index: 100;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
         }
-        .nav-inner {
-            max-width: 1600px;
-            margin: 0 auto;
+
+        .sidebar-section {
+            margin-bottom: var(--spacing-6);
+        }
+
+        .sidebar-section-title {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: var(--spacing-2) var(--spacing-3);
+            margin-bottom: var(--spacing-1);
+        }
+
+        .sidebar-link {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            height: 64px;
+            gap: var(--spacing-3);
+            padding: var(--spacing-3);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: var(--dark);
+            transition: all 0.15s ease;
+            font-size: var(--font-size-sm);
         }
-        .nav-brand { font-size: 1.1rem; font-weight: 700; color: var(--dark); }
-        .nav-right { display: flex; align-items: center; gap: 16px; }
-        .user-pill {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 14px;
+
+        .sidebar-link:hover {
             background: var(--gray-100);
-            border-radius: 100px;
         }
-        .user-avatar {
-            width: 28px; height: 28px;
-            background: var(--accent);
-            border-radius: 50%;
+
+        .sidebar-link.active {
+            background: var(--accent-muted);
+            color: var(--dark);
+        }
+
+        .sidebar-link-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-md);
+            background: var(--gray-100);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-link:hover .sidebar-link-icon,
+        .sidebar-link.active .sidebar-link-icon {
+            background: var(--accent);
+        }
+
+        .sidebar-link-text {
+            flex: 1;
+        }
+
+        .sidebar-link-title {
+            font-weight: var(--font-weight-medium);
+            margin-bottom: 1px;
+        }
+
+        .sidebar-link-desc {
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+        }
+
+        .sidebar-link-badge {
+            background: var(--accent);
             color: var(--dark);
-        }
-        .user-name { font-size: 0.85rem; font-weight: 500; color: var(--dark); }
-        .role-badge {
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 100px;
-            text-transform: uppercase;
-        }
-        .role-badge.admin { background: var(--accent); color: var(--dark); }
-        .role-badge.member { background: var(--gray-300); color: var(--gray-700); }
-        .btn-logout { padding: 8px 16px; font-size: 0.8rem; }
-
-        .dashboard-content { max-width: 1600px; margin: 0 auto; padding: 32px 40px; }
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 32px;
-        }
-        @media (max-width: 1200px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
         }
 
-        /* Stats Bar */
-        .stats-bar {
+        /* Main content area */
+        .dashboard-content {
+            padding: var(--spacing-6);
+            background: var(--gray-50);
+        }
+
+        /* Right sidebar - Quick info */
+        .dashboard-sidebar-right {
+            background: var(--white);
+            border-left: 1px solid var(--gray-200);
+            padding: var(--spacing-4);
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+        }
+
+        /* Stats cards in main content */
+        .stats-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .stat-card {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--gray-300);
-        }
-        .stat-card.highlight { background: var(--accent); border-color: var(--accent); }
-        .stat-label { font-size: 0.8rem; color: var(--gray-500); margin-bottom: 4px; }
-        .stat-card.highlight .stat-label { color: var(--gray-700); }
-        .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--dark); }
-        @media (max-width: 768px) {
-            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-6);
         }
 
-        /* Feed Section */
-        .feed-section { margin-bottom: 32px; }
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
+        @media (max-width: 1200px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
         }
-        .section-title { font-size: 1.1rem; font-weight: 600; color: var(--dark); }
-        .live-dot {
-            display: inline-block;
-            width: 8px; height: 8px;
-            background: var(--success);
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .feed-list { display: flex; flex-direction: column; gap: 12px; }
-        .feed-item {
-            background: var(--white);
-            border-radius: 12px;
-            border: 1px solid var(--gray-300);
-            padding: 16px 20px;
-            transition: all 0.2s;
-        }
-        .feed-item:hover { border-color: var(--dark); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .feed-item-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-        .feed-category {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        .feed-category.konkurs { background: #fecaca; color: var(--error); }
-        .feed-category.registrering { background: #dbeafe; color: var(--blue); }
-        .feed-category.kallelse { background: #fef3c7; color: var(--warning); }
-        .feed-category.skuld { background: #e5e7eb; color: var(--gray-700); }
-        .feed-time { font-size: 0.8rem; color: var(--gray-500); }
-        .feed-company { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
-        .feed-description { font-size: 0.9rem; color: var(--gray-500); margin-bottom: 12px; }
-        .feed-actions { display: flex; gap: 8px; }
-        .feed-actions .btn { padding: 6px 12px; font-size: 0.75rem; }
 
-        /* Sidebar */
-        .sidebar { display: flex; flex-direction: column; gap: 24px; }
-        .card {
+        /* Quick actions section */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-6);
+        }
+
+        @media (max-width: 1000px) {
+            .quick-actions { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .quick-actions { grid-template-columns: 1fr; }
+        }
+
+        .quick-action-card {
             background: var(--white);
-            border-radius: 12px;
-            border: 1px solid var(--gray-300);
-            overflow: hidden;
-        }
-        .card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--gray-300);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .card-title { font-size: 0.95rem; font-weight: 600; }
-        .card-body { padding: 16px 20px; }
-        .tool-list { display: flex; flex-direction: column; gap: 8px; }
-        .tool-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 8px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            padding: var(--spacing-5);
             text-decoration: none;
             color: var(--dark);
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-3);
         }
-        .tool-item:hover { background: var(--gray-100); }
-        .tool-icon {
-            width: 36px; height: 36px;
+
+        .quick-action-card:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .quick-action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            background: var(--accent-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .quick-action-card:hover .quick-action-icon {
+            background: var(--accent);
+        }
+
+        .quick-action-title {
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-base);
+        }
+
+        .quick-action-desc {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            line-height: 1.4;
+        }
+
+        /* Settings button in nav */
+        .settings-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-full);
             background: var(--gray-100);
-            border-radius: 8px;
+            border: none;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.1rem;
+            transition: background 0.2s;
         }
-        .tool-item:hover .tool-icon { background: var(--accent); }
-        .tool-info { flex: 1; }
-        .tool-name { font-weight: 500; font-size: 0.9rem; }
-        .tool-desc { font-size: 0.8rem; color: var(--gray-500); }
 
-        /* Modal */
-        .modal {
+        .settings-btn:hover {
+            background: var(--gray-200);
+        }
+
+        /* Settings dropdown */
+        .settings-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: var(--spacing-2);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--gray-200);
+            min-width: 200px;
+            display: none;
+            z-index: 200;
+        }
+
+        .settings-dropdown.show {
+            display: block;
+        }
+
+        .settings-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            padding: var(--spacing-3) var(--spacing-4);
+            text-decoration: none;
+            color: var(--dark);
+            font-size: var(--font-size-sm);
+            transition: background 0.15s;
+        }
+
+        .settings-dropdown-item:hover {
+            background: var(--gray-100);
+        }
+
+        .settings-dropdown-item:first-child {
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .settings-dropdown-item:last-child {
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
+        .settings-dropdown-divider {
+            height: 1px;
+            background: var(--gray-200);
+            margin: var(--spacing-2) 0;
+        }
+
+        /* Mobile nav toggle */
+        .mobile-nav-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 900px) {
+            .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
+        }
+
+        /* Mobile sidebar overlay */
+        .mobile-sidebar-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: rgba(0,0,0,0.5);
-            z-index: 200;
-            align-items: center;
-            justify-content: center;
+            z-index: 150;
         }
-        .modal.show { display: flex; }
-        .modal-content {
-            background: var(--white);
-            border-radius: 16px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 24px;
-            border-bottom: 1px solid var(--gray-300);
-        }
-        .modal-title { font-size: 1.1rem; font-weight: 600; }
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--gray-500);
-        }
-        .modal-body { padding: 24px; }
-        .modal-footer {
-            padding: 16px 24px;
-            border-top: 1px solid var(--gray-300);
-            display: flex;
-            gap: 12px;
-            justify-content: flex-end;
-        }
-        .investigation-step {
-            display: flex;
-            gap: 16px;
-            padding: 16px;
-            background: var(--gray-100);
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
-        .step-icon {
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-        }
-        .step-icon.pending { background: var(--gray-300); color: var(--gray-500); }
-        .step-icon.active { background: var(--accent); color: var(--dark); }
-        .step-icon.done { background: var(--success); color: var(--white); }
-        .step-content { flex: 1; }
-        .step-title { font-weight: 500; margin-bottom: 2px; }
-        .step-desc { font-size: 0.85rem; color: var(--gray-500); }
 
-        .empty-state { text-align: center; padding: 48px; color: var(--gray-500); }
-        .empty-state h3 { margin-bottom: 8px; color: var(--dark); }
+        .mobile-sidebar-overlay.show {
+            display: block;
+        }
 
-        @media (max-width: 768px) {
-            .dashboard-nav { padding: 0 20px; }
-            .dashboard-content { padding: 20px; }
-            .user-name { display: none; }
+        @media (max-width: 900px) {
+            .dashboard-sidebar-left.mobile-open {
+                display: block;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 280px;
+                z-index: 160;
+                padding-top: var(--spacing-16);
+            }
         }
     </style>
 </head>
@@ -401,7 +330,7 @@
     <div class="login-page" id="login-form">
         <div class="login-hero">
             <h1>Bevaka.<br>Analysera.<br>Publicera.</h1>
-            <p>1214 impact-företag under bevakning. Realtidsnotifikationer från POIT. AI-driven journalistik.</p>
+            <p>1214 impact-företag under bevakning. Realtidsnotifikationer från POIT. Nyhetsbevakning för journalister.</p>
         </div>
         <div class="login-form-container">
             <div class="login-logo">
@@ -432,112 +361,178 @@
     <div id="dashboard">
         <nav class="dashboard-nav">
             <div class="nav-inner">
-                <div class="nav-brand">Bevakningsverktyget</div>
+                <div class="d-flex items-center gap-4">
+                    <button class="mobile-nav-toggle" id="mobile-nav-toggle">☰</button>
+                    <a href="./" class="nav-brand">Bevakningsverktyget</a>
+                </div>
                 <div class="nav-right">
                     <div class="user-pill">
                         <div class="user-avatar" id="user-avatar">IS</div>
                         <span class="user-name" id="user-email-display"></span>
                         <span class="role-badge" id="user-role"></span>
                     </div>
-                    <button class="btn btn-secondary btn-logout" id="logout-btn">Logga ut</button>
+                    <div style="position: relative;">
+                        <button class="settings-btn" id="settings-btn" title="Inställningar">⚙️</button>
+                        <div class="settings-dropdown" id="settings-dropdown">
+                            <a href="sms-notiser/" class="settings-dropdown-item">📱 SMS-notiser</a>
+                            <div class="settings-dropdown-divider"></div>
+                            <a href="bevakning/foretagslista/" class="settings-dropdown-item" id="admin-companies-link" style="display: none;">📊 Hantera företag</a>
+                            <a href="#" class="settings-dropdown-item" id="admin-api-link" style="display: none;">🔐 API-nycklar</a>
+                            <div class="settings-dropdown-divider" id="admin-divider" style="display: none;"></div>
+                            <a href="#" class="settings-dropdown-item" id="logout-link">🚪 Logga ut</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <main class="dashboard-content">
-            <div class="stats-bar">
-                <div class="stat-card highlight">
-                    <div class="stat-label">Bevakade företag</div>
-                    <div class="stat-value" id="stat-companies">1214</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">POIT-händelser idag</div>
-                    <div class="stat-value" id="stat-poit">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Utkast</div>
-                    <div class="stat-value" id="stat-drafts">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Publicerade artiklar</div>
-                    <div class="stat-value" id="stat-published">0</div>
-                </div>
-            </div>
+        <!-- Mobile sidebar overlay -->
+        <div class="mobile-sidebar-overlay" id="mobile-overlay"></div>
 
-            <div class="dashboard-grid">
-                <div class="main-content">
-                    <section class="feed-section">
-                        <div class="section-header">
-                            <h2 class="section-title">
-                                <span class="live-dot"></span>
-                                Händelseflöde - POIT
-                            </h2>
-                            <button class="btn btn-secondary btn-sm" onclick="refreshFeed()">Uppdatera</button>
+        <div class="dashboard-main">
+            <!-- Left Sidebar - Navigation -->
+            <aside class="dashboard-sidebar-left" id="sidebar-left">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Nyhetsverktyg</div>
+                    <a href="nyhetsverktyg/rss-lasare/" class="sidebar-link">
+                        <div class="sidebar-link-icon">📡</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">RSS-läsare</div>
+                            <div class="sidebar-link-desc">Branschnyheter i realtid</div>
                         </div>
-                        <div id="feed-list" class="feed-list">
-                            <div class="empty-state">
-                                <h3>Laddar händelser...</h3>
-                            </div>
+                    </a>
+                    <a href="nyhetsverktyg/pressbevakning/" class="sidebar-link">
+                        <div class="sidebar-link-icon">📰</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Pressbevakning</div>
+                            <div class="sidebar-link-desc">MyNewsdesk-flöden</div>
                         </div>
-                        <div style="margin-top: 16px; text-align: center;">
-                            <button class="btn btn-secondary" id="load-more-btn" onclick="loadMoreEvents()" style="display: none;">
-                                Ladda fler händelser
-                            </button>
-                        </div>
-                    </section>
+                    </a>
                 </div>
 
-                <div class="sidebar">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Verktyg</h3>
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Företagsbevakning</div>
+                    <a href="bevakning/handelser/" class="sidebar-link active">
+                        <div class="sidebar-link-icon">🔔</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">POIT-händelser</div>
+                            <div class="sidebar-link-desc">Konkurser, kallelser, m.m.</div>
                         </div>
-                        <div class="card-body">
-                            <div class="tool-list">
-                                <a href="verktyg/foretagsbevakning/" class="tool-item">
-                                    <div class="tool-icon">📊</div>
-                                    <div class="tool-info">
-                                        <div class="tool-name">Företagsbevakning</div>
-                                        <div class="tool-desc">1214 Loop Impact-företag</div>
-                                    </div>
-                                </a>
-                                <a href="verktyg/nyhetsredaktion/" class="tool-item">
-                                    <div class="tool-icon">📰</div>
-                                    <div class="tool-info">
-                                        <div class="tool-name">Nyhetsredaktion</div>
-                                        <div class="tool-desc">Skriv och publicera artiklar</div>
-                                    </div>
-                                </a>
-                                <a href="verktyg/dokumentkop/" class="tool-item">
-                                    <div class="tool-icon">📁</div>
-                                    <div class="tool-info">
-                                        <div class="tool-name">Dokumentköp</div>
-                                        <div class="tool-desc">Hämta från Bolagsverket</div>
-                                    </div>
-                                </a>
-                            </div>
+                        <span class="sidebar-link-badge" id="poit-badge">0</span>
+                    </a>
+                    <a href="bevakning/foretagslista/" class="sidebar-link">
+                        <div class="sidebar-link-icon">🏢</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Företagslista</div>
+                            <div class="sidebar-link-desc">1214 bevakade företag</div>
                         </div>
+                    </a>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Notifikationer</div>
+                    <a href="sms-notiser/" class="sidebar-link">
+                        <div class="sidebar-link-icon">📱</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">SMS-notiser</div>
+                            <div class="sidebar-link-desc">Konfigurera varningar</div>
+                        </div>
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="dashboard-content">
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card highlight">
+                        <div class="stat-label">📊 Bevakade företag</div>
+                        <div class="stat-value" id="stat-companies">1214</div>
                     </div>
-
-                    <div class="card" id="admin-card" style="display: none;">
-                        <div class="card-header">
-                            <h3 class="card-title">Administration</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="tool-list">
-                                <a href="admin/api-nycklar/" class="tool-item">
-                                    <div class="tool-icon">🔐</div>
-                                    <div class="tool-info">
-                                        <div class="tool-name">API-nycklar</div>
-                                        <div class="tool-desc">Hantera autentisering</div>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
+                    <div class="stat-card">
+                        <div class="stat-label">🔔 POIT-händelser idag</div>
+                        <div class="stat-value" id="stat-poit">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">📰 Pressreleaser</div>
+                        <div class="stat-value" id="stat-press">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">📡 RSS-artiklar</div>
+                        <div class="stat-value" id="stat-rss">-</div>
                     </div>
                 </div>
-            </div>
-        </main>
+
+                <!-- Quick Actions -->
+                <h2 class="font-semibold mb-4">Snabbstart</h2>
+                <div class="quick-actions">
+                    <a href="nyhetsverktyg/rss-lasare/" class="quick-action-card">
+                        <div class="quick-action-icon">📡</div>
+                        <div class="quick-action-title">Läs branschnyheter</div>
+                        <div class="quick-action-desc">Breakit, Di, TechCrunch och fler - allt samlat med nyckelordsbevakning</div>
+                    </a>
+                    <a href="nyhetsverktyg/pressbevakning/" class="quick-action-card">
+                        <div class="quick-action-icon">📰</div>
+                        <div class="quick-action-title">Bevaka pressreleaser</div>
+                        <div class="quick-action-desc">Följ pressmeddelanden från Northvolt, Klarna, Spotify och andra företag</div>
+                    </a>
+                    <a href="bevakning/handelser/" class="quick-action-card">
+                        <div class="quick-action-icon">🔔</div>
+                        <div class="quick-action-title">Se POIT-händelser</div>
+                        <div class="quick-action-desc">Konkurser, likvidationer, kallelser och skulder för bevakade företag</div>
+                    </a>
+                </div>
+
+                <!-- POIT Feed Section -->
+                <section class="feed-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <span class="live-dot"></span>
+                            Senaste POIT-händelser
+                        </h2>
+                        <button class="btn btn-secondary btn-sm" onclick="refreshFeed()">Uppdatera</button>
+                    </div>
+                    <div id="feed-list" class="feed-list">
+                        <div class="empty-state">
+                            <div class="loader"></div>
+                            <p class="mt-4">Laddar händelser...</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; text-align: center;">
+                        <button class="btn btn-secondary" id="load-more-btn" onclick="loadMoreEvents()" style="display: none;">
+                            Ladda fler händelser
+                        </button>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Right Sidebar - Quick Info -->
+            <aside class="dashboard-sidebar-right">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Senaste nytt</div>
+                    <div id="latest-news">
+                        <p class="text-muted text-sm p-3">
+                            Använd RSS-läsaren eller Pressbevakning för att se de senaste nyheterna.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Tips</div>
+                    <div class="p-3">
+                        <p class="text-sm text-muted mb-3">
+                            💡 <strong>Nyckelordsbevakning:</strong> I RSS-läsaren kan du markera nyckelord för att snabbt hitta relevanta artiklar.
+                        </p>
+                        <p class="text-sm text-muted mb-3">
+                            📱 <strong>SMS-varningar:</strong> Konfigurera SMS-notiser för att få varningar vid konkurser eller andra viktiga händelser.
+                        </p>
+                        <p class="text-sm text-muted">
+                            🏢 <strong>1214 företag:</strong> Alla Loop Impact-företag bevakas automatiskt i POIT.
+                        </p>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </div>
 
     <!-- Investigation Modal -->
@@ -545,7 +540,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">Undersök händelse</h3>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body" id="modal-body">
                 <div id="event-details"></div>
@@ -557,21 +552,27 @@
         </div>
     </div>
 
+    <script src="assets/js/config.js"></script>
     <script>
-        // App state - use var to allow redefinition
-        var SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
-        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+        // =========================================================================
+        // MAIN DASHBOARD
+        // =========================================================================
 
-        var sb = null; // Renamed from 'supabase' to avoid overwriting window.supabase
+        // App state - use var to allow redefinition
+        var sb = null;
         var currentUser = null;
         var events = [];
         var currentOffset = 0;
-        var pageSize = 20;
+        var pageSize = 10;
         var watchedOrgnrs = [];
+
+        // =========================================================================
+        // INITIALIZATION
+        // =========================================================================
 
         async function initSupabase() {
             try {
-                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                sb = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
                 const { data: { session } } = await sb.auth.getSession();
                 if (session) {
                     currentUser = session.user;
@@ -581,6 +582,10 @@
                 console.error('Supabase init error:', error);
             }
         }
+
+        // =========================================================================
+        // AUTHENTICATION
+        // =========================================================================
 
         async function handleLogin(event) {
             event.preventDefault();
@@ -638,7 +643,10 @@
                     roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
                     roleEl.className = 'role-badge ' + profile.role;
                     if (profile.role === 'admin') {
-                        document.getElementById('admin-card').style.display = 'block';
+                        // Show admin links in settings dropdown
+                        document.getElementById('admin-companies-link').style.display = 'flex';
+                        document.getElementById('admin-api-link').style.display = 'flex';
+                        document.getElementById('admin-divider').style.display = 'block';
                     }
                 }
             } catch (e) { console.error(e); }
@@ -647,6 +655,22 @@
             await loadStats();
             await loadPoitEvents();
         }
+
+        async function handleLogout() {
+            await sb.auth.signOut();
+            currentUser = null;
+            document.getElementById('dashboard').classList.remove('show');
+            document.getElementById('login-form').classList.remove('hide');
+            document.getElementById('admin-companies-link').style.display = 'none';
+            document.getElementById('admin-api-link').style.display = 'none';
+            document.getElementById('admin-divider').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // =========================================================================
+        // DATA LOADING
+        // =========================================================================
 
         async function loadWatchedCompanies() {
             const { data } = await sb
@@ -665,17 +689,10 @@
                 .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
                 .gte('announcement_date', today);
-            document.getElementById('stat-poit').textContent = poitCount || 0;
 
-            // Article stats
-            const { data: articles } = await sb
-                .from('news_articles')
-                .select('status');
-
-            if (articles) {
-                document.getElementById('stat-drafts').textContent = articles.filter(a => a.status === 'draft').length;
-                document.getElementById('stat-published').textContent = articles.filter(a => a.status === 'published').length;
-            }
+            const poitValue = poitCount || 0;
+            document.getElementById('stat-poit').textContent = poitValue;
+            document.getElementById('poit-badge').textContent = poitValue;
         }
 
         async function loadPoitEvents() {
@@ -698,12 +715,17 @@
             }
         }
 
+        // =========================================================================
+        // RENDERING
+        // =========================================================================
+
         function renderEvents() {
             const container = document.getElementById('feed-list');
 
             if (events.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
                         <h3>Inga händelser hittade</h3>
                         <p>Nya POIT-händelser visas här i realtid</p>
                     </div>
@@ -718,11 +740,11 @@
                 return `
                     <div class="feed-item" data-id="${e.id}">
                         <div class="feed-item-header">
-                            <span class="feed-category ${getCategoryClass(e.category)}">${e.category}</span>
+                            <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
                             <span class="feed-time">${formatDate(e.announcement_date)}</span>
                         </div>
-                        <div class="feed-company">${e.orgnr || 'Okänt orgnr'} ${isWatched ? '⭐' : ''}</div>
-                        <div class="feed-description">${truncate(e.title || e.content, 150)}</div>
+                        <div class="feed-company">${escapeHtml(e.orgnr || 'Okänt orgnr')} ${isWatched ? '⭐' : ''}</div>
+                        <div class="feed-description">${escapeHtml(truncate(e.title || e.content, 150))}</div>
                         <div class="feed-actions">
                             <button class="btn btn-accent btn-sm" onclick="investigateEvent('${e.id}')">
                                 Undersök mer
@@ -752,6 +774,11 @@
             if (date.toDateString() === today.toDateString()) {
                 return 'Idag';
             }
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (date.toDateString() === yesterday.toDateString()) {
+                return 'Igår';
+            }
             return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
         }
 
@@ -759,6 +786,16 @@
             if (!text) return '-';
             return text.length > length ? text.substring(0, length) + '...' : text;
         }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // =========================================================================
+        // ACTIONS
+        // =========================================================================
 
         async function refreshFeed() {
             currentOffset = 0;
@@ -784,6 +821,10 @@
             }
         }
 
+        // =========================================================================
+        // INVESTIGATION MODAL
+        // =========================================================================
+
         let currentEventId = null;
 
         function investigateEvent(eventId) {
@@ -794,10 +835,10 @@
             document.getElementById('event-details').innerHTML = `
                 <div style="margin-bottom: 16px;">
                     <div class="feed-category ${getCategoryClass(event.category)}" style="margin-bottom: 8px;">
-                        ${event.category}
+                        ${escapeHtml(event.category)}
                     </div>
-                    <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${event.orgnr || 'Okänt företag'}</h4>
-                    <p style="color: var(--gray-500);">${event.title || event.content || 'Ingen beskrivning'}</p>
+                    <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(event.orgnr || 'Okänt företag')}</h4>
+                    <p style="color: var(--gray-500);">${escapeHtml(event.title || event.content || 'Ingen beskrivning')}</p>
                 </div>
             `;
 
@@ -927,19 +968,53 @@
             currentEventId = null;
         }
 
-        async function handleLogout() {
-            await sb.auth.signOut();
-            currentUser = null;
-            document.getElementById('dashboard').classList.remove('show');
-            document.getElementById('login-form').classList.remove('hide');
-            document.getElementById('admin-card').style.display = 'none';
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
+        // =========================================================================
+        // UI INTERACTIONS
+        // =========================================================================
+
+        function toggleSettingsDropdown() {
+            const dropdown = document.getElementById('settings-dropdown');
+            dropdown.classList.toggle('show');
         }
 
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar-left');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('show');
+        }
+
+        // =========================================================================
+        // INIT
+        // =========================================================================
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Login form
             document.getElementById('login-form-element').addEventListener('submit', handleLogin);
-            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+            // Logout link
+            document.getElementById('logout-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                handleLogout();
+            });
+
+            // Settings dropdown
+            document.getElementById('settings-btn').addEventListener('click', toggleSettingsDropdown);
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('settings-dropdown');
+                const settingsBtn = document.getElementById('settings-btn');
+                if (!dropdown.contains(e.target) && !settingsBtn.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+
+            // Mobile navigation
+            document.getElementById('mobile-nav-toggle').addEventListener('click', toggleMobileSidebar);
+            document.getElementById('mobile-overlay').addEventListener('click', toggleMobileSidebar);
+
+            // Initialize Supabase
             initSupabase();
         });
     </script>

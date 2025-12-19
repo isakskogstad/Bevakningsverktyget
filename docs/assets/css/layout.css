@@ -1,0 +1,512 @@
+/* ==========================================================================
+   LAYOUT - Strukturella layoutkomponenter
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   LOGIN-SIDA
+   -------------------------------------------------------------------------- */
+
+.login-page {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.login-hero {
+    background: var(--accent);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+}
+
+.login-hero h1 {
+    font-size: var(--font-size-6xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--black);
+    line-height: var(--line-height-tight);
+    margin-bottom: var(--spacing-6);
+    position: relative;
+    z-index: 1;
+}
+
+.login-hero p {
+    font-size: var(--font-size-2xl);
+    color: var(--gray-700);
+    max-width: 400px;
+    position: relative;
+    z-index: 1;
+}
+
+.login-form-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.login-logo {
+    margin-bottom: var(--spacing-12);
+}
+
+.login-logo span {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--dark);
+}
+
+.login-title {
+    font-size: var(--font-size-5xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--dark);
+    margin-bottom: var(--spacing-2);
+}
+
+.login-subtitle {
+    color: var(--gray-500);
+    margin-bottom: var(--spacing-10);
+}
+
+.login-footer {
+    margin-top: var(--spacing-10);
+    text-align: center;
+    color: var(--gray-500);
+    font-size: var(--font-size-sm);
+}
+
+@media (max-width: 900px) {
+    .login-page {
+        grid-template-columns: 1fr;
+    }
+
+    .login-hero {
+        display: none;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   DASHBOARD NAVIGATION
+   -------------------------------------------------------------------------- */
+
+.dashboard-nav {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-300);
+    padding: 0 var(--spacing-10);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+}
+
+.nav-inner {
+    max-width: var(--max-width-content);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--nav-height);
+}
+
+.nav-brand {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--dark);
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+}
+
+.user-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    background: var(--gray-100);
+    border-radius: var(--radius-full);
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    color: var(--dark);
+}
+
+.user-name {
+    font-size: 0.85rem;
+    font-weight: var(--font-weight-medium);
+    color: var(--dark);
+}
+
+.role-badge {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+}
+
+.role-badge.admin {
+    background: var(--accent);
+    color: var(--dark);
+}
+
+.role-badge.member {
+    background: var(--gray-300);
+    color: var(--gray-700);
+}
+
+/* --------------------------------------------------------------------------
+   DASHBOARD CONTENT
+   -------------------------------------------------------------------------- */
+
+.dashboard-content {
+    max-width: var(--max-width-content);
+    margin: 0 auto;
+    padding: var(--spacing-8) var(--spacing-10);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr var(--sidebar-width);
+    gap: var(--spacing-8);
+}
+
+/* --------------------------------------------------------------------------
+   STATS BAR
+   -------------------------------------------------------------------------- */
+
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-4);
+    margin-bottom: var(--spacing-8);
+}
+
+.stat-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-5);
+    border: 1px solid var(--gray-300);
+}
+
+.stat-card.highlight {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+    margin-bottom: var(--spacing-1);
+}
+
+.stat-card.highlight .stat-label {
+    color: var(--gray-700);
+}
+
+.stat-value {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--dark);
+}
+
+/* --------------------------------------------------------------------------
+   FEED SECTION
+   -------------------------------------------------------------------------- */
+
+.feed-section {
+    margin-bottom: var(--spacing-8);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-4);
+}
+
+.section-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+}
+
+.feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.feed-item {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-300);
+    padding: var(--spacing-4) var(--spacing-5);
+    transition: all var(--transition-base);
+}
+
+.feed-item:hover {
+    border-color: var(--dark);
+    box-shadow: var(--shadow-md);
+}
+
+.feed-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-2);
+}
+
+.feed-category {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+}
+
+.feed-category.konkurs {
+    background: var(--error-border);
+    color: var(--error);
+}
+
+.feed-category.registrering {
+    background: var(--blue-bg);
+    color: var(--blue);
+}
+
+.feed-category.kallelse {
+    background: var(--warning-bg);
+    color: var(--warning);
+}
+
+.feed-category.skuld {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.feed-time {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+}
+
+.feed-company {
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-1);
+}
+
+.feed-description {
+    font-size: var(--font-size-base);
+    color: var(--gray-500);
+    margin-bottom: var(--spacing-3);
+}
+
+.feed-actions {
+    display: flex;
+    gap: var(--spacing-2);
+}
+
+/* --------------------------------------------------------------------------
+   SIDEBAR
+   -------------------------------------------------------------------------- */
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-6);
+}
+
+.tool-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.tool-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--dark);
+    transition: all var(--transition-base);
+}
+
+.tool-item:hover {
+    background: var(--gray-100);
+}
+
+.tool-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-xl);
+}
+
+.tool-item:hover .tool-icon {
+    background: var(--accent);
+}
+
+.tool-info {
+    flex: 1;
+}
+
+.tool-name {
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-base);
+}
+
+.tool-desc {
+    font-size: var(--font-size-sm);
+    color: var(--gray-500);
+}
+
+/* --------------------------------------------------------------------------
+   VERKTYG PAGE LAYOUT
+   -------------------------------------------------------------------------- */
+
+.page-header {
+    margin-bottom: var(--spacing-8);
+}
+
+.page-title {
+    font-size: var(--font-size-5xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--spacing-2);
+}
+
+.page-subtitle {
+    color: var(--gray-500);
+    font-size: var(--font-size-lg);
+}
+
+.page-actions {
+    display: flex;
+    gap: var(--spacing-3);
+    margin-top: var(--spacing-4);
+}
+
+/* --------------------------------------------------------------------------
+   INVESTIGATION STEPS (Modal)
+   -------------------------------------------------------------------------- */
+
+.investigation-step {
+    display: flex;
+    gap: var(--spacing-4);
+    padding: var(--spacing-4);
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-3);
+}
+
+.step-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-base);
+    flex-shrink: 0;
+}
+
+.step-icon.pending {
+    background: var(--gray-300);
+    color: var(--gray-500);
+}
+
+.step-icon.active {
+    background: var(--accent);
+    color: var(--dark);
+}
+
+.step-icon.done {
+    background: var(--success);
+    color: var(--white);
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-title {
+    font-weight: var(--font-weight-medium);
+    margin-bottom: 2px;
+}
+
+.step-desc {
+    font-size: 0.85rem;
+    color: var(--gray-500);
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 1200px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        order: -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-nav {
+        padding: 0 var(--spacing-5);
+    }
+
+    .dashboard-content {
+        padding: var(--spacing-5);
+    }
+
+    .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .user-name {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-bar {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS-läsare - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/utilities.css">
+    <style>
+        /* RSS-specifika stilar */
+        body { background: var(--gray-100); }
+
+        .rss-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 400px;
+            gap: var(--spacing-6);
+            height: calc(100vh - var(--nav-height));
+        }
+
+        @media (max-width: 1400px) {
+            .rss-grid { grid-template-columns: 250px 1fr; }
+            .article-preview { display: none; }
+        }
+
+        @media (max-width: 900px) {
+            .rss-grid { grid-template-columns: 1fr; }
+            .feeds-sidebar { display: none; }
+        }
+
+        /* Feeds sidebar */
+        .feeds-sidebar {
+            background: var(--white);
+            border-right: 1px solid var(--gray-300);
+            padding: var(--spacing-4);
+            overflow-y: auto;
+        }
+
+        .feed-category-title {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: var(--spacing-3) var(--spacing-2);
+            margin-top: var(--spacing-4);
+        }
+
+        .feed-category-title:first-child { margin-top: 0; }
+
+        .feed-source {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            padding: var(--spacing-2) var(--spacing-3);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .feed-source:hover { background: var(--gray-100); }
+        .feed-source.active { background: var(--accent-muted); }
+
+        .feed-source-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: var(--radius-sm);
+            background: var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .feed-source-name {
+            flex: 1;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .feed-source-count {
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+        }
+
+        /* Articles list */
+        .articles-container {
+            padding: var(--spacing-4);
+            overflow-y: auto;
+        }
+
+        .articles-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-4);
+        }
+
+        .articles-header h2 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .article-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-300);
+            padding: var(--spacing-4);
+            margin-bottom: var(--spacing-3);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .article-card:hover {
+            border-color: var(--dark);
+            box-shadow: var(--shadow-md);
+        }
+
+        .article-card.active {
+            border-color: var(--accent);
+            border-width: 2px;
+        }
+
+        .article-card.read { opacity: 0.7; }
+
+        .article-source {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .article-source-badge {
+            background: var(--gray-100);
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .article-title {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            line-height: var(--line-height-snug);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .article-excerpt {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            line-height: var(--line-height-normal);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            margin-top: var(--spacing-3);
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+        }
+
+        /* Article preview */
+        .article-preview {
+            background: var(--white);
+            border-left: 1px solid var(--gray-300);
+            overflow-y: auto;
+        }
+
+        .preview-header {
+            padding: var(--spacing-4);
+            border-bottom: 1px solid var(--gray-300);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .preview-content {
+            padding: var(--spacing-6);
+        }
+
+        .preview-title {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            line-height: var(--line-height-snug);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .preview-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-4);
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            margin-bottom: var(--spacing-6);
+            padding-bottom: var(--spacing-6);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .preview-image {
+            width: 100%;
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .preview-text {
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-relaxed);
+            color: var(--gray-700);
+        }
+
+        .preview-text p { margin-bottom: var(--spacing-4); }
+
+        .preview-actions {
+            display: flex;
+            gap: var(--spacing-2);
+            margin-top: var(--spacing-6);
+            padding-top: var(--spacing-6);
+            border-top: 1px solid var(--gray-200);
+        }
+
+        /* Keyword alerts */
+        .keyword-match {
+            background: var(--accent-muted);
+            padding: 0 4px;
+            border-radius: 2px;
+        }
+
+        /* Search */
+        .search-box {
+            position: relative;
+            margin-bottom: var(--spacing-4);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: var(--spacing-3) var(--spacing-4);
+            padding-left: 40px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
+
+        /* Filters */
+        .filter-tabs {
+            display: flex;
+            gap: var(--spacing-2);
+            margin-bottom: var(--spacing-4);
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: var(--spacing-2) var(--spacing-3);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .filter-tab:hover { border-color: var(--dark); }
+        .filter-tab.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
+
+        /* Empty state */
+        .empty-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--gray-500);
+            text-align: center;
+            padding: var(--spacing-8);
+        }
+
+        .empty-preview-icon {
+            font-size: 48px;
+            margin-bottom: var(--spacing-4);
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="dashboard-nav">
+        <div class="nav-inner">
+            <div class="d-flex items-center gap-4">
+                <a href="../../" class="nav-brand">Bevakningsverktyget</a>
+                <span class="text-muted">›</span>
+                <span class="font-medium">RSS-läsare</span>
+            </div>
+            <div class="nav-right">
+                <button class="btn btn-secondary btn-sm" onclick="refreshAllFeeds()">
+                    <span id="refresh-icon">🔄</span> Uppdatera
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleSettings()">⚙️</button>
+                <a href="../../" class="btn btn-ghost btn-sm">← Tillbaka</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="rss-grid">
+        <!-- Feeds sidebar -->
+        <aside class="feeds-sidebar">
+            <div class="search-box">
+                <input type="text" id="feed-search" placeholder="Sök källor...">
+            </div>
+
+            <div id="feeds-list">
+                <div class="empty-state p-4">
+                    <div class="loader"></div>
+                    <p class="mt-2 text-sm">Laddar källor...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Articles list -->
+        <main class="articles-container">
+            <div class="articles-header">
+                <h2 id="articles-title">Alla nyheter</h2>
+                <div class="d-flex gap-2">
+                    <select id="sort-select" class="btn btn-secondary btn-sm">
+                        <option value="newest">Nyast först</option>
+                        <option value="oldest">Äldst först</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-tabs" id="category-tabs">
+                <button class="filter-tab active" data-category="all">Alla</button>
+                <button class="filter-tab" data-category="tech">Tech</button>
+                <button class="filter-tab" data-category="finans">Finans</button>
+                <button class="filter-tab" data-category="nyheter">Nyheter</button>
+            </div>
+
+            <div id="articles-list">
+                <div class="empty-state">
+                    <div class="loader loader-lg"></div>
+                    <p class="mt-4">Hämtar nyheter...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Article preview -->
+        <aside class="article-preview" id="article-preview">
+            <div class="empty-preview">
+                <div class="empty-preview-icon">📰</div>
+                <h3>Välj en artikel</h3>
+                <p class="mt-2">Klicka på en artikel till vänster för att läsa den här</p>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Inställningar</h3>
+                <button class="modal-close" onclick="toggleSettings()">×</button>
+            </div>
+            <div class="modal-body">
+                <h4 class="font-semibold mb-4">Bevakade nyckelord</h4>
+                <p class="text-sm text-muted mb-4">Artiklar som innehåller dessa ord markeras</p>
+                <div id="keywords-list" class="mb-4"></div>
+                <div class="d-flex gap-2">
+                    <input type="text" id="new-keyword" placeholder="Lägg till nyckelord..." class="flex-1">
+                    <button class="btn btn-accent btn-sm" onclick="addKeyword()">Lägg till</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/auth.js"></script>
+    <script src="../../assets/js/api.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/components.js"></script>
+    <script>
+        // =========================================================================
+        // RSS READER - Klientkod
+        // =========================================================================
+
+        // RSS feeds konfiguration
+        const RSS_FEEDS = [
+            // Svenska Tech/Business
+            { id: 'breakit', name: 'Breakit', url: 'https://www.breakit.se/feed/artiklar', category: 'tech', enabled: true },
+            { id: 'realtid', name: 'Realtid', url: 'https://www.realtid.se/rss/senaste', category: 'finans', enabled: true },
+            { id: 'nyteknik', name: 'Ny Teknik', url: 'https://www.nyteknik.se/feed', category: 'tech', enabled: true },
+            { id: 'di', name: 'Di Digital', url: 'https://digital.di.se/rss', category: 'finans', enabled: true },
+
+            // Svenska Dagstidningar
+            { id: 'svt', name: 'SVT Nyheter', url: 'https://www.svt.se/nyheter/rss.xml', category: 'nyheter', enabled: true },
+            { id: 'omni', name: 'Omni', url: 'https://omni.se/rss', category: 'nyheter', enabled: true },
+
+            // Internationella Tech
+            { id: 'techcrunch', name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: 'tech', enabled: true },
+            { id: 'theverge', name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'tech', enabled: true },
+            { id: 'hackernews', name: 'Hacker News', url: 'https://hnrss.org/frontpage', category: 'tech', enabled: true },
+
+            // Internationella Finans
+            { id: 'reuters', name: 'Reuters', url: 'https://www.reutersagency.com/feed/', category: 'finans', enabled: true }
+        ];
+
+        // State
+        let articles = [];
+        let selectedArticle = null;
+        let currentCategory = 'all';
+        let currentFeed = null;
+        let keywords = Utils.getStorage('rss-keywords', ['startup', 'greentech', 'cleantech', 'klimat']);
+        let readArticles = Utils.getStorage('rss-read', []);
+
+        // RSS proxy URL - använder en publik CORS proxy
+        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+        // =========================================================================
+        // FETCH RSS
+        // =========================================================================
+
+        async function fetchFeed(feed) {
+            try {
+                const proxyUrl = CORS_PROXY + encodeURIComponent(feed.url);
+                const response = await fetch(proxyUrl);
+
+                if (!response.ok) throw new Error('Fetch failed');
+
+                const text = await response.text();
+                return parseRSS(text, feed);
+            } catch (error) {
+                console.error(`Error fetching ${feed.name}:`, error);
+                return [];
+            }
+        }
+
+        function parseRSS(xml, feed) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            const items = doc.querySelectorAll('item, entry');
+            const articles = [];
+
+            items.forEach((item, index) => {
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent ||
+                    item.querySelector('link')?.getAttribute('href') || '';
+                const description = item.querySelector('description, summary, content')?.textContent || '';
+                const pubDate = item.querySelector('pubDate, published, updated')?.textContent || '';
+                const author = item.querySelector('author, creator, dc\\:creator')?.textContent || '';
+
+                // Försök hitta bild
+                let image = '';
+                const enclosure = item.querySelector('enclosure[type^="image"]');
+                const mediaContent = item.querySelector('media\\:content, content');
+                const thumbnail = item.querySelector('media\\:thumbnail');
+
+                if (enclosure) image = enclosure.getAttribute('url');
+                else if (mediaContent && mediaContent.getAttribute('url')) image = mediaContent.getAttribute('url');
+                else if (thumbnail) image = thumbnail.getAttribute('url');
+                else {
+                    // Sök i description efter img
+                    const imgMatch = description.match(/<img[^>]+src="([^"]+)"/);
+                    if (imgMatch) image = imgMatch[1];
+                }
+
+                // Rensa HTML från description
+                const cleanDesc = description.replace(/<[^>]+>/g, '').trim();
+
+                articles.push({
+                    id: `${feed.id}-${index}-${Date.now()}`,
+                    title: title.trim(),
+                    link: link.trim(),
+                    description: cleanDesc.substring(0, 300),
+                    pubDate: pubDate ? new Date(pubDate) : new Date(),
+                    author: author.trim(),
+                    image: image,
+                    source: feed.name,
+                    sourceId: feed.id,
+                    category: feed.category,
+                    read: readArticles.includes(link.trim())
+                });
+            });
+
+            return articles;
+        }
+
+        async function refreshAllFeeds() {
+            const icon = document.getElementById('refresh-icon');
+            icon.textContent = '⏳';
+            icon.style.animation = 'spin 1s linear infinite';
+
+            articles = [];
+            const enabledFeeds = RSS_FEEDS.filter(f => f.enabled);
+
+            // Hämta alla feeds parallellt
+            const results = await Promise.allSettled(
+                enabledFeeds.map(feed => fetchFeed(feed))
+            );
+
+            results.forEach(result => {
+                if (result.status === 'fulfilled') {
+                    articles = articles.concat(result.value);
+                }
+            });
+
+            // Sortera efter datum
+            articles.sort((a, b) => b.pubDate - a.pubDate);
+
+            // Markera keyword-matches
+            highlightKeywords();
+
+            renderArticles();
+            renderFeedsSidebar();
+
+            icon.textContent = '🔄';
+            icon.style.animation = '';
+
+            Components.showToast(`${articles.length} artiklar laddade`, 'success');
+        }
+
+        function highlightKeywords() {
+            articles.forEach(article => {
+                const text = (article.title + ' ' + article.description).toLowerCase();
+                article.keywordMatches = keywords.filter(kw =>
+                    text.includes(kw.toLowerCase())
+                );
+            });
+        }
+
+        // =========================================================================
+        // RENDER
+        // =========================================================================
+
+        function renderFeedsSidebar() {
+            const container = document.getElementById('feeds-list');
+            const categories = {};
+
+            RSS_FEEDS.forEach(feed => {
+                if (!categories[feed.category]) {
+                    categories[feed.category] = [];
+                }
+                const count = articles.filter(a => a.sourceId === feed.id).length;
+                categories[feed.category].push({ ...feed, count });
+            });
+
+            const categoryNames = {
+                tech: '💻 Tech',
+                finans: '💰 Finans',
+                nyheter: '📰 Nyheter'
+            };
+
+            let html = `
+                <div class="feed-source ${!currentFeed ? 'active' : ''}" onclick="selectFeed(null)">
+                    <div class="feed-source-icon">📚</div>
+                    <div class="feed-source-name">Alla källor</div>
+                    <div class="feed-source-count">${articles.length}</div>
+                </div>
+            `;
+
+            Object.entries(categories).forEach(([cat, feeds]) => {
+                html += `<div class="feed-category-title">${categoryNames[cat] || cat}</div>`;
+                feeds.forEach(feed => {
+                    html += `
+                        <div class="feed-source ${currentFeed === feed.id ? 'active' : ''}"
+                             onclick="selectFeed('${feed.id}')">
+                            <div class="feed-source-name">${feed.name}</div>
+                            <div class="feed-source-count">${feed.count}</div>
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderArticles() {
+            const container = document.getElementById('articles-list');
+            let filtered = articles;
+
+            // Filtrera på kategori
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(a => a.category === currentCategory);
+            }
+
+            // Filtrera på källa
+            if (currentFeed) {
+                filtered = filtered.filter(a => a.sourceId === currentFeed);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <h3>Inga artiklar</h3>
+                        <p>Inga artiklar matchade dina filter</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(article => {
+                const hasKeywords = article.keywordMatches && article.keywordMatches.length > 0;
+                return `
+                    <div class="article-card ${article.read ? 'read' : ''} ${selectedArticle?.id === article.id ? 'active' : ''}"
+                         onclick="selectArticle('${article.id}')">
+                        <div class="article-source">
+                            <span class="article-source-badge">${article.source}</span>
+                            ${hasKeywords ? `<span class="keyword-match">🔔 ${article.keywordMatches.join(', ')}</span>` : ''}
+                        </div>
+                        <div class="article-title">${escapeHtml(article.title)}</div>
+                        <div class="article-excerpt">${escapeHtml(article.description)}</div>
+                        <div class="article-meta">
+                            <span>${Utils.formatDate(article.pubDate, { relative: true })}</span>
+                            ${article.author ? `<span>• ${escapeHtml(article.author)}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectArticle(id) {
+            selectedArticle = articles.find(a => a.id === id);
+            if (!selectedArticle) return;
+
+            // Markera som läst
+            if (!readArticles.includes(selectedArticle.link)) {
+                readArticles.push(selectedArticle.link);
+                Utils.setStorage('rss-read', readArticles);
+                selectedArticle.read = true;
+            }
+
+            renderArticles();
+            renderPreview();
+        }
+
+        function renderPreview() {
+            const container = document.getElementById('article-preview');
+
+            if (!selectedArticle) {
+                container.innerHTML = `
+                    <div class="empty-preview">
+                        <div class="empty-preview-icon">📰</div>
+                        <h3>Välj en artikel</h3>
+                        <p class="mt-2">Klicka på en artikel till vänster för att läsa den här</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="preview-header">
+                    <span class="text-sm text-muted">${selectedArticle.source}</span>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-secondary btn-sm" onclick="bookmarkArticle()">⭐</button>
+                        <button class="btn btn-secondary btn-sm" onclick="shareArticle()">📤</button>
+                    </div>
+                </div>
+                <div class="preview-content">
+                    <h1 class="preview-title">${escapeHtml(selectedArticle.title)}</h1>
+                    <div class="preview-meta">
+                        <span>${Utils.formatDate(selectedArticle.pubDate, { includeTime: true })}</span>
+                        ${selectedArticle.author ? `<span>• ${escapeHtml(selectedArticle.author)}</span>` : ''}
+                    </div>
+                    ${selectedArticle.image ? `<img src="${selectedArticle.image}" class="preview-image" alt="">` : ''}
+                    <div class="preview-text">
+                        <p>${escapeHtml(selectedArticle.description)}</p>
+                    </div>
+                    <div class="preview-actions">
+                        <a href="${selectedArticle.link}" target="_blank" class="btn btn-accent">
+                            Läs hela artikeln →
+                        </a>
+                        <button class="btn btn-secondary" onclick="investigateArticle()">
+                            🔍 Undersök
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // =========================================================================
+        // ACTIONS
+        // =========================================================================
+
+        function selectFeed(feedId) {
+            currentFeed = feedId;
+            renderFeedsSidebar();
+            renderArticles();
+
+            const feedName = feedId ? RSS_FEEDS.find(f => f.id === feedId)?.name : 'Alla nyheter';
+            document.getElementById('articles-title').textContent = feedName;
+        }
+
+        function filterByCategory(category) {
+            currentCategory = category;
+
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.category === category);
+            });
+
+            renderArticles();
+        }
+
+        function bookmarkArticle() {
+            if (!selectedArticle) return;
+            Components.showToast('Artikel sparad ⭐', 'success');
+        }
+
+        function shareArticle() {
+            if (!selectedArticle) return;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: selectedArticle.title,
+                    url: selectedArticle.link
+                });
+            } else {
+                Utils.copyToClipboard(selectedArticle.link);
+                Components.showToast('Länk kopierad!', 'success');
+            }
+        }
+
+        function investigateArticle() {
+            if (!selectedArticle) return;
+            // Öppna i företagsbevakning med sökning på eventuellt företagsnamn
+            const query = encodeURIComponent(selectedArticle.title.split(' ').slice(0, 3).join(' '));
+            window.open(`../../bevakning/foretagslista/?search=${query}`, '_blank');
+        }
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('show');
+            if (modal.classList.contains('show')) {
+                renderKeywords();
+            }
+        }
+
+        function renderKeywords() {
+            const container = document.getElementById('keywords-list');
+            if (keywords.length === 0) {
+                container.innerHTML = '<p class="text-muted text-sm">Inga nyckelord tillagda</p>';
+                return;
+            }
+
+            container.innerHTML = keywords.map(kw => `
+                <span class="badge badge-member mr-2 mb-2" style="display: inline-flex; align-items: center; gap: 4px;">
+                    ${escapeHtml(kw)}
+                    <button onclick="removeKeyword('${escapeHtml(kw)}')" style="background:none;border:none;cursor:pointer;padding:0;margin-left:4px;">×</button>
+                </span>
+            `).join('');
+        }
+
+        function addKeyword() {
+            const input = document.getElementById('new-keyword');
+            const kw = input.value.trim().toLowerCase();
+
+            if (kw && !keywords.includes(kw)) {
+                keywords.push(kw);
+                Utils.setStorage('rss-keywords', keywords);
+                highlightKeywords();
+                renderKeywords();
+                renderArticles();
+            }
+
+            input.value = '';
+        }
+
+        function removeKeyword(kw) {
+            keywords = keywords.filter(k => k !== kw);
+            Utils.setStorage('rss-keywords', keywords);
+            highlightKeywords();
+            renderKeywords();
+            renderArticles();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // =========================================================================
+        // INIT
+        // =========================================================================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Kolla auth
+            const user = await Auth.getUser();
+            if (!user) {
+                window.location.href = '../../';
+                return;
+            }
+
+            // Event listeners
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', () => filterByCategory(tab.dataset.category));
+            });
+
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                if (e.target.value === 'oldest') {
+                    articles.sort((a, b) => a.pubDate - b.pubDate);
+                } else {
+                    articles.sort((a, b) => b.pubDate - a.pubDate);
+                }
+                renderArticles();
+            });
+
+            document.getElementById('new-keyword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addKeyword();
+            });
+
+            // Ladda feeds
+            await refreshAllFeeds();
+        });
+    </script>
+</body>
+</html>
