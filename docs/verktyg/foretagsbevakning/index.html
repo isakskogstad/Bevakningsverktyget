@@ -234,6 +234,191 @@
             .nav { padding: 0 20px; }
             .company-table { display: block; overflow-x: auto; }
         }
+
+        /* Company Detail Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            z-index: 1000;
+            padding: 40px 20px;
+            overflow-y: auto;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--white);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            margin: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 24px;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .modal-subtitle {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            font-family: monospace;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-500);
+            padding: 4px 8px;
+            line-height: 1;
+        }
+        .modal-close:hover { color: var(--dark); }
+        .modal-body { padding: 24px; }
+        .modal-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--gray-300);
+            padding-bottom: 0;
+        }
+        .modal-tab {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gray-500);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.2s;
+        }
+        .modal-tab:hover { color: var(--dark); }
+        .modal-tab.active {
+            color: var(--dark);
+            border-bottom-color: var(--accent);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 600px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+        .info-item {
+            background: var(--gray-100);
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .event-list { display: flex; flex-direction: column; gap: 12px; }
+        .event-card {
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 16px;
+            transition: border-color 0.2s;
+        }
+        .event-card:hover { border-color: var(--accent); }
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .event-type {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .event-date {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+        .event-description {
+            font-size: 0.9rem;
+            color: var(--gray-700);
+        }
+        .event-link {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--dark);
+            text-decoration: underline;
+        }
+        .document-list { display: flex; flex-direction: column; gap: 12px; }
+        .document-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .document-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .document-info { flex: 1; }
+        .document-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .document-meta {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .category-konkurs { background: #fef2f2; color: #dc2626; }
+        .category-likvidation { background: #fef3c7; color: #d97706; }
+        .category-kallelse { background: #e0f2fe; color: #0284c7; }
+        .category-default { background: var(--gray-100); color: var(--gray-700); }
+        .empty-tab {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--gray-500);
+        }
+        .empty-tab h4 { margin-bottom: 8px; color: var(--dark); }
     </style>
 </head>
 <body>
@@ -272,11 +457,11 @@
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="stat-events">-</div>
-                <div class="stat-label">Händelser idag</div>
+                <div class="stat-label">Händelser denna vecka</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="stat-alerts">-</div>
-                <div class="stat-label">Nya POIT-poster</div>
+                <div class="stat-label">Bolagshändelser totalt</div>
             </div>
         </div>
 
@@ -307,6 +492,8 @@
                                 <th>Orgnr</th>
                                 <th>Sektor</th>
                                 <th>Stad</th>
+                                <th>VD</th>
+                                <th>Ordförande</th>
                                 <th>Omsättning 2024</th>
                                 <th>Status</th>
                                 <th></th>
@@ -314,7 +501,7 @@
                         </thead>
                         <tbody id="companies-tbody">
                             <tr>
-                                <td colspan="7" class="empty-state">
+                                <td colspan="9" class="empty-state">
                                     <h3>Laddar företag...</h3>
                                 </td>
                             </tr>
@@ -327,6 +514,47 @@
                 <div class="pagination-buttons">
                     <button class="btn btn-secondary btn-sm" id="prev-btn" onclick="prevPage()" disabled>Föregående</button>
                     <button class="btn btn-secondary btn-sm" id="next-btn" onclick="nextPage()" disabled>Nästa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Company Detail Modal -->
+    <div class="modal-overlay" id="company-modal" onclick="closeModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title" id="modal-company-name">Företagsnamn</h2>
+                    <p class="modal-subtitle" id="modal-orgnr">556890-8288</p>
+                </div>
+                <button class="modal-close" onclick="closeModal()" aria-label="Stäng">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-tabs">
+                    <button class="modal-tab active" data-tab="overview" onclick="switchTab('overview')">Översikt</button>
+                    <button class="modal-tab" data-tab="events" onclick="switchTab('events')">Händelser</button>
+                    <button class="modal-tab" data-tab="documents" onclick="switchTab('documents')">Dokument</button>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="tab-content active" id="tab-overview">
+                    <div class="info-grid" id="company-info-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Events Tab -->
+                <div class="tab-content" id="tab-events">
+                    <div class="event-list" id="company-events">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Documents Tab -->
+                <div class="tab-content" id="tab-documents">
+                    <div class="document-list" id="company-documents">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -362,8 +590,8 @@
 
         async function loadCompanies() {
             const { data, error } = await sb
-                .from('loop_table')
-                .select('orgnr, company_name, sector, city, turnover_2024_sek, investment_status')
+                .from('loop_companies_with_management')
+                .select('orgnr, company_name, sector, city, turnover_2024_sek, investment_status, ceo_name, chairman_name, website, board_count')
                 .order('company_name');
 
             if (error) {
@@ -400,22 +628,25 @@
         }
 
         async function loadStats() {
-            // Get POIT announcements from today - ENDAST för Loop's bevakade företag
-            const today = new Date().toISOString().split('T')[0];
-            const { count: poitCount } = await sb
+            // Beräkna datum för senaste veckan
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const weekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+
+            // Hämta TOTALT antal bolagshändelser för Loop-företag
+            const { count: poitTotal } = await sb
+                .from('loop_poit_events')
+                .select('*', { count: 'exact', head: true });
+
+            document.getElementById('stat-alerts').textContent = poitTotal || 0;
+
+            // Hämta händelser denna vecka
+            const { count: weekCount } = await sb
                 .from('loop_poit_events')
                 .select('*', { count: 'exact', head: true })
-                .gte('announcement_date', today);
+                .gte('announcement_date', weekAgoStr);
 
-            document.getElementById('stat-alerts').textContent = poitCount || 0;
-
-            // Get company events from today
-            const { count: eventCount } = await sb
-                .from('company_events')
-                .select('*', { count: 'exact', head: true })
-                .gte('event_date', today);
-
-            document.getElementById('stat-events').textContent = eventCount || 0;
+            document.getElementById('stat-events').textContent = weekCount || 0;
         }
 
         function setupSearch() {
@@ -458,7 +689,7 @@
             if (pageData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="9" class="empty-state">
                             <h3>Inga företag hittades</h3>
                             <p>Försök ändra dina sökfilter</p>
                         </td>
@@ -473,6 +704,8 @@
                         <td class="company-orgnr">${c.orgnr || '-'}</td>
                         <td>${c.sector ? `<span class="sector-badge">${c.sector.split(',')[0]}</span>` : '-'}</td>
                         <td>${c.city || '-'}</td>
+                        <td>${c.ceo_name || '-'}</td>
+                        <td>${c.chairman_name || '-'}</td>
                         <td>${c.turnover_2024_sek ? formatCurrency(c.turnover_2024_sek) : '-'}</td>
                         <td>
                             <span class="status-dot active"></span>
@@ -522,18 +755,494 @@
             }
         }
 
-        function viewCompany(orgnr) {
-            // TODO: Implement company detail view
-            alert('Företagsdetaljer för ' + orgnr + ' - kommer snart!');
+        // ===========================================
+        // COMPANY DETAIL MODAL
+        // ===========================================
+
+        async function viewCompany(orgnr) {
+            const company = companies.find(c => c.orgnr === orgnr);
+            if (!company) {
+                showAlert('Företag hittades inte', 'error');
+                return;
+            }
+
+            // Show modal
+            document.getElementById('company-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Set header info
+            document.getElementById('modal-company-name').textContent = company.company_name || 'Okänt företag';
+            document.getElementById('modal-orgnr').textContent = formatOrgnr(orgnr);
+
+            // Load detailed company data
+            const details = await loadCompanyDetails(orgnr);
+
+            // Populate overview with enriched data
+            populateOverview(company, details);
+
+            // Load events
+            await loadCompanyEvents(orgnr);
+
+            // Load documents
+            await loadCompanyDocuments(orgnr);
+
+            // Reset to overview tab
+            switchTab('overview');
         }
 
+        function formatOrgnr(orgnr) {
+            if (!orgnr) return '-';
+            const clean = orgnr.replace(/-/g, '');
+            if (clean.length === 10) {
+                return clean.substring(0, 6) + '-' + clean.substring(6);
+            }
+            return orgnr;
+        }
+
+        async function loadCompanyDetails(orgnr) {
+            const cleanOrgnr = orgnr.replace(/-/g, '');
+
+            const details = {
+                financials: [],
+                owners: [],
+                boardMembers: []
+            };
+
+            try {
+                // Fetch latest 3 years financial data
+                const { data: financials, error: finError } = await sb
+                    .from('financials')
+                    .select('period_year, revenue, operating_profit, net_profit, num_employees, total_assets, equity')
+                    .eq('company_orgnr', cleanOrgnr)
+                    .order('period_year', { ascending: false })
+                    .limit(3);
+
+                if (finError) {
+                    console.error('Error loading financials:', finError);
+                } else {
+                    details.financials = financials || [];
+                }
+
+                // Fetch current owners
+                const { data: owners, error: ownError } = await sb
+                    .from('loop_owners')
+                    .select('owner_name, owner_type, ownership_percent')
+                    .eq('orgnr', cleanOrgnr)
+                    .eq('is_current', true)
+                    .order('ownership_percent', { ascending: false })
+                    .limit(5);
+
+                if (ownError) {
+                    console.error('Error loading owners:', ownError);
+                } else {
+                    details.owners = owners || [];
+                }
+
+                // Fetch active board members (excluding CEO and Chairman)
+                const { data: roles, error: rolesError } = await sb
+                    .from('roles')
+                    .select('name, role_type, role_category, from_date, city')
+                    .eq('company_orgnr', cleanOrgnr)
+                    .eq('role_category', 'BOARD')
+                    .is('to_date', null);
+
+                if (rolesError) {
+                    console.error('Error loading board members:', rolesError);
+                } else {
+                    details.boardMembers = roles || [];
+                }
+
+            } catch (err) {
+                console.error('Error loading company details:', err);
+            }
+
+            return details;
+        }
+
+        function populateOverview(company, details = {}) {
+            const grid = document.getElementById('company-info-grid');
+
+            // Basic company info
+            const fields = [
+                { label: 'Företagsnamn', value: company.company_name || '-' },
+                { label: 'Organisationsnummer', value: formatOrgnr(company.orgnr) },
+                { label: 'Sektor', value: company.sector || '-' },
+                { label: 'Stad', value: company.city || '-' },
+                { label: 'VD', value: company.ceo_name || '-' },
+                { label: 'Ordförande', value: company.chairman_name || '-' },
+                { label: 'Omsättning 2024', value: company.turnover_2024_sek ? formatCurrency(company.turnover_2024_sek) : '-' },
+                { label: 'Webbplats', value: company.website ? `<a href="${company.website}" target="_blank" rel="noopener">${company.website}</a>` : '-' },
+                { label: 'Status', value: '<span class="status-dot active"></span> Aktiv bevakning' },
+                { label: 'Senaste uppdatering', value: new Date().toLocaleDateString('sv-SE') }
+            ];
+
+            let html = fields.map(f => `
+                <div class="info-item">
+                    <div class="info-label">${f.label}</div>
+                    <div class="info-value">${f.value}</div>
+                </div>
+            `).join('');
+
+            // Add Financial Development section
+            if (details.financials && details.financials.length > 0) {
+                html += `
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <div class="info-label">Finansiell utveckling</div>
+                        <div style="overflow-x: auto; margin-top: 8px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--gray-300);">
+                                        <th style="text-align: left; padding: 8px; color: var(--gray-500); font-weight: 600;">År</th>
+                                        <th style="text-align: right; padding: 8px; color: var(--gray-500); font-weight: 600;">Omsättning</th>
+                                        <th style="text-align: right; padding: 8px; color: var(--gray-500); font-weight: 600;">Rörelseresultat</th>
+                                        <th style="text-align: right; padding: 8px; color: var(--gray-500); font-weight: 600;">Nettoresultat</th>
+                                        <th style="text-align: right; padding: 8px; color: var(--gray-500); font-weight: 600;">Anställda</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${details.financials.map(fin => `
+                                        <tr style="border-bottom: 1px solid var(--gray-300);">
+                                            <td style="padding: 8px; font-weight: 600;">${fin.period_year || '-'}</td>
+                                            <td style="padding: 8px; text-align: right;">${fin.revenue ? formatCurrency(fin.revenue) : '-'}</td>
+                                            <td style="padding: 8px; text-align: right; ${fin.operating_profit < 0 ? 'color: var(--error);' : ''}">${fin.operating_profit ? formatCurrency(fin.operating_profit) : '-'}</td>
+                                            <td style="padding: 8px; text-align: right; ${fin.net_profit < 0 ? 'color: var(--error);' : ''}">${fin.net_profit ? formatCurrency(fin.net_profit) : '-'}</td>
+                                            <td style="padding: 8px; text-align: right;">${fin.num_employees || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Add Owners section
+            if (details.owners && details.owners.length > 0) {
+                html += `
+                    <div class="info-item" style="grid-column: 1 / -1;">
+                        <div class="info-label">Ägare (Topp ${details.owners.length})</div>
+                        <div style="margin-top: 8px;">
+                            ${details.owners.map(owner => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-300);">
+                                    <div>
+                                        <div style="font-weight: 600; color: var(--dark);">${escapeHtml(owner.owner_name || 'Okänd')}</div>
+                                        <div style="font-size: 0.8rem; color: var(--gray-500);">${escapeHtml(owner.owner_type || '')}</div>
+                                    </div>
+                                    <div style="font-weight: 600; color: var(--dark);">${owner.ownership_percent ? owner.ownership_percent.toFixed(1) + '%' : '-'}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Add Board Members section
+            if (details.boardMembers && details.boardMembers.length > 0) {
+                // Filter out CEO and Chairman (they're already shown in basic info)
+                const otherBoardMembers = details.boardMembers.filter(member => {
+                    const roleType = (member.role_type || '').toLowerCase();
+                    return !roleType.includes('vd') &&
+                           !roleType.includes('verkställande direktör') &&
+                           !roleType.includes('ordförande');
+                });
+
+                if (otherBoardMembers.length > 0) {
+                    html += `
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <div class="info-label">Styrelseledamöter</div>
+                            <div style="margin-top: 8px;">
+                                ${otherBoardMembers.map(member => `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-300);">
+                                        <div>
+                                            <div style="font-weight: 600; color: var(--dark);">${escapeHtml(member.name || 'Okänd')}</div>
+                                            <div style="font-size: 0.8rem; color: var(--gray-500);">
+                                                ${escapeHtml(member.role_type || '')}
+                                                ${member.from_date ? ' • Sedan ' + formatDate(member.from_date) : ''}
+                                            </div>
+                                        </div>
+                                        ${member.city ? `<div style="color: var(--gray-500); font-size: 0.85rem;">${escapeHtml(member.city)}</div>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            grid.innerHTML = html;
+        }
+
+        async function loadCompanyEvents(orgnr) {
+            const container = document.getElementById('company-events');
+            container.innerHTML = '<div class="empty-tab"><p>Laddar händelser...</p></div>';
+
+            try {
+                // Remove dashes for query
+                const cleanOrgnr = orgnr.replace(/-/g, '');
+
+                const { data, error } = await sb
+                    .from('loop_poit_events')
+                    .select('*')
+                    .eq('org_number', cleanOrgnr)
+                    .order('announcement_date', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-tab">
+                            <h4>Inga händelser</h4>
+                            <p>Det finns inga registrerade bolagshändelser för detta företag</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.map(event => {
+                    const category = event.category || 'Okänd';
+                    const categoryClass = getCategoryClass(category);
+                    const poitId = event.announcement_id || '';
+                    const poitUrl = poitId ? `https://poit.bolagsverket.se/poit-app/kungorelse/${poitId.replace('/', '-')}` : '';
+
+                    return `
+                        <div class="event-card">
+                            <div class="event-header">
+                                <span class="category-badge ${categoryClass}">${escapeHtml(category)}</span>
+                                <span class="event-date">${formatDate(event.announcement_date)}</span>
+                            </div>
+                            <div class="event-description">${escapeHtml(event.title || 'Ingen beskrivning')}</div>
+                            ${poitUrl ? `<a href="${poitUrl}" target="_blank" rel="noopener" class="event-link">Visa på Bolagsverket →</a>` : ''}
+                            ${renderInvestigateButton(event, orgnr)}
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error loading events:', err);
+                container.innerHTML = `
+                    <div class="empty-tab">
+                        <h4>Kunde inte ladda händelser</h4>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getCategoryClass(category) {
+            if (!category) return 'category-default';
+            const lower = category.toLowerCase();
+            if (lower.includes('konkurs')) return 'category-konkurs';
+            if (lower.includes('likvidation')) return 'category-likvidation';
+            if (lower.includes('kallelse')) return 'category-kallelse';
+            return 'category-default';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('sv-SE', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ===========================================
+        // INVESTIGATE FURTHER - BOLAGSVERKET INTEGRATION
+        // ===========================================
+
+        function renderInvestigateButton(event, orgnr) {
+            const category = (event.category || '').toLowerCase();
+            const title = (event.title || '').toLowerCase();
+
+            // Determine what document type to fetch based on event
+            let docType = null;
+            let docLabel = '';
+
+            // Stämmoprotokoll - för beslut på årsstämma, extra stämma, föreningsstämma, styrelsemöte
+            if (title.includes('stämma') || title.includes('årsstämma') || title.includes('bolagsstämma') ||
+                title.includes('föreningsstämma') || title.includes('styrelsemöte') || title.includes('styrelsen beslut')) {
+                docType = 'PROT';
+                docLabel = 'Hämta stämmoprotokoll';
+            }
+            // Bolagsordning - för ändringar i bolagsordning
+            else if (title.includes('bolagsordning') || title.includes('verksamhet') ||
+                     title.includes('aktiekapital') || title.includes('räkenskapsår') ||
+                     title.includes('företagsnamn') || title.includes('firma')) {
+                docType = 'BOLORDN';
+                docLabel = 'Hämta bolagsordning';
+            }
+            // Verkliga huvudmän
+            else if (title.includes('verklig huvudman') || title.includes('huvudmän') ||
+                     title.includes('ägare') || title.includes('ägarförändring')) {
+                docType = 'RVHBEV';
+                docLabel = 'Hämta register verkliga huvudmän';
+            }
+
+            if (docType) {
+                const cleanOrgnr = orgnr.replace(/-/g, '');
+                return `
+                    <button class="btn btn-accent btn-sm" style="margin-top: 12px;"
+                            onclick="investigateFurther('${cleanOrgnr}', '${docType}', '${escapeHtml(event.title || '')}')">
+                        🔍 ${docLabel}
+                    </button>
+                `;
+            }
+
+            return '';
+        }
+
+        function investigateFurther(orgnr, docType, eventTitle) {
+            // Build Bolagsverket URL based on document type
+            const baseUrl = 'https://foretagsinfo.bolagsverket.se/sok-foretagsinformation-web/foretag/produkt';
+            const url = `${baseUrl}/${docType}/organisationsnummer/${orgnr}`;
+
+            // Log the investigation
+            console.log(`Investigating: ${docType} for orgnr ${orgnr}`);
+            console.log(`Event: ${eventTitle}`);
+            console.log(`URL: ${url}`);
+
+            // Open Bolagsverket in new tab
+            window.open(url, '_blank', 'noopener,noreferrer');
+
+            // Show user feedback
+            showAlert(`Öppnar Bolagsverket för att hämta ${getDocTypeName(docType)}...`, 'success');
+        }
+
+        function getDocTypeName(docType) {
+            switch(docType) {
+                case 'PROT': return 'stämmoprotokoll';
+                case 'BOLORDN': return 'bolagsordning';
+                case 'RVHBEV': return 'register över verkliga huvudmän';
+                default: return 'dokument';
+            }
+        }
+
+        async function loadCompanyDocuments(orgnr) {
+            const container = document.getElementById('company-documents');
+            container.innerHTML = '<div class="empty-tab"><p>Laddar dokument...</p></div>';
+
+            try {
+                const cleanOrgnr = orgnr.replace(/-/g, '');
+
+                const { data, error } = await sb
+                    .from('company_documents')
+                    .select('*')
+                    .eq('org_nr', cleanOrgnr)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-tab">
+                            <h4>Inga dokument</h4>
+                            <p>Det finns inga sparade dokument för detta företag</p>
+                            <p style="margin-top: 12px; font-size: 0.9rem; color: var(--gray-500);">
+                                Använd "Undersök vidare"-knappen på händelser för att hämta dokument från Bolagsverket
+                            </p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = data.map(doc => {
+                    const icon = getDocumentIcon(doc.document_type);
+                    const typeName = getDocumentTypeName(doc.document_type);
+
+                    return `
+                        <div class="document-card">
+                            <div class="document-icon">${icon}</div>
+                            <div class="document-info">
+                                <div class="document-title">${escapeHtml(doc.title || typeName)}</div>
+                                <div class="document-meta">
+                                    ${typeName} • ${formatDate(doc.document_date || doc.created_at)}
+                                    ${doc.source_url ? ` • <a href="${doc.source_url}" target="_blank">Visa källa</a>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error loading documents:', err);
+                container.innerHTML = `
+                    <div class="empty-tab">
+                        <h4>Kunde inte ladda dokument</h4>
+                        <p>${err.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function getDocumentIcon(type) {
+            switch(type) {
+                case 'poit_kungorelse': return '📋';
+                case 'arsredovisning': return '📊';
+                case 'pressmeddelande': return '📰';
+                case 'allmanhandling': return '📄';
+                case 'dom': return '⚖️';
+                case 'insolvens': return '⚠️';
+                default: return '📄';
+            }
+        }
+
+        function getDocumentTypeName(type) {
+            switch(type) {
+                case 'poit_kungorelse': return 'Kungörelse';
+                case 'arsredovisning': return 'Årsredovisning';
+                case 'pressmeddelande': return 'Pressmeddelande';
+                case 'allmanhandling': return 'Allmän handling';
+                case 'dom': return 'Dom/Beslut';
+                case 'insolvens': return 'Insolvenshandling';
+                default: return 'Dokument';
+            }
+        }
+
+        function switchTab(tabId) {
+            // Update tab buttons
+            document.querySelectorAll('.modal-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabId);
+            });
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tabId}`);
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('company-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeModal();
+            }
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
         function exportCSV() {
-            const headers = ['Företagsnamn', 'Orgnr', 'Sektor', 'Stad', 'Omsättning 2024'];
+            const headers = ['Företagsnamn', 'Orgnr', 'Sektor', 'Stad', 'VD', 'Ordförande', 'Omsättning 2024'];
             const rows = filteredCompanies.map(c => [
                 c.company_name || '',
                 c.orgnr || '',
                 c.sector || '',
                 c.city || '',
+                c.ceo_name || '',
+                c.chairman_name || '',
                 c.turnover_2024_sek || ''
             ]);
 
