@@ -1,0 +1,30 @@
+{
+  "name": "bevakningsverktyg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
+    "2captcha": "^3.0.5-2",
+    "2captcha-ts": "^2.4.1",
+    "express": "^5.2.1",
+    "media-scraper": "^0.1.2",
+    "pdf-parse": "^2.4.5",
+    "playwright": "^1.57.0",
+    "puppeteer": "^24.33.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-recaptcha": "^3.6.8",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "puppeteer-real-browser": "^1.4.4",
+    "resend": "^6.6.0",
+    "undetected-chromedriver": "^0.0.1-security",
+    "xlsx": "^0.18.5"
+  }
+}

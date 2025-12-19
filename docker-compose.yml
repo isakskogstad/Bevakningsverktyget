@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  bevakningsverktyg:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - HEADLESS=true
+      - CHECK_INTERVAL_MINUTES=60
+      - DEBUG=false
+    volumes:
+      # Möjliggör uppdatering av företagslistan utan rebuild
+      - ./companies.json:/app/companies.json:ro
+    restart: unless-stopped
+    # Behövs för Chrome i container
+    shm_size: '2gb'
+    # Säkerhetsinställningar för Chrome
+    cap_add:
+      - SYS_ADMIN

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Key Admin Panel</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 0;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+    }
+
+    .login-container {
+      max-width: 400px;
+      margin: 4rem auto;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background: var(--primary-hover);
+    }
+
+    button.secondary {
+      background: #6b7280;
+    }
+
+    button.secondary:hover {
+      background: #4b5563;
+    }
+
+    button.danger {
+      background: var(--danger);
+    }
+
+    button.danger:hover {
+      background: #dc2626;
+    }
+
+    button.success {
+      background: var(--success);
+    }
+
+    button.success:hover {
+      background: #059669;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .keys-grid {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .key-item {
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .key-info h3 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .key-service {
+      color: var(--primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .key-value {
+      font-family: 'Courier New', monospace;
+      background: var(--bg);
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      margin: 0.5rem 0;
+      font-size: 0.875rem;
+    }
+
+    .key-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .key-actions button {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 0.375rem;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #10b981;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+
+    .alert-warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #f59e0b;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border-radius: 0.5rem;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-header h2 {
+      font-size: 1.5rem;
+    }
+
+    .close-modal {
+      background: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      padding: 0;
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .close-modal:hover {
+      background: var(--bg);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+    }
+
+    .logout-btn {
+      position: absolute;
+      top: 1.5rem;
+      right: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .key-item {
+        grid-template-columns: 1fr;
+      }
+
+      .key-actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-container">
+    <div class="card">
+      <h1>🔐 Admin Login</h1>
+      <div id="loginError" class="alert alert-error hidden"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Användarnamn</label>
+          <input type="text" id="username" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Lösenord</label>
+          <input type="password" id="password" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" style="width: 100%;">Logga in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainApp" class="hidden">
+    <header>
+      <div class="container" style="position: relative;">
+        <h1>
+          🔐 API Key Manager
+        </h1>
+        <button class="logout-btn secondary" onclick="logout()">Logga ut</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <div id="alerts"></div>
+
+      <!-- Add Key Button -->
+      <div style="margin-bottom: 1.5rem;">
+        <button onclick="openAddKeyModal()" class="success">+ Lägg till ny nyckel</button>
+      </div>
+
+      <!-- Keys List -->
+      <div class="card">
+        <h2 style="margin-bottom: 1.5rem;">API-nycklar</h2>
+        <div id="keysList" class="keys-grid">
+          <div class="loading">Laddar...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Key Modal -->
+  <div id="keyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Lägg till API-nyckel</h2>
+        <button class="close-modal" onclick="closeKeyModal()">&times;</button>
+      </div>
+
+      <form id="keyForm">
+        <div class="form-group">
+          <label for="keyName">Nyckelnamn *</label>
+          <input type="text" id="keyName" required placeholder="t.ex. TWOCAPTCHA_API_KEY">
+          <small style="color: var(--text-muted);">Använd VERSALER med understreck</small>
+        </div>
+
+        <div class="form-group">
+          <label for="keyValue">Nyckelvärde *</label>
+          <input type="password" id="keyValue" required placeholder="Din API-nyckel">
+          <label style="margin-top: 0.5rem;">
+            <input type="checkbox" id="showPassword" onchange="togglePasswordVisibility()">
+            Visa värde
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="serviceName">Tjänst *</label>
+          <select id="serviceName" required style="width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border); border-radius: 0.375rem;">
+            <option value="">Välj tjänst...</option>
+            <option value="twocaptcha">2Captcha</option>
+            <option value="anticaptcha">AntiCaptcha</option>
+            <option value="twilio">Twilio</option>
+            <option value="supabase">Supabase</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="other">Annat</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Beskrivning</label>
+          <textarea id="description" placeholder="Valfri beskrivning..."></textarea>
+        </div>
+
+        <div class="btn-group">
+          <button type="submit">Spara</button>
+          <button type="button" class="secondary" onclick="closeKeyModal()">Avbryt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

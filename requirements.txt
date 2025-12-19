@@ -1,0 +1,26 @@
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+
+# Browser Automation
+undetected-chromedriver>=3.5.0
+selenium>=4.15.0
+
+# Database (optional)
+supabase>=2.0.0
+
+# Scheduling
+apscheduler>=3.10.0
+
+# Utils
+python-dotenv>=1.0.0
+httpx>=0.25.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Async support
+aiofiles>=23.0.0
+
+# Python 3.12+ compatibility
+setuptools>=65.0.0

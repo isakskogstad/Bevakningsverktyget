@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impact Loop – Bevakningsverktyg</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background: #D4FF00;
+            padding: 20px 40px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo svg {
+            width: 45px;
+            height: 45px;
+        }
+        .logo-text {
+            font-weight: 700;
+            font-size: 1.1em;
+            letter-spacing: -0.5px;
+        }
+
+        /* Main */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        /* Dashboard Card */
+        .dashboard-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            max-width: 560px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 30px 35px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .card-header h1 {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .card-header p {
+            color: #666;
+            font-size: 0.95em;
+        }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 600;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .live-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .card-body {
+            padding: 30px 35px;
+        }
+
+        /* Company Selector */
+        .company-selector {
+            margin-bottom: 20px;
+        }
+        .company-selector label {
+            display: block;
+            font-size: 0.85em;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .company-select-wrapper {
+            position: relative;
+        }
+        .company-select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.95em;
+            background: white;
+            cursor: pointer;
+            appearance: none;
+            transition: border-color 0.2s;
+        }
+        .company-select:hover {
+            border-color: #D4FF00;
+        }
+        .company-select:focus {
+            outline: none;
+            border-color: #D4FF00;
+        }
+        .company-select-wrapper::after {
+            content: '▼';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7em;
+            color: #888;
+            pointer-events: none;
+        }
+        .random-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #555;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .random-btn:hover {
+            background: #e0e0e0;
+        }
+
+        /* Start Button */
+        .start-btn {
+            width: 100%;
+            padding: 18px 30px;
+            background: #D4FF00;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .start-btn:hover {
+            background: #c4ef00;
+            transform: translateY(-1px);
+        }
+        .start-btn:disabled {
+            background: #e0e0e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .start-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            display: none;
+            margin-top: 25px;
+        }
+        .progress-section.active {
+            display: block;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: #f0f0f0;
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #D4FF00, #a8cc00);
+            border-radius: 8px;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* Status Log */
+        .status-log {
+            background: #fafafa;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            animation: fadeIn 0.3s ease;
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .status-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+        .status-icon.pending {
+            background: #f0f0f0;
+            color: #999;
+        }
+        .status-icon.active {
+            background: #D4FF00;
+            color: #000;
+        }
+        .status-icon.done {
+            background: #10b981;
+            color: white;
+        }
+        .status-text {
+            font-size: 0.9em;
+            color: #333;
+            line-height: 1.5;
+        }
+        .status-text.active {
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Complete Section */
+        .complete-section {
+            display: none;
+            text-align: center;
+            margin-top: 25px;
+        }
+        .complete-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        .success-icon {
+            width: 70px;
+            height: 70px;
+            background: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .success-icon svg {
+            width: 35px;
+            height: 35px;
+            color: white;
+        }
+        .complete-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .complete-subtitle {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        /* View Article Button */
+        .view-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 35px;
+            background: #000;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .view-btn:hover {
+            background: #222;
+            transform: translateY(-1px);
+        }
+        .view-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Loading Animation for button */
+        .view-btn.loading {
+            pointer-events: none;
+        }
+        .view-btn.loading .btn-text {
+            display: none;
+        }
+        .view-btn.loading .spinner {
+            display: block;
+        }
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Reset Button */
+        .reset-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            color: #666;
+        }
+        .reset-btn:hover {
+            background: #f5f5f5;
+        }
+
+        /* Article Preview Container */
+        .article-preview {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .article-preview.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .article-preview.visible {
+            opacity: 1;
+        }
+        .article-frame-container {
+            background: white;
+            border-radius: 16px;
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            overflow: hidden;
+            transform: scale(0.9) translateY(30px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .article-preview.visible .article-frame-container {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        .article-frame-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .article-frame-title {
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #333;
+        }
+        .article-frame-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #e0e0e0;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: #666;
+            transition: all 0.2s ease;
+        }
+        .article-frame-close:hover {
+            background: #d0d0d0;
+            color: #333;
+        }
+        .article-frame {
+            flex: 1;
+            border: none;
+            width: 100%;
+        }
+
+        /* Final Step Progress */
+        .final-progress {
+            display: none;
+            margin-top: 8px;
+            margin-left: 34px;
+        }
+        .final-progress.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        .final-progress-bar {
+            background: #e0e0e0;
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .final-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D4FF00, #a8cc00);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        .final-progress-text {
+            font-size: 0.75em;
+            color: #888;
+            font-family: 'SF Mono', 'Monaco', monospace;
+        }
+
+        /* Cost Breakdown Section */
+        .cost-section {
+            margin-top: 25px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+        }
+        .cost-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 0.95em;
+            color: #333;
+        }
+        .cost-header svg {
+            width: 18px;
+            height: 18px;
+            color: #666;
+        }
+        .cost-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .cost-item .label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cost-item .label .icon {
+            font-size: 14px;
+        }
+        .cost-item .value {
+            font-family: 'SF Mono', 'Monaco', monospace;
+            color: #333;
+        }
+        .cost-divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 10px 0;
+        }
+        .cost-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1em;
+        }
+        .cost-total .label {
+            font-weight: 600;
+            color: #333;
+        }
+        .cost-total .value {
+            font-weight: 700;
+            font-size: 1.2em;
+            color: #000;
+            font-family: 'SF Mono', 'Monaco', monospace;
+        }
+        .cost-detail {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 3px;
+        }
+        .tokens-detail {
+            font-size: 0.75em;
+            color: #999;
+            margin-left: 24px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <svg viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="25" cy="25" r="23" stroke="#000" stroke-width="2.5"/>
+                <text x="25" y="20" text-anchor="middle" font-size="7" font-weight="bold" fill="#000">IMPACT</text>
+                <text x="25" y="34" text-anchor="middle" font-size="7" font-weight="bold" fill="#000">LOOP</text>
+            </svg>
+            <span class="logo-text">Bevakningsverktyg</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h1>Företagsbevakning <span class="live-badge">LIVE</span></h1>
+                <p>Automatisk kontroll av Bolagsverkets register och generering av nyhetsartiklar.</p>
+            </div>
+            <div class="card-body">
+                <div class="company-selector">
+                    <label for="companySelect">Välj företag att kontrollera</label>
+                    <div class="company-select-wrapper">
+                        <select class="company-select" id="companySelect">
+                            <option value="">Laddar företag...</option>
+                        </select>
+                    </div>
+                    <button class="random-btn" id="randomBtn">🎲 Slumpa företag</button>
+                </div>
+
+                <button class="start-btn" id="startBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    Kör LIVE kontroll
+                </button>
+
+                <div class="progress-section" id="progressSection">
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <div class="status-log" id="statusLog"></div>
+                </div>
+
+                <div class="complete-section" id="completeSection">
+                    <div class="success-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <h2 class="complete-title">Artikel klar!</h2>
+                    <p class="complete-subtitle" id="companyName">Zpark Energy Systems AB</p>
+                    <a href="#" class="view-btn" id="viewBtn">
+                        <span class="btn-text">Visa nyhetsartikel</span>
+                        <div class="spinner"></div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>
+
+                    <!-- Kostnadsberäkning -->
+                    <div class="cost-section" id="costSection">
+                        <div class="cost-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v6l4 2"></path>
+                            </svg>
+                            Kostnadsberäkning
+                        </div>
+                        <div class="cost-items">
+                            <div class="cost-item">
+                                <span class="label"><span class="icon">🤖</span> AI-tokens (Claude Opus 4.5)</span>
+                                <span class="value" id="aiCost">0,00 kr</span>
+                            </div>
+                            <div class="tokens-detail" id="tokensDetail">
+                                Input: 0 tokens • Output: 0 tokens
+                            </div>
+                            <div class="cost-item">
+                                <span class="label"><span class="icon">📄</span> Dokumentköp (Bolagsverket)</span>
+                                <span class="value" id="docCost">0,00 kr</span>
+                            </div>
+                            <div class="cost-item">
+                                <span class="label"><span class="icon">🔍</span> Webb-sökningar</span>
+                                <span class="value" id="searchCost">0,00 kr</span>
+                            </div>
+                            <div class="cost-divider"></div>
+                            <div class="cost-total">
+                                <span class="label">Totalkostnad</span>
+                                <span class="value" id="totalCost">0,00 kr</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="reset-btn" id="resetBtn">Kör ny kontroll</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Article Preview Modal -->
+    <div class="article-preview" id="articlePreview">
+        <div class="article-frame-container">
+            <div class="article-frame-header">
+                <span class="article-frame-title">Förhandsgranskning av artikel</span>
+                <button class="article-frame-close" id="closePreview">✕</button>
+            </div>
+            <iframe class="article-frame" id="articleFrame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressBar = document.getElementById('progressBar');
+        const statusLog = document.getElementById('statusLog');
+        const completeSection = document.getElementById('completeSection');
+        const companyNameEl = document.getElementById('companyName');
+        const viewBtn = document.getElementById('viewBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const articlePreview = document.getElementById('articlePreview');
+        const articleFrame = document.getElementById('articleFrame');
+        const closePreview = document.getElementById('closePreview');
+        const companySelect = document.getElementById('companySelect');
+        const randomBtn = document.getElementById('randomBtn');
+
+        let eventSource = null;
+        let articleUrl = null;
+        let finalProgressInterval = null;
+        let isFinalStep = false;
+        let companies = [];
+
+        // Ladda företagslistan vid start
+        loadCompanies();
+
+        startBtn.addEventListener('click', startKontroll);
+        resetBtn.addEventListener('click', reset);
+        viewBtn.addEventListener('click', showArticle);
+        closePreview.addEventListener('click', closeArticlePreview);
+        articlePreview.addEventListener('click', (e) => {
+            if (e.target === articlePreview) closeArticlePreview();
+        });
+        randomBtn.addEventListener('click', selectRandomCompany);
+
+        async function loadCompanies() {
+            try {
+                const res = await fetch('/companies');
+                companies = await res.json();
+
+                companySelect.innerHTML = '<option value="">-- Välj ett företag --</option>';
+                companies.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.orgnr;
+                    opt.textContent = `${c.company_name} (${c.orgnr})`;
+                    companySelect.appendChild(opt);
+                });
+
+                // Förvälj ett slumpmässigt företag
+                selectRandomCompany();
+            } catch (e) {
+                companySelect.innerHTML = '<option value="">Kunde inte ladda företag</option>';
+            }
+        }
+
+        function selectRandomCompany() {
+            if (companies.length > 0) {
+                const random = companies[Math.floor(Math.random() * companies.length)];
+                companySelect.value = random.orgnr;
+            }
+        }
+
+        function startKontroll() {
+            const selectedOrgnr = companySelect.value;
+            if (!selectedOrgnr) {
+                alert('Välj ett företag först');
+                return;
+            }
+
+            startBtn.disabled = true;
+            startBtn.innerHTML = `
+                <div class="spinner" style="display:block; border-color: rgba(0,0,0,0.2); border-top-color: #000;"></div>
+                Kör LIVE-kontroll...
+            `;
+
+            progressSection.classList.add('active');
+            completeSection.classList.remove('active');
+            statusLog.innerHTML = '';
+            progressBar.style.width = '0%';
+
+            // Anslut till SSE
+            eventSource = new EventSource('/events');
+
+            eventSource.addEventListener('progress', (e) => {
+                const data = JSON.parse(e.data);
+                updateProgress(data);
+            });
+
+            eventSource.addEventListener('complete', (e) => {
+                const data = JSON.parse(e.data);
+                showComplete(data);
+                eventSource.close();
+            });
+
+            eventSource.addEventListener('error', (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    addStatusItem('❌ Fel: ' + data.message, 'error');
+                } catch (err) {
+                    addStatusItem('❌ Anslutningsfel', 'error');
+                }
+                eventSource.close();
+            });
+
+            // Starta LIVE kontrollen
+            fetch(`/start-kontroll?orgnr=${selectedOrgnr}`);
+        }
+
+        function updateProgress(data) {
+            progressBar.style.width = data.progress + '%';
+
+            // Uppdatera tidigare items till done
+            const items = statusLog.querySelectorAll('.status-item');
+            items.forEach(item => {
+                const icon = item.querySelector('.status-icon');
+                const text = item.querySelector('.status-text');
+                const finalProgress = item.querySelector('.final-progress');
+                if (icon.classList.contains('active')) {
+                    icon.classList.remove('active');
+                    icon.classList.add('done');
+                    icon.textContent = '✓';
+                    text.classList.remove('active');
+                    if (finalProgress) {
+                        finalProgress.classList.remove('active');
+                        clearInterval(finalProgressInterval);
+                    }
+                }
+            });
+
+            // Kontrollera om detta är sista steget
+            const isLastStep = data.step === data.total;
+
+            // Lägg till nytt item
+            addStatusItem(data.message, 'active', isLastStep);
+
+            // Starta 0-100% progress för sista steget
+            if (isLastStep) {
+                isFinalStep = true;
+                startFinalProgress();
+            }
+        }
+
+        function startFinalProgress() {
+            const progressContainer = statusLog.querySelector('.final-progress');
+            const progressFill = progressContainer?.querySelector('.final-progress-fill');
+            const progressText = progressContainer?.querySelector('.final-progress-text');
+
+            if (!progressContainer || !progressFill || !progressText) return;
+
+            progressContainer.classList.add('active');
+            let progress = 0;
+
+            finalProgressInterval = setInterval(() => {
+                progress += Math.random() * 3 + 1; // Öka med 1-4% åt gången
+                if (progress > 95) progress = 95; // Håll på 95% tills complete event
+
+                progressFill.style.width = progress + '%';
+                progressText.textContent = Math.floor(progress) + ' %';
+            }, 150);
+        }
+
+        function addStatusItem(message, status, showFinalProgress = false) {
+            const item = document.createElement('div');
+            item.className = 'status-item';
+
+            const iconClass = status === 'active' ? 'active' : status === 'error' ? 'done' : 'pending';
+            const iconContent = status === 'active' ? '→' : status === 'error' ? '!' : '○';
+
+            let finalProgressHtml = '';
+            if (showFinalProgress) {
+                finalProgressHtml = `
+                    <div class="final-progress">
+                        <div class="final-progress-bar">
+                            <div class="final-progress-fill"></div>
+                        </div>
+                        <span class="final-progress-text">0 %</span>
+                    </div>
+                `;
+            }
+
+            item.innerHTML = `
+                <span class="status-icon ${iconClass}">${iconContent}</span>
+                <div style="flex: 1;">
+                    <span class="status-text ${status === 'active' ? 'active' : ''}">${message}</span>
+                    ${finalProgressHtml}
+                </div>
+            `;
+
+            statusLog.appendChild(item);
+            statusLog.scrollTop = statusLog.scrollHeight;
+        }
+
+        function showComplete(data) {
+            // Stoppa final progress interval
+            clearInterval(finalProgressInterval);
+
+            // Slutför final progress till 100%
+            const progressFill = statusLog.querySelector('.final-progress-fill');
+            const progressText = statusLog.querySelector('.final-progress-text');
+            if (progressFill && progressText) {
+                progressFill.style.width = '100%';
+                progressText.textContent = '100 %';
+            }
+
+            // Kort fördröjning innan vi markerar som klar
+            setTimeout(() => {
+                // Markera sista item som done
+                const items = statusLog.querySelectorAll('.status-item');
+                items.forEach(item => {
+                    const icon = item.querySelector('.status-icon');
+                    const text = item.querySelector('.status-text');
+                    const finalProgress = item.querySelector('.final-progress');
+                    if (icon.classList.contains('active')) {
+                        icon.classList.remove('active');
+                        icon.classList.add('done');
+                        icon.textContent = '✓';
+                        text.classList.remove('active');
+                        if (finalProgress) {
+                            finalProgress.classList.remove('active');
+                        }
+                    }
+                });
+
+                progressBar.style.width = '100%';
+
+                setTimeout(() => {
+                    progressSection.classList.remove('active');
+                    completeSection.classList.add('active');
+                    companyNameEl.textContent = data.companyName;
+                    articleUrl = data.articleUrl;
+                    isFinalStep = false;
+
+                    // Uppdatera kostnadsvisning
+                    if (data.costs) {
+                        updateCostDisplay(data.costs);
+                    }
+
+                    startBtn.disabled = false;
+                    startBtn.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Kör kontroll
+                    `;
+                }, 500);
+            }, 300);
+        }
+
+        function updateCostDisplay(costs) {
+            const aiCostEl = document.getElementById('aiCost');
+            const tokensDetailEl = document.getElementById('tokensDetail');
+            const docCostEl = document.getElementById('docCost');
+            const searchCostEl = document.getElementById('searchCost');
+            const totalCostEl = document.getElementById('totalCost');
+
+            // Formatera siffror med komma som decimaltecken
+            const formatSEK = (value) => {
+                return parseFloat(value).toFixed(2).replace('.', ',') + ' kr';
+            };
+
+            // Formatera token-antal med tusentalsavgränsare
+            const formatTokens = (value) => {
+                return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            };
+
+            // AI-kostnad
+            aiCostEl.textContent = formatSEK(costs.aiTokens.totalCost);
+            tokensDetailEl.textContent = `Input: ${formatTokens(costs.aiTokens.input)} tokens • Output: ${formatTokens(costs.aiTokens.output)} tokens`;
+
+            // Dokumentköp
+            docCostEl.textContent = formatSEK(costs.dokumentKop);
+
+            // Webb-sökningar
+            searchCostEl.textContent = formatSEK(costs.webSearch);
+
+            // Totalkostnad
+            totalCostEl.textContent = formatSEK(costs.total);
+        }
+
+        function showArticle(e) {
+            e.preventDefault();
+            if (!articleUrl) return;
+
+            viewBtn.classList.add('loading');
+
+            // Ladda artikeln i iframe
+            articleFrame.src = articleUrl;
+
+            // Visa preview med snygg animation
+            articlePreview.classList.add('active');
+            setTimeout(() => {
+                articlePreview.classList.add('visible');
+                viewBtn.classList.remove('loading');
+            }, 50);
+        }
+
+        function closeArticlePreview() {
+            articlePreview.classList.remove('visible');
+            setTimeout(() => {
+                articlePreview.classList.remove('active');
+                articleFrame.src = '';
+            }, 400);
+        }
+
+        function reset() {
+            completeSection.classList.remove('active');
+            progressSection.classList.remove('active');
+            statusLog.innerHTML = '';
+            progressBar.style.width = '0%';
+            articleUrl = null;
+            isFinalStep = false;
+            clearInterval(finalProgressInterval);
+        }
+
+        // Stäng preview med Escape-tangent
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && articlePreview.classList.contains('active')) {
+                closeArticlePreview();
+            }
+        });
+    </script>
+</body>
+</html>

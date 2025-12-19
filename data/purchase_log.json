@@ -1,0 +1,49 @@
+{
+  "purchases": [
+    {
+      "id": "PUR-1766122846333",
+      "timestamp": "2025-12-19T05:40:46.333Z",
+      "date": "2025-12-19",
+      "orgnr": "5593220048",
+      "companyName": null,
+      "documentType": "PROTOKOLL",
+      "amountSEK": 2.5,
+      "ordernummer": "146485925",
+      "email": "isak.skogstad@me.com",
+      "status": "completed",
+      "paymentMethod": "card",
+      "notes": null
+    },
+    {
+      "id": "PUR-1766127731626",
+      "timestamp": "2025-12-19T07:02:11.626Z",
+      "date": "2025-12-19",
+      "orgnr": "5593220048",
+      "companyName": null,
+      "documentType": "PROTOKOLL",
+      "amountSEK": 2.5,
+      "ordernummer": "146494525",
+      "email": "isak.skogstad@me.com",
+      "status": "completed",
+      "paymentMethod": "card",
+      "notes": null
+    },
+    {
+      "id": "PUR-1766141950626",
+      "timestamp": "2025-12-19T10:59:10.626Z",
+      "date": "2025-12-19",
+      "orgnr": "5593220048",
+      "companyName": null,
+      "documentType": "PROTOKOLL",
+      "amountSEK": 2.5,
+      "ordernummer": "146569425",
+      "email": "isak.skogstad@me.com",
+      "status": "completed",
+      "paymentMethod": "card",
+      "notes": null
+    }
+  ],
+  "dailyTotals": {
+    "2025-12-19": 7.5
+  }
+}
