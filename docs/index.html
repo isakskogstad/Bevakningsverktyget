@@ -1462,10 +1462,13 @@
                 return;
             }
             try {
-                const { data, error } = await sb
+                console.log('Starting loadCompanyData, sb=', !!sb);
+                const result = await sb
                     .from('loop_table')
                     .select('orgnr, company_name, sector, turnover_2024_sek, website, city, ceo_name, chairman_name')
                     .limit(1500);
+                console.log('Query result:', result);
+                const { data, error } = result;
 
                 if (error) {
                     console.error('Error loading company data:', error);
