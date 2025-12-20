@@ -8,6 +8,29 @@ const path = require('path');
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 const ARTICLE_URLS = (process.env.BONNIER_ARTICLE_URLS || '').split(',').map(u => u.trim()).filter(Boolean);
+
+async function fetchCompanies() {
+  const { data, error } = await supabase
+    .from('loop_table')
+    .select('orgnr, company_name')
+    .order('company_name');
+
+  if (error) {
+    console.error('Failed to fetch company list', error.message);
+    return [];
+  }
+
+  return (data || []).map(row => ({
+    orgnr: row.orgnr,
+    company_name: row.company_name,
+    normalized: (row.company_name || '').toLowerCase()
+  })).filter(c => c.company_name);
+}
+
+function matchCompanies(body, companies) {
+  const normalized = (body || '').toLowerCase();
+  return companies.filter(c => normalized.includes(c.normalized));
+}
 const SESSION_DIR = process.env.BONNIER_SESSION_DIR || path.resolve(__dirname, '../data/bonnier-session');
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -33,6 +56,7 @@ async function run() {
 
   await scraper.init();
 
+  const companies = await fetchCompanies();
   for (const url of ARTICLE_URLS) {
     console.log(`Scraping article: ${url}`);
     try {
@@ -56,9 +80,21 @@ async function run() {
         created_at: new Date().toISOString()
       };
 
+      const matched = matchCompanies(article.body, companies)
+        .map(c => c.company_name)
+        .slice(0, 5);
+
+      if (!matched.length) {
+        console.log('   Skipping article – no monitored company mentioned');
+        continue;
+      }
+
       const { data, error } = await supabase
         .from('news_articles')
-        .upsert(payload, { onConflict: 'url' });
+        .upsert({
+          ...payload,
+          related_companies: matched
+        }, { onConflict: 'url' });
 
       if (error) {
         console.error('Supabase insert failed', error.message);
