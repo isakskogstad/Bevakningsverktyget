@@ -1358,8 +1358,10 @@
         // =========================================================================
         async function initSupabase() {
             try {
+                console.log('Initializing Supabase with URL:', CONFIG.supabase.url);
                 sb = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
                 const { data: { session } } = await sb.auth.getSession();
+                console.log('Session status:', session ? 'Logged in as ' + session.user.email : 'Not logged in');
                 if (session) {
                     currentUser = session.user;
                     await showDashboard();
