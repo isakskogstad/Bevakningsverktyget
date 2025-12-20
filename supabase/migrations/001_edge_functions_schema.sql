@@ -433,21 +433,26 @@ CREATE TRIGGER trigger_cleanup_rate_limits
 CREATE OR REPLACE FUNCTION cleanup_old_cache(older_than_hours INTEGER DEFAULT 72)
 RETURNS INTEGER AS $$
 DECLARE
-  deleted_count INTEGER;
+  rss_deleted INTEGER := 0;
+  press_deleted INTEGER := 0;
 BEGIN
   -- Rensa gamla RSS-artiklar
-  DELETE FROM rss_articles
-  WHERE fetched_at < NOW() - (older_than_hours || ' hours')::INTERVAL;
-
-  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  WITH deleted AS (
+    DELETE FROM rss_articles
+    WHERE fetched_at < NOW() - (older_than_hours || ' hours')::INTERVAL
+    RETURNING 1
+  )
+  SELECT COUNT(*) INTO rss_deleted FROM deleted;
 
   -- Rensa gammal pressroom cache
-  DELETE FROM pressroom_cache
-  WHERE expires_at < NOW() - (older_than_hours || ' hours')::INTERVAL;
+  WITH deleted AS (
+    DELETE FROM pressroom_cache
+    WHERE expires_at < NOW() - (older_than_hours || ' hours')::INTERVAL
+    RETURNING 1
+  )
+  SELECT COUNT(*) INTO press_deleted FROM deleted;
 
-  GET DIAGNOSTICS deleted_count = deleted_count + ROW_COUNT;
-
-  RETURN deleted_count;
+  RETURN COALESCE(rss_deleted, 0) + COALESCE(press_deleted, 0);
 END;
 $$ LANGUAGE plpgsql;
 
@@ -471,7 +476,7 @@ CREATE POLICY "Admins can manage feeds"
   USING (
     EXISTS (
       SELECT 1 FROM user_profiles
-      WHERE user_profiles.user_id = auth.uid()
+      WHERE user_profiles.id = auth.uid()
       AND user_profiles.role = 'admin'
     )
   );

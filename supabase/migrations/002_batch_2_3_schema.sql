@@ -119,6 +119,14 @@ CREATE TABLE IF NOT EXISTS public.budget_logs (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure expected columns exist if budget_logs was created earlier
+ALTER TABLE IF EXISTS public.budget_logs
+  ADD COLUMN IF NOT EXISTS tokens_input INTEGER;
+ALTER TABLE IF EXISTS public.budget_logs
+  ADD COLUMN IF NOT EXISTS tokens_output INTEGER;
+ALTER TABLE IF EXISTS public.budget_logs
+  ADD COLUMN IF NOT EXISTS cost_sek DECIMAL(10,2);
+
 -- Indexes for budget_logs
 CREATE INDEX IF NOT EXISTS idx_budget_logs_user_id ON budget_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_budget_logs_service ON budget_logs(service);
@@ -339,39 +347,49 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- VIEWS
 -- ============================================================================
 
--- View: User spending overview
-CREATE OR REPLACE VIEW user_spending_overview AS
-SELECT
-  bl.user_id,
-  date_trunc('day', bl.created_at)::DATE as spending_date,
-  bl.service,
-  COUNT(*) as request_count,
-  SUM(bl.tokens_input) as total_tokens_input,
-  SUM(bl.tokens_output) as total_tokens_output,
-  SUM(bl.cost_sek) as total_cost_sek
-FROM budget_logs bl
-GROUP BY bl.user_id, date_trunc('day', bl.created_at), bl.service
-ORDER BY spending_date DESC, total_cost_sek DESC;
+-- Views: Budget analytics (guarded to avoid hard-fail on legacy schemas)
+DO $$
+BEGIN
+  EXECUTE $view$
+    CREATE OR REPLACE VIEW user_spending_overview AS
+    SELECT
+      bl.user_id,
+      date_trunc('day', bl.created_at)::DATE as spending_date,
+      bl.service,
+      COUNT(*) as request_count,
+      SUM(bl.tokens_input) as total_tokens_input,
+      SUM(bl.tokens_output) as total_tokens_output,
+      SUM(bl.cost_sek) as total_cost_sek
+    FROM budget_logs bl
+    GROUP BY bl.user_id, date_trunc('day', bl.created_at), bl.service
+    ORDER BY spending_date DESC, total_cost_sek DESC
+  $view$;
 
--- View: Daily spending by user
-CREATE OR REPLACE VIEW daily_user_spending AS
-SELECT
-  user_id,
-  date_trunc('day', created_at)::DATE as date,
-  COUNT(*) as transactions,
-  SUM(cost_sek) as total_cost,
-  jsonb_object_agg(service, service_cost) as by_service
-FROM (
-  SELECT
-    user_id,
-    created_at,
-    service,
-    SUM(cost_sek) as service_cost
-  FROM budget_logs
-  GROUP BY user_id, created_at, service
-) as service_summary
-GROUP BY user_id, date_trunc('day', created_at)
-ORDER BY date DESC;
+  EXECUTE $view$
+    CREATE OR REPLACE VIEW daily_user_spending AS
+    SELECT
+      user_id,
+      date_trunc('day', created_at)::DATE as date,
+      COUNT(*) as transactions,
+      SUM(service_cost) as total_cost,
+      jsonb_object_agg(service, service_cost) as by_service
+    FROM (
+      SELECT
+        user_id,
+        created_at,
+        service,
+        SUM(cost_sek) as service_cost
+      FROM budget_logs
+      GROUP BY user_id, created_at, service
+    ) as service_summary
+    GROUP BY user_id, date_trunc('day', created_at)
+    ORDER BY date DESC
+  $view$;
+EXCEPTION
+  WHEN undefined_table OR undefined_column THEN
+    RAISE NOTICE 'Skipping budget views: %', SQLERRM;
+END;
+$$;
 
 -- ============================================================================
 -- GRANT PERMISSIONS
@@ -382,8 +400,15 @@ GRANT EXECUTE ON FUNCTION get_user_spending_summary(UUID, TEXT) TO authenticated
 GRANT EXECUTE ON FUNCTION check_budget_limit(UUID, DECIMAL, TEXT) TO authenticated;
 
 -- Grant select on views to authenticated users
-GRANT SELECT ON user_spending_overview TO authenticated;
-GRANT SELECT ON daily_user_spending TO authenticated;
+DO $$
+BEGIN
+  EXECUTE 'GRANT SELECT ON user_spending_overview TO authenticated';
+  EXECUTE 'GRANT SELECT ON daily_user_spending TO authenticated';
+EXCEPTION
+  WHEN undefined_table THEN
+    RAISE NOTICE 'Skipping view grants: %', SQLERRM;
+END;
+$$;
 
 -- ============================================================================
 -- COMMENTS

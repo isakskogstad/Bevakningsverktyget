@@ -16,9 +16,7 @@
            ======================================================================== */
 
         :root {
-            --sidebar-width: 64px;
-            --sidebar-expanded: 280px;
-            --nav-height: 56px;
+            --nav-height: 64px;
         }
 
         body {
@@ -674,6 +672,261 @@
         }
 
         /* ========================================================================
+           NEW DASHBOARD LAYOUT OVERRIDES
+           ======================================================================== */
+        .dashboard-shell {
+            padding: 2rem 2rem 3rem;
+        }
+
+        .dashboard-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .dashboard-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .dashboard-subtitle {
+            color: #64748b;
+            max-width: 520px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .dashboard-tabs {
+            display: flex;
+            gap: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .dashboard-tab {
+            background: transparent;
+            border: none;
+            padding: 0.75rem 0.25rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .dashboard-tab.active {
+            color: #1a1a2e;
+            border-bottom-color: #1a1a2e;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .main-content,
+        .panel-block {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .event-time {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .company-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .company-controls input,
+        .company-controls select {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            min-width: 180px;
+        }
+
+        .company-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .company-table th,
+        .company-table td {
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: left;
+            font-size: 0.875rem;
+        }
+
+        .company-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #94a3b8;
+        }
+
+        .company-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .company-name-cell {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .company-orgnr {
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .table-actions button {
+            border: none;
+            background: transparent;
+            color: #3b82f6;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .drawer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 300;
+        }
+
+        .drawer-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .settings-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: min(420px, 100%);
+            background: white;
+            border-left: 1px solid #e2e8f0;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+            z-index: 310;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-drawer.show {
+            transform: translateX(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .drawer-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .drawer-section {
+            margin-bottom: 1.5rem;
+            border: 1px solid #f1f5f9;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .drawer-section h4 {
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .drawer-section p {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .drawer-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .drawer-field input,
+        .drawer-field select {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .drawer-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-shell {
+                padding: 1rem;
+            }
+
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .main-content,
+            .panel-block {
+                padding: 1rem;
+            }
+        }
+
+        /* ========================================================================
            MODAL
            ======================================================================== */
         .modal-overlay {
@@ -861,6 +1114,64 @@
         </div>
     </div>
 
+    <!-- Settings Drawer -->
+    <div class="drawer-overlay" id="settings-overlay"></div>
+    <aside class="settings-drawer" id="settings-drawer" aria-hidden="true">
+        <div class="drawer-header">
+            <strong>Inställningar</strong>
+            <button class="btn btn-ghost" id="settings-close">Stäng</button>
+        </div>
+        <div class="drawer-body">
+            <div class="drawer-section">
+                <h4>Budget</h4>
+                <p>Översikt av budget och spend.</p>
+                <div class="drawer-field">
+                    <label for="budget-daily">Daglig gräns (SEK)</label>
+                    <input type="number" id="budget-daily" min="0" step="1">
+                </div>
+                <div class="drawer-field">
+                    <label for="budget-monthly">Månatlig gräns (SEK)</label>
+                    <input type="number" id="budget-monthly" min="0" step="1">
+                </div>
+                <div class="drawer-actions">
+                    <button class="btn btn-primary" id="save-budget-btn">Spara budget</button>
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h4>SMS-notiser</h4>
+                <p>Hantera viktiga larm och telefonnummer.</p>
+                <div class="drawer-field">
+                    <label for="sms-phone">Mobilnummer</label>
+                    <input type="tel" id="sms-phone" placeholder="+46 70 000 00 00">
+                </div>
+                <div class="drawer-field">
+                    <label for="sms-important">Viktiga händelser</label>
+                    <select id="sms-important" multiple>
+                        <option value="konkurs">Konkursbeslut</option>
+                        <option value="likvidation">Likvidation</option>
+                        <option value="styrelse">Styrelseförändring</option>
+                        <option value="fusion">Fusion/uppköp</option>
+                    </select>
+                </div>
+                <div class="drawer-field">
+                    <label for="sms-orgnrs">Bevaka org.nr (komma-separerat)</label>
+                    <input type="text" id="sms-orgnrs" placeholder="5566778899, 5599990000">
+                </div>
+                <div class="drawer-actions">
+                    <button class="btn btn-primary" id="save-sms-btn">Spara SMS-inställningar</button>
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h4>SMS-logg & Kostnad</h4>
+                <p>Senaste inkommande/utgående SMS och kostnad.</p>
+                <div id="sms-billing-summary" class="event-meta" style="margin-bottom: 0.75rem;">-</div>
+                <div id="sms-log-list" class="event-meta">Laddar SMS-logg...</div>
+            </div>
+        </div>
+    </aside>
+
     <!-- Dashboard -->
     <div id="dashboard">
         <nav class="nav">
@@ -870,145 +1181,90 @@
                     <div class="user-avatar" id="user-avatar">IS</div>
                     <span id="user-email-display"></span>
                 </div>
-                <button class="btn btn-ghost" id="logout-btn">Logga ut</button>
             </div>
         </nav>
 
-        <div class="dashboard-grid">
-            <!-- Icon Sidebar -->
-            <aside class="icon-sidebar">
-                <button class="sidebar-icon active" data-panel="feed" title="Flöde">
-                    📡
-                    <span class="sidebar-icon-tooltip">Realtidsflöde</span>
-                </button>
-                <button class="sidebar-icon" data-panel="companies" title="Företag">
-                    🏢
-                    <span class="sidebar-icon-tooltip">Företagslista</span>
-                </button>
-                <button class="sidebar-icon" data-panel="tools" title="Verktyg">
-                    🔧
-                    <span class="sidebar-icon-tooltip">Verktyg</span>
-                </button>
-
-                <div class="sidebar-divider"></div>
-
-                <button class="sidebar-icon" data-panel="notifications" title="Notiser">
-                    🔔
-                    <span class="sidebar-icon-tooltip">SMS-notiser</span>
-                </button>
-
-                <div class="sidebar-spacer"></div>
-
-                <button class="sidebar-icon" data-panel="settings" title="Inställningar">
-                    ⚙️
-                    <span class="sidebar-icon-tooltip">Inställningar</span>
-                </button>
-            </aside>
-
-            <!-- Expanded Sidebar Panels -->
-            <div class="sidebar-panel" id="panel-companies">
-                <div class="panel-title">Företagsbevakning</div>
-                <a href="verktyg/foretagsbevakning/" class="panel-link">
-                    <div class="panel-link-icon">📋</div>
-                    Bolagshändelser
-                </a>
-                <a href="verktyg/foretagsbevakning/#companies" class="panel-link">
-                    <div class="panel-link-icon">🏢</div>
-                    Företagslista (1214)
-                </a>
-                <a href="verktyg/allabolag/" class="panel-link">
-                    <div class="panel-link-icon">🔍</div>
-                    Allabolag Sökning
-                </a>
-                <a href="verktyg/bolagsverket-api/" class="panel-link">
-                    <div class="panel-link-icon">📄</div>
-                    Bolagsverket API
-                </a>
-            </div>
-
-            <div class="sidebar-panel" id="panel-tools">
-                <div class="panel-title">Verktyg</div>
-                <a href="nyhetsverktyg/nyhetsflode/" class="panel-link">
-                    <div class="panel-link-icon">📰</div>
-                    Nyhetsflöde
-                </a>
-                <a href="verktyg/xbrl-parser/" class="panel-link">
-                    <div class="panel-link-icon">📊</div>
-                    XBRL Parser
-                </a>
-                <a href="verktyg/artikelgenerator/" class="panel-link">
-                    <div class="panel-link-icon">✍️</div>
-                    Artikelgenerator
-                </a>
-                <a href="verktyg/pdf-parser/" class="panel-link">
-                    <div class="panel-link-icon">📄</div>
-                    PDF-parser
-                </a>
-                <a href="verktyg/pressbilder/" class="panel-link">
-                    <div class="panel-link-icon">📸</div>
-                    Pressbilder
-                </a>
-            </div>
-
-            <div class="sidebar-panel" id="panel-notifications">
-                <div class="panel-title">Notifikationer</div>
-                <a href="sms-notiser/" class="panel-link">
-                    <div class="panel-link-icon">📱</div>
-                    SMS-notiser
-                </a>
-            </div>
-
-            <div class="sidebar-panel" id="panel-settings">
-                <div class="panel-title">Inställningar</div>
-                <a href="installningar/" class="panel-link">
-                    <div class="panel-link-icon">👤</div>
-                    Profil
-                </a>
-                <a href="admin/budget/" class="panel-link">
-                    <div class="panel-link-icon">💰</div>
-                    Budget & Köp
-                </a>
-            </div>
-
-            <!-- Main Content - Unified Feed -->
-            <main class="main-content">
-                <!-- Filter Bar -->
-                <div class="filter-bar">
-                    <button class="filter-chip active" data-filter="all">
-                        Alla <span class="count" id="count-all">0</span>
-                    </button>
-                    <button class="filter-chip" data-filter="poit">
-                        Bolagshändelser <span class="count" id="count-poit">0</span>
-                    </button>
-                    <button class="filter-chip" data-filter="news">
-                        Nyheter <span class="count" id="count-news">0</span>
-                    </button>
-                    <button class="filter-chip" data-filter="press">
-                        Press <span class="count" id="count-press">0</span>
-                    </button>
-
-                    <div class="filter-spacer"></div>
-
-                    <button class="refresh-btn" id="refresh-btn">
-                        ↻ Uppdatera
-                    </button>
-                </div>
-
-                <!-- Feed -->
-                <div class="feed-container" id="feed-container">
-                    <div class="empty-state">
-                        <div class="loader"></div>
-                        <p>Laddar händelser...</p>
+        <div class="dashboard-shell">
+            <div class="dashboard-wrapper">
+                <section class="dashboard-header">
+                    <div>
+                        <h1 class="dashboard-title">Realtidsbevakning</h1>
+                        <p class="dashboard-subtitle">Samlad vy av nyheter, pressmeddelanden och bolagshändelser för Loop Impact-portföljen.</p>
                     </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" id="settings-open">Inställningar</button>
+                        <button class="btn btn-ghost" id="logout-btn">Logga ut</button>
+                    </div>
+                </section>
+
+                <div class="dashboard-tabs">
+                    <button class="dashboard-tab active" data-tab="feed">Flöde</button>
+                    <button class="dashboard-tab" data-tab="companies">Företag</button>
                 </div>
 
-                <!-- Load More -->
-                <div style="text-align: center; margin-top: 1.5rem;">
-                    <button class="btn btn-secondary" id="load-more-btn" style="display: none;">
-                        Ladda fler händelser
-                    </button>
-                </div>
-            </main>
+                <section class="tab-panel active" id="tab-feed">
+                    <div class="main-content">
+                        <div class="panel-header">
+                            <div class="panel-title">Samlat flöde</div>
+                            <button class="refresh-btn" id="refresh-btn">↻ Uppdatera</button>
+                        </div>
+                        <div class="filter-bar">
+                            <button class="filter-chip active" data-filter="all">
+                                Alla <span class="count" id="count-all">0</span>
+                            </button>
+                            <button class="filter-chip" data-filter="poit">
+                                Bolagshändelser <span class="count" id="count-poit">0</span>
+                            </button>
+                            <button class="filter-chip" data-filter="news">
+                                Nyheter <span class="count" id="count-news">0</span>
+                            </button>
+                            <button class="filter-chip" data-filter="press">
+                                Press <span class="count" id="count-press">0</span>
+                            </button>
+                        </div>
+
+                        <div class="feed-container" id="feed-container">
+                            <div class="empty-state">
+                                <div class="loader"></div>
+                                <p>Laddar händelser...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="tab-panel" id="tab-companies">
+                    <div class="panel-block">
+                        <div class="panel-header">
+                            <div class="panel-title">Företagsöversikt</div>
+                            <span id="company-count-label" class="event-meta">- företag</span>
+                        </div>
+                        <div class="company-controls">
+                            <input type="text" id="company-search-input" placeholder="Sök företag eller orgnr...">
+                            <select id="company-sector-filter">
+                                <option value="">Alla sektorer</option>
+                            </select>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="company-table">
+                                <thead>
+                                    <tr>
+                                        <th>Företag</th>
+                                        <th>Sektor</th>
+                                        <th>Omsättning</th>
+                                        <th>Org.nr</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="company-table-body">
+                                    <tr>
+                                        <td colspan="5" class="empty-state">Laddar företag...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 
@@ -1038,11 +1294,13 @@
         let allEvents = [];          // Combined events (POIT + News)
         let filteredEvents = [];
         let currentFilter = 'all';
-        let currentOffset = 0;
-        const pageSize = 30;
         let companyData = {};        // orgnr -> company info
+        let allCompanies = [];
+        let filteredCompanies = [];
         let newsItems = [];
         let poitEvents = [];
+        let companySearchQuery = '';
+        let companySectorFilter = '';
 
         // RSS feeds (samma som nyhetsflöde)
         const RSS_FEEDS = [
@@ -1111,6 +1369,7 @@
 
             await loadCompanyData();
             await loadAllEvents();
+            await loadSettings();
         }
 
         async function handleLogout() {
@@ -1118,6 +1377,27 @@
             currentUser = null;
             document.getElementById('dashboard').classList.remove('show');
             document.getElementById('login-form').classList.remove('hide');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.dashboard-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabId);
+            });
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.toggle('active', panel.id === `tab-${tabId}`);
+            });
+        }
+
+        function openSettingsDrawer() {
+            document.getElementById('settings-drawer').classList.add('show');
+            document.getElementById('settings-overlay').classList.add('show');
+            document.getElementById('settings-drawer').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeSettingsDrawer() {
+            document.getElementById('settings-drawer').classList.remove('show');
+            document.getElementById('settings-overlay').classList.remove('show');
+            document.getElementById('settings-drawer').setAttribute('aria-hidden', 'true');
         }
 
         function getInitials(email) {
@@ -1133,20 +1413,27 @@
         async function loadCompanyData() {
             const { data } = await sb
                 .from('loop_table')
-                .select('orgnr, company_name, sector, turnover_2024_sek, website')
+                .select('orgnr, company_name, sector, turnover_2024_sek, website, city, ceo_name, chairman_name')
                 .limit(1500);
 
+            allCompanies = data || [];
             companyData = {};
-            (data || []).forEach(c => {
+            allCompanies.forEach(c => {
                 if (c.orgnr) {
                     companyData[c.orgnr] = {
                         name: c.company_name,
                         sector: c.sector,
                         turnover: c.turnover_2024_sek,
-                        website: c.website
+                        website: c.website,
+                        city: c.city,
+                        ceo: c.ceo_name,
+                        chairman: c.chairman_name
                     };
                 }
             });
+
+            initCompanyFilters();
+            applyCompanyFilters();
         }
 
         async function loadAllEvents() {
@@ -1193,9 +1480,13 @@
             const rssResults = await Promise.allSettled(rssPromises);
 
             newsItems = [];
+            const seenLinks = new Set();
             rssResults.forEach((result, i) => {
                 if (result.status === 'fulfilled' && result.value) {
                     result.value.forEach(item => {
+                        const linkKey = item.link || item.guid;
+                        if (linkKey && seenLinks.has(linkKey)) return;
+                        if (linkKey) seenLinks.add(linkKey);
                         newsItems.push({
                             id: `news-${item.guid || item.link}`,
                             type: 'news',
@@ -1231,12 +1522,36 @@
         async function loadPressReleases() {
             const { data } = await sb
                 .from('company_pressrooms')
-                .select('orgnr, company_name, pressroom_url')
-                .not('pressroom_url', 'is', null)
-                .limit(50);
+                .select('orgnr, company_name, rss_feed_url')
+                .not('rss_feed_url', 'is', null)
+                .limit(30);
 
-            // I en riktig implementation skulle vi hämta senaste pressmeddelanden
-            // För nu, skippar vi denna del för att hålla det enkelt
+            if (!data || data.length === 0) return;
+
+            const pressPromises = data.map(async (pressroom) => {
+                const items = await fetchRSSFeed({
+                    name: pressroom.company_name || 'Pressrum',
+                    url: pressroom.rss_feed_url,
+                    type: 'press'
+                });
+
+                items.forEach(item => {
+                    newsItems.push({
+                        id: `press-${item.guid || item.link}`,
+                        type: 'press',
+                        category: 'Press',
+                        title: item.title,
+                        date: item.pubDate,
+                        timestamp: new Date(item.pubDate).getTime(),
+                        orgnr: pressroom.orgnr,
+                        companyName: pressroom.company_name || 'Pressrum',
+                        source: pressroom.company_name || 'Pressrum',
+                        link: item.link
+                    });
+                });
+            });
+
+            await Promise.allSettled(pressPromises);
         }
 
         function matchCompanyToNews(item) {
@@ -1253,6 +1568,239 @@
 
         function getCompanyName(orgnr) {
             return companyData[orgnr]?.name || null;
+        }
+
+        // =========================================================================
+        // COMPANY LIST
+        // =========================================================================
+        function initCompanyFilters() {
+            const sectorSelect = document.getElementById('company-sector-filter');
+            if (!sectorSelect) return;
+
+            const sectors = Array.from(new Set(allCompanies.map(c => c.sector).filter(Boolean))).sort();
+            sectorSelect.innerHTML = ['<option value="">Alla sektorer</option>']
+                .concat(sectors.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`))
+                .join('');
+
+            document.getElementById('company-count-label').textContent = `${allCompanies.length} företag`;
+        }
+
+        function applyCompanyFilters() {
+            const query = companySearchQuery.toLowerCase();
+            filteredCompanies = allCompanies.filter(c => {
+                const matchesQuery = !query ||
+                    (c.company_name || '').toLowerCase().includes(query) ||
+                    (c.orgnr || '').toLowerCase().includes(query);
+                const matchesSector = !companySectorFilter || c.sector === companySectorFilter;
+                return matchesQuery && matchesSector;
+            });
+            renderCompanyTable();
+        }
+
+        function renderCompanyTable() {
+            const tbody = document.getElementById('company-table-body');
+            if (!tbody) return;
+
+            if (!filteredCompanies.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Inga företag matchar filtret.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredCompanies.slice(0, 200).map(c => `
+                <tr>
+                    <td>
+                        <div class="company-name-cell">${escapeHtml(c.company_name || '-')}</div>
+                        <div class="company-orgnr">${escapeHtml(c.orgnr || '-')}</div>
+                    </td>
+                    <td>${escapeHtml(c.sector || '-')}</td>
+                    <td>${c.turnover_2024_sek ? formatNumber(c.turnover_2024_sek) + ' kr' : '-'}</td>
+                    <td>${escapeHtml(c.orgnr || '-')}</td>
+                    <td class="table-actions">
+                        <button onclick='showCompanyModal("${c.orgnr || ''}", ${JSON.stringify(c.company_name || '')})'>Öppna</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // =========================================================================
+        // SETTINGS
+        // =========================================================================
+        async function loadSettings() {
+            if (!currentUser) return;
+
+            await Promise.all([
+                loadBudgetSettings(),
+                loadSmsSettings(),
+                loadSmsLogs(),
+                loadSmsBilling()
+            ]);
+        }
+
+        async function loadBudgetSettings() {
+            try {
+                const { data } = await sb
+                    .from('user_budget_limits')
+                    .select('daily_limit, monthly_limit')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (data) {
+                    document.getElementById('budget-daily').value = data.daily_limit ?? '';
+                    document.getElementById('budget-monthly').value = data.monthly_limit ?? '';
+                }
+            } catch (error) {
+                console.error('Budget settings load failed:', error);
+            }
+        }
+
+        async function saveBudgetSettings() {
+            if (!currentUser) return;
+            const daily = parseFloat(document.getElementById('budget-daily').value || '0');
+            const monthly = parseFloat(document.getElementById('budget-monthly').value || '0');
+
+            try {
+                await sb.from('user_budget_limits')
+                    .upsert({
+                        user_id: currentUser.id,
+                        daily_limit: daily,
+                        monthly_limit: monthly
+                    });
+            } catch (error) {
+                console.error('Budget settings save failed:', error);
+            }
+        }
+
+        async function loadSmsSettings() {
+            try {
+                const { data } = await sb
+                    .from('sms_preferences')
+                    .select('phone_number, important_events, important_orgnrs')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (data) {
+                    document.getElementById('sms-phone').value = data.phone_number || '';
+                    const select = document.getElementById('sms-important');
+                    if (Array.isArray(data.important_events)) {
+                        Array.from(select.options).forEach(opt => {
+                            opt.selected = data.important_events.includes(opt.value);
+                        });
+                    }
+                    if (Array.isArray(data.important_orgnrs)) {
+                        document.getElementById('sms-orgnrs').value = data.important_orgnrs.join(', ');
+                    }
+                }
+            } catch (error) {
+                console.error('SMS settings load failed:', error);
+            }
+        }
+
+        async function saveSmsSettings() {
+            if (!currentUser) return;
+            const phone = document.getElementById('sms-phone').value.trim();
+            const select = document.getElementById('sms-important');
+            const importantEvents = Array.from(select.selectedOptions).map(opt => opt.value);
+            const orgnrInput = document.getElementById('sms-orgnrs').value || '';
+            const importantOrgnrs = orgnrInput
+                .split(',')
+                .map(v => v.trim())
+                .filter(Boolean);
+
+            try {
+                await sb.from('sms_preferences')
+                    .upsert({
+                        user_id: currentUser.id,
+                        phone_number: phone,
+                        important_events: importantEvents,
+                        important_orgnrs: importantOrgnrs
+                    });
+            } catch (error) {
+                console.error('SMS settings save failed:', error);
+            }
+        }
+
+        async function loadSmsLogs() {
+            const container = document.getElementById('sms-log-list');
+            if (!container) return;
+
+            try {
+                const { data } = await sb
+                    .from('sms_logs')
+                    .select('to_phone, from_phone, message, status, sent_at, cost_sek')
+                    .order('sent_at', { ascending: false })
+                    .limit(5);
+
+                if (!data || data.length === 0) {
+                    container.textContent = 'Inga SMS-loggar ännu.';
+                    return;
+                }
+
+                container.innerHTML = data.map(log => `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <div>
+                            <strong>${escapeHtml(log.from_phone || log.to_phone || '')}</strong>
+                            <div class="event-time">${formatDate(log.sent_at)} ${formatTime(log.sent_at)}</div>
+                            <div>${escapeHtml(truncate(log.message || '', 80))}</div>
+                        </div>
+                        <div class="event-time">${log.cost_sek ? log.cost_sek + ' kr' : ''}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('SMS log load failed:', error);
+                container.textContent = 'Kunde inte ladda SMS-logg.';
+            }
+        }
+
+        async function loadSmsBilling() {
+            const summary = document.getElementById('sms-billing-summary');
+            if (!summary) return;
+
+            try {
+                const { data } = await sb
+                    .from('budget_logs')
+                    .select('cost_sek, created_at')
+                    .eq('service', 'twilio')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
+
+                const total = (data || []).reduce((sum, row) => sum + (row.cost_sek || 0), 0);
+                summary.textContent = `Twilio kostnad (senaste 100): ${total.toFixed(2)} kr`;
+            } catch (error) {
+                console.error('SMS billing load failed:', error);
+                summary.textContent = 'Kunde inte ladda kostnad.';
+            }
+        }
+
+        async function loadCompanyDocumentsInline(orgnr) {
+            const container = document.getElementById('company-documents-inline');
+            if (!container) return;
+
+            try {
+                const cleanOrgnr = (orgnr || '').replace(/-/g, '');
+                const { data, error } = await sb
+                    .from('company_documents')
+                    .select('title, document_type, source_url, created_at')
+                    .eq('org_nr', cleanOrgnr)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.textContent = 'Inga dokument ännu.';
+                    return;
+                }
+
+                container.innerHTML = data.map(doc => `
+                    <div style="margin-bottom: 0.5rem;">
+                        ${doc.source_url ? `<a href="${doc.source_url}" target="_blank" class="event-link">${escapeHtml(doc.title || doc.document_type || 'Dokument')}</a>` : `<span>${escapeHtml(doc.title || doc.document_type || 'Dokument')}</span>`}
+                        <div class="event-time">${formatDate(doc.created_at)}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Company documents load failed:', error);
+                container.textContent = 'Kunde inte ladda dokument.';
+            }
         }
 
         // =========================================================================
@@ -1377,10 +1925,13 @@
                     <div class="company-logo">${initial}</div>
                     <div class="event-content">
                         <div class="company-name">${escapeHtml(e.companyName)}</div>
-                        <div class="event-title">${escapeHtml(e.title || '')}</div>
+                        <div class="event-title">
+                            ${e.link ? `<a href="${e.link}" target="_blank" class="event-link" onclick="event.stopPropagation()">${escapeHtml(e.title || '')}</a>` : escapeHtml(e.title || '')}
+                        </div>
                         <div class="event-meta">
                             <span class="event-tag ${typeClass}">${escapeHtml(e.category)}</span>
                             <span>${formatDate(e.date)}</span>
+                            <span class="event-time">${formatTime(e.date)}</span>
                             <span>• ${e.source}</span>
                         </div>
                     </div>
@@ -1395,7 +1946,7 @@
 
             return `
                 <div class="company-card">
-                    <div class="company-header" onclick="showCompanyModal('${group.orgnr || ''}', '${escapeHtml(group.companyName)}')">
+                    <div class="company-header" onclick='showCompanyModal("${group.orgnr || ''}", ${JSON.stringify(group.companyName || '')})'>
                         <div class="company-logo">${initial}</div>
                         <div class="company-info">
                             <div class="company-name">${escapeHtml(group.companyName)}</div>
@@ -1420,10 +1971,12 @@
                 <div class="event-item" onclick="showEventModal('${e.id}')">
                     <div class="event-type-indicator ${typeClass}"></div>
                     <div class="event-content">
-                        <div class="event-title">${escapeHtml(truncate(e.title || '', 100))}</div>
+                        <div class="event-title">
+                            ${e.link ? `<a href="${e.link}" target="_blank" class="event-link" onclick="event.stopPropagation()">${escapeHtml(truncate(e.title || '', 100))}</a>` : escapeHtml(truncate(e.title || '', 100))}
+                        </div>
                         <div class="event-meta">
                             <span class="event-tag ${typeClass}">${escapeHtml(e.category)}</span>
-                            <span>${formatTime(e.date)}</span>
+                            <span class="event-time">${formatTime(e.date)}</span>
                             <span>• ${e.source}</span>
                         </div>
                     </div>
@@ -1529,44 +2082,66 @@
                                     <div class="event-meta">
                                         <span class="event-tag ${getTypeClass(e)}">${escapeHtml(e.category)}</span>
                                         <span>${formatDate(e.date)}</span>
+                                        <span class="event-time">${formatTime(e.date)}</span>
                                     </div>
                                 </div>
                             </div>
                         `).join('')}
                     </div>
                 </div>
+                <div class="detail-section">
+                    <div class="detail-section-title">Dokument</div>
+                    <div id="company-documents-inline" class="event-meta">Laddar dokument...</div>
+                </div>
             `;
 
             document.getElementById('modal-footer').innerHTML = `
                 <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
-                ${orgnr ? `<a href="verktyg/foretagsbevakning/?orgnr=${orgnr}" class="btn btn-primary">Visa företag</a>` : ''}
+                ${orgnr ? `<button class="btn btn-primary" onclick="refreshCompanyData('${orgnr}', this)">Uppdatera data</button>` : ''}
             `;
 
             document.getElementById('modal-overlay').classList.add('show');
+            if (orgnr) {
+                loadCompanyDocumentsInline(orgnr);
+            }
         }
 
         function closeModal() {
             document.getElementById('modal-overlay').classList.remove('show');
         }
 
-        // =========================================================================
-        // SIDEBAR PANEL HANDLING
-        // =========================================================================
-        function togglePanel(panelId) {
-            const panel = document.getElementById(`panel-${panelId}`);
-            const isOpen = panel?.classList.contains('open');
+        async function refreshCompanyData(orgnr, button) {
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Uppdaterar...';
+            }
 
-            // Stäng alla paneler
-            document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('open'));
-            document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
+            try {
+                const cleanOrgnr = (orgnr || '').replace(/-/g, '');
+                const response = await fetch(`${CONFIG.supabase.url}/functions/v1/allabolag-proxy`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.supabase.anonKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ orgnr: cleanOrgnr, save: true })
+                });
 
-            // Om panelen inte var öppen, öppna den
-            if (!isOpen && panel) {
-                panel.classList.add('open');
-                document.querySelector(`[data-panel="${panelId}"]`)?.classList.add('active');
-            } else {
-                // Aktivera feed-ikonen som default
-                document.querySelector('[data-panel="feed"]')?.classList.add('active');
+                if (!response.ok) {
+                    throw new Error('Kunde inte uppdatera data');
+                }
+
+                await loadCompanyData();
+                if (companyData[cleanOrgnr]?.name) {
+                    showCompanyModal(cleanOrgnr, companyData[cleanOrgnr].name);
+                }
+            } catch (error) {
+                console.error('Company refresh failed:', error);
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = 'Uppdatera data';
+                }
             }
         }
 
@@ -1627,19 +2202,39 @@
             // Refresh button
             document.getElementById('refresh-btn').addEventListener('click', loadAllEvents);
 
-            // Sidebar icons
-            document.querySelectorAll('.sidebar-icon[data-panel]').forEach(icon => {
-                icon.addEventListener('click', () => {
-                    const panel = icon.dataset.panel;
-                    if (panel === 'feed') {
-                        // Stäng alla paneler, visa bara feed
-                        document.querySelectorAll('.sidebar-panel').forEach(p => p.classList.remove('open'));
-                        document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
-                        icon.classList.add('active');
-                    } else {
-                        togglePanel(panel);
-                    }
+            // Tabs
+            document.querySelectorAll('.dashboard-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+
+            // Company filters
+            const companySearchInput = document.getElementById('company-search-input');
+            if (companySearchInput) {
+                companySearchInput.addEventListener('input', (e) => {
+                    companySearchQuery = e.target.value || '';
+                    applyCompanyFilters();
                 });
+            }
+
+            const companySectorSelect = document.getElementById('company-sector-filter');
+            if (companySectorSelect) {
+                companySectorSelect.addEventListener('change', (e) => {
+                    companySectorFilter = e.target.value || '';
+                    applyCompanyFilters();
+                });
+            }
+
+            // Settings drawer
+            document.getElementById('settings-open').addEventListener('click', openSettingsDrawer);
+            document.getElementById('settings-close').addEventListener('click', closeSettingsDrawer);
+            document.getElementById('settings-overlay').addEventListener('click', closeSettingsDrawer);
+            document.getElementById('save-budget-btn').addEventListener('click', saveBudgetSettings);
+            document.getElementById('save-sms-btn').addEventListener('click', saveSmsSettings);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeSettingsDrawer();
+                }
             });
 
             // Modal close
@@ -1652,8 +2247,8 @@
             // Initialize Supabase
             initSupabase();
 
-            // Auto-refresh every 5 minutes
-            setInterval(loadAllEvents, 5 * 60 * 1000);
+            // Auto-refresh every minute
+            setInterval(loadAllEvents, 60 * 1000);
         });
     </script>
 </body>
