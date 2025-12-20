@@ -1,0 +1,33 @@
+{
+  "namn": null,
+  "fornamn": null,
+  "efternamn": null,
+  "adress": null,
+  "inkomster": [
+    {
+      "inkomstar": 2024,
+      "alder": null,
+      "loneranking": null,
+      "betalningsanmarkning": null,
+      "lon_forvarvsinkomst": null,
+      "kapitalinkomst": null
+    },
+    {
+      "inkomstar": 2023,
+      "alder": null,
+      "loneranking": null,
+      "betalningsanmarkning": null,
+      "lon_forvarvsinkomst": null,
+      "kapitalinkomst": null
+    },
+    {
+      "inkomstar": 2022,
+      "alder": null,
+      "loneranking": null,
+      "betalningsanmarkning": null,
+      "lon_forvarvsinkomst": null,
+      "kapitalinkomst": null
+    }
+  ],
+  "pdf_path": "/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/downloads/Lönekollen+3+år+(2025)+-+Stockholm+Norrmalm+mfl,+s.pdf"
+}

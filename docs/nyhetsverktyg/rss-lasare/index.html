@@ -323,6 +323,50 @@
             font-weight: var(--font-weight-medium);
         }
 
+        /* Relevance score badge */
+        .relevance-badge {
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .relevance-high {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .relevance-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .relevance-low {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        /* Company match badge */
+        .company-match {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        /* Highlighted article card (high relevance) */
+        .article-card.high-relevance {
+            border-left: 4px solid #22c55e;
+            background: linear-gradient(to right, rgba(34, 197, 94, 0.05) 0%, var(--white) 10%);
+        }
+
+        .article-card.company-mention {
+            border-left: 4px solid #3b82f6;
+            background: linear-gradient(to right, rgba(59, 130, 246, 0.05) 0%, var(--white) 10%);
+        }
+
         /* Search */
         .search-box {
             position: relative;
@@ -607,6 +651,7 @@
                            class="btn btn-secondary btn-sm" style="width: 200px; padding: 8px 12px;">
                     <select id="sort-select" class="btn btn-secondary btn-sm">
                         <option value="newest">Nyast först</option>
+                        <option value="relevance">Mest relevanta</option>
                         <option value="oldest">Äldst först</option>
                     </select>
                 </div>
@@ -614,6 +659,8 @@
 
             <div class="filter-tabs" id="category-tabs">
                 <button class="filter-tab active" data-category="all">Alla</button>
+                <button class="filter-tab" data-category="relevant">🎯 Relevanta</button>
+                <button class="filter-tab" data-category="companies">🏢 Bevakade företag</button>
                 <button class="filter-tab" data-category="tech">💻 Tech</button>
                 <button class="filter-tab" data-category="finans">💰 Finans</button>
                 <button class="filter-tab" data-category="nyheter">📰 Nyheter</button>
@@ -692,8 +739,94 @@
             AUTO_UPDATE_INTERVAL: 5 * 60 * 1000, // 5 minuter
             INITIAL_DISPLAY_COUNT: 30,    // Visa 30 först
             LOAD_MORE_COUNT: 20,          // Ladda 20 till
-            NEW_ARTICLE_THRESHOLD: 60 * 60 * 1000 // 1 timme = "ny"
+            NEW_ARTICLE_THRESHOLD: 60 * 60 * 1000, // 1 timme = "ny"
+            RELEVANCE_THRESHOLD: 15       // Minsta poäng för att räknas som "relevant"
         };
+
+        // =========================================================================
+        // SMART FILTRERING - Impact Loop's intressesfär
+        // =========================================================================
+
+        // Nyckelord med viktning för relevanspoäng
+        const RELEVANCE_KEYWORDS = {
+            // Startups & Venture Capital (hög vikt)
+            highPriority: {
+                weight: 25,
+                keywords: [
+                    // Svenska
+                    'startup', 'startups', 'scaleup', 'scale-up',
+                    'riskkapital', 'vc', 'venture capital', 'såddfinansiering', 'seedfinansiering',
+                    'investeringsrunda', 'investeringsrundor', 'serie a', 'serie b', 'serie c',
+                    'kapitalanskaffning', 'kapitalrunda', 'affärsängel', 'affärsänglar',
+                    'unicorn', 'enhörning', 'tech-bolag', 'techbolag',
+                    'börsnotering', 'ipo', 'notering',
+                    // Engelska
+                    'fundraise', 'funding round', 'seed round', 'series a', 'series b',
+                    'angel investor', 'accelerator', 'incubator'
+                ]
+            },
+            // Green Tech & Climate (hög vikt)
+            greenTech: {
+                weight: 20,
+                keywords: [
+                    'greentech', 'green tech', 'cleantech', 'clean tech',
+                    'klimattech', 'hållbarhet', 'hållbar', 'sustainability', 'sustainable',
+                    'förnybar energi', 'renewable', 'solenergi', 'vindkraft',
+                    'elbilar', 'ev', 'elektrifiering', 'laddinfrastruktur',
+                    'klimat', 'climate', 'co2', 'koldioxid', 'utsläpp', 'emission',
+                    'cirkulär ekonomi', 'circular economy', 'återvinning',
+                    'batteritech', 'battery tech', 'vätgas', 'hydrogen',
+                    'klimatomställning', 'fossilfri', 'fossilfritt'
+                ]
+            },
+            // AI & Tech (medelhög vikt)
+            aiTech: {
+                weight: 18,
+                keywords: [
+                    'ai', 'artificiell intelligens', 'artificial intelligence',
+                    'maskininlärning', 'machine learning', 'ml',
+                    'generativ ai', 'generative ai', 'llm', 'gpt', 'chatgpt',
+                    'automation', 'automatisering', 'robotik', 'robotics',
+                    'saas', 'software as a service', 'b2b saas', 'b2b-saas',
+                    'fintech', 'proptech', 'healthtech', 'edtech', 'medtech',
+                    'deep tech', 'deeptech'
+                ]
+            },
+            // Svenska Unicorns & Framgångsrika bolag
+            swedishSuccess: {
+                weight: 22,
+                keywords: [
+                    'klarna', 'spotify', 'northvolt', 'einride', 'voi',
+                    'bolt', 'kry', 'truecaller', 'tink', 'izettle', 'zettle',
+                    'king', 'mojang', 'skype', 'oatly', 'polestar',
+                    'swedish unicorn', 'svensk unicorn', 'svenskt techbolag'
+                ]
+            },
+            // Affärer & Finansnyheter (medium vikt)
+            businessNews: {
+                weight: 12,
+                keywords: [
+                    'förvärv', 'acquisition', 'uppköp', 'merger', 'fusion',
+                    'exit', 'avyttring', 'försäljning', 'miljoner', 'miljarder',
+                    'tillväxt', 'growth', 'expansion', 'internationalisering',
+                    'vd', 'ceo', 'grundare', 'founder', 'co-founder',
+                    'rekrytering', 'anställer', 'nyanställning'
+                ]
+            },
+            // Negativa signaler (vi vill se konkurser men markera dem)
+            warnings: {
+                weight: 15,
+                keywords: [
+                    'konkurs', 'bankruptcy', 'likvidation', 'avveckling',
+                    'nedläggning', 'varsel', 'uppsägning', 'nedskärning',
+                    'kris', 'problem', 'förlust'
+                ]
+            }
+        };
+
+        // Lista med bevakade företag (hämtas från API)
+        let monitoredCompanies = [];
+        let monitoredCompanyNames = new Set(); // För snabb lookup
 
         // RSS feeds konfiguration - utökad lista
         const RSS_FEEDS = [
@@ -744,6 +877,126 @@
 
         // RSS proxy URL - använder rss2json API
         const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+        // =========================================================================
+        // RELEVANCE SCORING SYSTEM
+        // =========================================================================
+
+        // Hämta företagslistor från Supabase
+        async function fetchMonitoredCompanies() {
+            try {
+                const client = Auth.getClient();
+                if (!client) {
+                    console.warn('Supabase client not available');
+                    return;
+                }
+
+                const { data, error } = await client
+                    .from('loop_table')
+                    .select('name, orgnr')
+                    .order('name');
+
+                if (error) {
+                    console.error('Failed to fetch companies:', error);
+                    return;
+                }
+
+                monitoredCompanies = (data || []).map(c => ({
+                    name: c.name,
+                    orgnr: c.orgnr,
+                    normalized: (c.name || '').toLowerCase().trim()
+                })).filter(c => c.name && c.name.length > 2);
+
+                // Skapa Set för snabb lookup
+                monitoredCompanyNames = new Set(monitoredCompanies.map(c => c.normalized));
+
+                console.log(`📊 Laddade ${monitoredCompanies.length} bevakade företag`);
+            } catch (err) {
+                console.error('Error fetching companies:', err);
+            }
+        }
+
+        // Beräkna relevanspoäng för en artikel
+        function calculateRelevanceScore(article) {
+            const text = (article.title + ' ' + article.description).toLowerCase();
+            let score = 0;
+            let matchedCategories = [];
+            let matchedKeywords = [];
+
+            // Kolla alla keyword-kategorier
+            Object.entries(RELEVANCE_KEYWORDS).forEach(([category, config]) => {
+                const matches = config.keywords.filter(kw => text.includes(kw.toLowerCase()));
+                if (matches.length > 0) {
+                    score += config.weight * Math.min(matches.length, 3); // Max 3x per kategori
+                    matchedCategories.push(category);
+                    matchedKeywords.push(...matches);
+                }
+            });
+
+            // Kolla om några bevakade företag nämns (bonus poäng!)
+            const companyMatches = findCompanyMentions(text);
+            if (companyMatches.length > 0) {
+                score += 30 * Math.min(companyMatches.length, 5); // Max 5 företag ger poäng
+                matchedCategories.push('companies');
+            }
+
+            // Bonus för svenska källor (närmare Impact Loop's fokus)
+            const swedishSources = ['breakit', 'realtid', 'nyteknik', 'di', 'svt', 'dn', 'svd', 'affarsvarlden'];
+            if (swedishSources.includes(article.sourceId)) {
+                score += 5;
+            }
+
+            return {
+                score,
+                matchedCategories,
+                matchedKeywords: [...new Set(matchedKeywords)],
+                companyMatches,
+                isHighRelevance: score >= 40,
+                isMediumRelevance: score >= RSS_CONFIG.RELEVANCE_THRESHOLD && score < 40,
+                hasCompanyMention: companyMatches.length > 0
+            };
+        }
+
+        // Hitta omnämnda företag i text
+        function findCompanyMentions(text) {
+            if (monitoredCompanies.length === 0) return [];
+
+            const matches = [];
+            const normalizedText = text.toLowerCase();
+
+            // Kolla varje företag - optimerat för snabbhet
+            for (const company of monitoredCompanies) {
+                // Skip korta namn (för generiska)
+                if (company.normalized.length < 4) continue;
+
+                // Exakt match eller med ordgräns
+                const regex = new RegExp(`\\b${escapeRegex(company.normalized)}\\b`, 'i');
+                if (regex.test(normalizedText)) {
+                    matches.push(company.name);
+                    if (matches.length >= 10) break; // Max 10 matchningar per artikel
+                }
+            }
+
+            return matches;
+        }
+
+        // Escape regex special characters
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Applicera relevanspoäng på alla artiklar
+        function applyRelevanceScoring() {
+            articles.forEach(article => {
+                const relevance = calculateRelevanceScore(article);
+                article.relevanceScore = relevance.score;
+                article.relevanceCategories = relevance.matchedCategories;
+                article.relevanceKeywords = relevance.matchedKeywords;
+                article.companyMatches = relevance.companyMatches;
+                article.isHighRelevance = relevance.isHighRelevance;
+                article.hasCompanyMention = relevance.hasCompanyMention;
+            });
+        }
 
         // =========================================================================
         // FETCH RSS
@@ -936,6 +1189,14 @@
             // Markera keyword-matches
             highlightKeywords();
 
+            // Applicera relevanspoäng på alla artiklar
+            applyRelevanceScoring();
+
+            // Sortera relevanta artiklar högst
+            if (currentCategory === 'relevant' || currentCategory === 'companies') {
+                articles.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+            }
+
             renderArticles();
             renderFeedsSidebar();
 
@@ -1042,8 +1303,18 @@
             const container = document.getElementById('articles-list');
             let filtered = articles;
 
-            // Filtrera på kategori
-            if (currentCategory !== 'all') {
+            // Smart filtrering baserat på kategori
+            if (currentCategory === 'relevant') {
+                // Visa bara artiklar med hög relevanspoäng
+                filtered = filtered.filter(a => (a.relevanceScore || 0) >= RSS_CONFIG.RELEVANCE_THRESHOLD);
+                // Sortera efter relevans
+                filtered.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+            } else if (currentCategory === 'companies') {
+                // Visa bara artiklar som nämner bevakade företag
+                filtered = filtered.filter(a => a.hasCompanyMention);
+                filtered.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+            } else if (currentCategory !== 'all') {
+                // Standard kategorifiltrering
                 filtered = filtered.filter(a => a.category === currentCategory);
             }
 
@@ -1052,20 +1323,31 @@
                 filtered = filtered.filter(a => a.sourceId === currentFeed);
             }
 
-            // Sökfilter
+            // Sökfilter - sök även i företagsnamn
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
                 filtered = filtered.filter(a =>
                     a.title.toLowerCase().includes(query) ||
                     a.description.toLowerCase().includes(query) ||
-                    a.source.toLowerCase().includes(query)
+                    a.source.toLowerCase().includes(query) ||
+                    (a.companyMatches && a.companyMatches.some(c => c.toLowerCase().includes(query)))
                 );
             }
+
+            // Beräkna statistik
+            const relevantCount = articles.filter(a => (a.relevanceScore || 0) >= RSS_CONFIG.RELEVANCE_THRESHOLD).length;
+            const companyMentionCount = articles.filter(a => a.hasCompanyMention).length;
 
             // Uppdatera statistik
             const statsEl = document.querySelector('.articles-stats');
             if (statsEl) {
-                statsEl.textContent = `${filtered.length} artiklar`;
+                if (currentCategory === 'relevant') {
+                    statsEl.textContent = `${filtered.length} relevanta artiklar (av ${articles.length} totalt)`;
+                } else if (currentCategory === 'companies') {
+                    statsEl.textContent = `${filtered.length} artiklar nämner bevakade företag`;
+                } else {
+                    statsEl.textContent = `${filtered.length} artiklar | 🎯 ${relevantCount} relevanta | 🏢 ${companyMentionCount} med företag`;
+                }
             }
 
             if (filtered.length === 0) {
@@ -1073,7 +1355,11 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
                         <h3>Inga artiklar</h3>
-                        <p>Inga artiklar matchade dina filter</p>
+                        <p>${currentCategory === 'relevant'
+                            ? 'Inga artiklar matchade dina relevansfilter. Prova att justera nyckelorden i inställningarna.'
+                            : currentCategory === 'companies'
+                            ? 'Inga nyheter omnämner just nu något av de bevakade företagen.'
+                            : 'Inga artiklar matchade dina filter'}</p>
                     </div>
                 `;
                 return;
@@ -1093,8 +1379,24 @@
                 const isReadClass = article.read ? 'read' : '';
                 const timeAgo = formatTimeAgo(article.pubDate);
 
+                // Relevans-klasser
+                const relevanceClass = article.hasCompanyMention ? 'company-mention'
+                    : article.isHighRelevance ? 'high-relevance' : '';
+
+                // Relevans-badge
+                const relevanceBadge = article.relevanceScore >= 40
+                    ? `<span class="relevance-badge relevance-high">🎯 ${article.relevanceScore}p</span>`
+                    : article.relevanceScore >= RSS_CONFIG.RELEVANCE_THRESHOLD
+                    ? `<span class="relevance-badge relevance-medium">📊 ${article.relevanceScore}p</span>`
+                    : '';
+
+                // Company-badge
+                const companyBadge = article.companyMatches && article.companyMatches.length > 0
+                    ? `<span class="company-match">🏢 ${article.companyMatches.slice(0, 2).join(', ')}${article.companyMatches.length > 2 ? '...' : ''}</span>`
+                    : '';
+
                 return `
-                    <article class="article-card ${isNewClass} ${isReadClass}"
+                    <article class="article-card ${isNewClass} ${isReadClass} ${relevanceClass}"
                              onclick="openArticleLightbox('${article.id}')">
                         <div class="article-card-image-wrapper">
                             ${article.image
@@ -1108,6 +1410,8 @@
                                 <span class="article-source-badge">${escapeHtml(article.source)}</span>
                                 <span class="article-time">${timeAgo}</span>
                                 ${article.isNew ? '<span class="new-badge">Ny</span>' : ''}
+                                ${relevanceBadge}
+                                ${companyBadge}
                                 ${hasKeywords ? `<span class="keyword-match">🔔 ${article.keywordMatches.join(', ')}</span>` : ''}
                             </div>
                             <h3 class="article-title">${escapeHtml(article.title)}</h3>
@@ -1524,6 +1828,10 @@
                 return;
             }
 
+            // Ladda bevakade företag för smart filtrering
+            console.log('🔄 Laddar bevakade företag...');
+            await fetchMonitoredCompanies();
+
             // Event listeners - kategori-filter
             document.querySelectorAll('.filter-tab').forEach(tab => {
                 tab.addEventListener('click', () => filterByCategory(tab.dataset.category));
@@ -1531,8 +1839,11 @@
 
             // Sortering
             document.getElementById('sort-select').addEventListener('change', (e) => {
-                if (e.target.value === 'oldest') {
+                const sortType = e.target.value;
+                if (sortType === 'oldest') {
                     articles.sort((a, b) => a.pubDate - b.pubDate);
+                } else if (sortType === 'relevance') {
+                    articles.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
                 } else {
                     articles.sort((a, b) => b.pubDate - a.pubDate);
                 }
@@ -1580,7 +1891,9 @@
             // Visa välkomstmeddelande
             console.log('🗞️ RSS-läsare startat!');
             console.log(`📰 ${RSS_FEEDS.length} källor konfigurerade`);
+            console.log(`📊 ${monitoredCompanies.length} bevakade företag laddade`);
             console.log('⏰ Auto-uppdatering var 5:e minut');
+            console.log('🎯 Smart filtrering aktiverad för Impact Loop');
         });
 
         // Cleanup vid sidstängning
