@@ -1164,6 +1164,13 @@
             </div>
 
             <div class="drawer-section">
+                <h4>Budgetlogg</h4>
+                <p>Senaste kostnader som påverkar budgeten.</p>
+                <div id="budget-log-summary" class="event-meta" style="margin-bottom: 0.75rem;">-</div>
+                <div id="budget-log-list" class="event-meta">Laddar budgetlogg...</div>
+            </div>
+
+            <div class="drawer-section">
                 <h4>SMS-logg & Kostnad</h4>
                 <p>Senaste inkommande/utgående SMS och kostnad.</p>
                 <div id="sms-billing-summary" class="event-meta" style="margin-bottom: 0.75rem;">-</div>
@@ -1301,6 +1308,43 @@
         let poitEvents = [];
         let companySearchQuery = '';
         let companySectorFilter = '';
+        const LOGO_BUCKET_NAME = 'company-logos';
+        const logoCache = {};
+
+        function cleanOrgNr(orgnr) {
+            if (!orgnr) return '';
+            return orgnr.replace(/\D/g, '');
+        }
+
+        function getCompanyLogoUrl(orgnr) {
+            if (!orgnr || !sb) return null;
+            const clean = cleanOrgNr(orgnr);
+            if (!clean) return null;
+
+            if (logoCache[clean] === undefined) {
+                try {
+                    const { data } = sb.storage.from(LOGO_BUCKET_NAME).getPublicUrl(`${clean}.png`);
+                    logoCache[clean] = data?.publicUrl || null;
+                } catch (error) {
+                    console.error('Logo fetch failed', error);
+                    logoCache[clean] = null;
+                }
+            }
+
+            return logoCache[clean];
+        }
+
+        function renderLogoElement(logoUrl, label) {
+            const text = (label || 'Företag').split(' ').filter(Boolean);
+            const initials = (text.length >= 2 ? text.slice(0, 2) : text).map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2) || 'FB';
+
+            if (logoUrl) {
+                const safeUrl = escapeHtml(logoUrl);
+                return `<div class="company-logo"><img src="${safeUrl}" alt="${escapeHtml(label || 'Företag')} logo" loading="lazy" onerror="this.remove();"></div>`;
+            }
+
+            return `<div class="company-logo">${escapeHtml(initials)}</div>`;
+        }
 
         // RSS feeds (samma som nyhetsflöde)
         const RSS_FEEDS = [
@@ -1420,6 +1464,7 @@
             companyData = {};
             allCompanies.forEach(c => {
                 if (c.orgnr) {
+                    const logoUrl = getCompanyLogoUrl(c.orgnr);
                     companyData[c.orgnr] = {
                         name: c.company_name,
                         sector: c.sector,
@@ -1427,8 +1472,10 @@
                         website: c.website,
                         city: c.city,
                         ceo: c.ceo_name,
-                        chairman: c.chairman_name
+                        chairman: c.chairman_name,
+                        logoUrl
                     };
+                    c.logoUrl = logoUrl;
                 }
             });
 
@@ -1469,6 +1516,7 @@
                 timestamp: new Date(e.announcement_date).getTime(),
                 orgnr: e.orgnr,
                 companyName: e.matched_company_name || getCompanyName(e.orgnr) || 'Okänt företag',
+                logoUrl: getCompanyLogoUrl(e.orgnr),
                 source: 'Bolagsverket',
                 originalEvent: e
             }));
@@ -1487,6 +1535,7 @@
                         const linkKey = item.link || item.guid;
                         if (linkKey && seenLinks.has(linkKey)) return;
                         if (linkKey) seenLinks.add(linkKey);
+                        const matchedOrg = matchCompanyToNews(item);
                         newsItems.push({
                             id: `news-${item.guid || item.link}`,
                             type: 'news',
@@ -1494,7 +1543,8 @@
                             title: item.title,
                             date: item.pubDate,
                             timestamp: new Date(item.pubDate).getTime(),
-                            orgnr: matchCompanyToNews(item),
+                            orgnr: matchedOrg,
+                            logoUrl: matchedOrg ? getCompanyLogoUrl(matchedOrg) : null,
                             companyName: item.matchedCompany || RSS_FEEDS[i].name,
                             source: RSS_FEEDS[i].name,
                             link: item.link
@@ -1544,6 +1594,7 @@
                         date: item.pubDate,
                         timestamp: new Date(item.pubDate).getTime(),
                         orgnr: pressroom.orgnr,
+                        logoUrl: getCompanyLogoUrl(pressroom.orgnr),
                         companyName: pressroom.company_name || 'Pressrum',
                         source: pressroom.company_name || 'Pressrum',
                         link: item.link
@@ -1560,6 +1611,7 @@
                 const name = (companyData[orgnr].name || '').toLowerCase();
                 if (name.length > 3 && title.includes(name)) {
                     item.matchedCompany = companyData[orgnr].name;
+                    item.matchedOrgNr = orgnr;
                     return orgnr;
                 }
             }
@@ -1606,11 +1658,19 @@
                 return;
             }
 
-            tbody.innerHTML = filteredCompanies.slice(0, 200).map(c => `
+            tbody.innerHTML = filteredCompanies.slice(0, 200).map(c => {
+                const logoUrl = c.logoUrl || companyData[c.orgnr]?.logoUrl || getCompanyLogoUrl(c.orgnr);
+                const meta = c.city || c.ceo || c.chairman || c.sector || '';
+                return `
                 <tr>
                     <td>
-                        <div class="company-name-cell">${escapeHtml(c.company_name || '-')}</div>
-                        <div class="company-orgnr">${escapeHtml(c.orgnr || '-')}</div>
+                        <div class="company-cell">
+                            ${renderLogoElement(logoUrl, c.company_name)}
+                            <div class="company-cell-info">
+                                <span class="company-name">${escapeHtml(c.company_name || '-')}</span>
+                                <span class="company-cell-meta">${escapeHtml(meta)}</span>
+                            </div>
+                        </div>
                     </td>
                     <td>${escapeHtml(c.sector || '-')}</td>
                     <td>${c.turnover_2024_sek ? formatNumber(c.turnover_2024_sek) + ' kr' : '-'}</td>
@@ -1619,7 +1679,8 @@
                         <button onclick='showCompanyModal("${c.orgnr || ''}", ${JSON.stringify(c.company_name || '')})'>Öppna</button>
                     </td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
 
         // =========================================================================
@@ -1632,7 +1693,8 @@
                 loadBudgetSettings(),
                 loadSmsSettings(),
                 loadSmsLogs(),
-                loadSmsBilling()
+                loadSmsBilling(),
+                loadBudgetLogOverview()
             ]);
         }
 
@@ -1771,6 +1833,46 @@
             }
         }
 
+        async function loadBudgetLogOverview() {
+            const summary = document.getElementById('budget-log-summary');
+            const list = document.getElementById('budget-log-list');
+            if (!summary || !list) return;
+
+            try {
+                const { data, error } = await sb
+                    .from('budget_logs')
+                    .select('service,operation,cost_sek,created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    summary.textContent = 'Inga budgetnoteringar ännu.';
+                    list.textContent = '';
+                    return;
+                }
+
+                const total = data.reduce((sum, row) => sum + (row.cost_sek || 0), 0);
+                summary.textContent = `Budgetkostnad (senaste ${data.length}): ${total.toFixed(2)} kr`;
+                list.innerHTML = data.map(row => `
+                    <div class="log-entry">
+                        <div>
+                            <strong>${escapeHtml(row.service || 'Okänt')}</strong> ${escapeHtml(row.operation || '')}
+                            <div class="event-time" style="font-size: var(--font-size-xxs);">
+                                ${formatDate(row.created_at)} ${formatTime(row.created_at)}
+                            </div>
+                        </div>
+                        <div class="event-time">${row.cost_sek ? row.cost_sek.toFixed(2) + ' kr' : '-'}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Budget log load failed:', error);
+                summary.textContent = 'Kunde inte ladda budgetlogg.';
+                list.textContent = '';
+            }
+        }
+
         async function loadCompanyDocumentsInline(orgnr) {
             const container = document.getElementById('company-documents-inline');
             if (!container) return;
@@ -1871,7 +1973,8 @@
                         orgnr: e.orgnr,
                         date: dateKey,
                         latestTimestamp: e.timestamp,
-                        events: []
+                        events: [],
+                        logoUrl: e.logoUrl || null
                     };
                 }
 
@@ -1879,10 +1982,21 @@
                 if (e.timestamp > groups[groupKey].latestTimestamp) {
                     groups[groupKey].latestTimestamp = e.timestamp;
                 }
+
+                if (!groups[groupKey].logoUrl && e.logoUrl) {
+                    groups[groupKey].logoUrl = e.logoUrl;
+                }
             });
 
             // Sortera grupper efter senaste händelse
-            return Object.values(groups).sort((a, b) => b.latestTimestamp - a.latestTimestamp);
+            return Object.values(groups)
+                .map(group => {
+                    if (!group.logoUrl && group.orgnr) {
+                        group.logoUrl = getCompanyLogoUrl(group.orgnr);
+                    }
+                    return group;
+                })
+                .sort((a, b) => b.latestTimestamp - a.latestTimestamp);
         }
 
         // =========================================================================
@@ -1918,11 +2032,12 @@
 
         function renderSingleEvent(e) {
             const typeClass = getTypeClass(e);
-            const initial = (e.companyName || 'X').charAt(0).toUpperCase();
+            const logoUrl = e.logoUrl || getCompanyLogoUrl(e.orgnr);
+            const logoMarkup = renderLogoElement(logoUrl, e.companyName);
 
             return `
                 <div class="single-event-card" onclick="showEventModal('${e.id}')">
-                    <div class="company-logo">${initial}</div>
+                    ${logoMarkup}
                     <div class="event-content">
                         <div class="company-name">${escapeHtml(e.companyName)}</div>
                         <div class="event-title">
@@ -1941,13 +2056,14 @@
         }
 
         function renderGroupedCard(group) {
-            const initial = (group.companyName || 'X').charAt(0).toUpperCase();
+            const logoUrl = group.logoUrl || getCompanyLogoUrl(group.orgnr);
+            const logoMarkup = renderLogoElement(logoUrl, group.companyName);
             const eventCount = group.events.length;
 
             return `
                 <div class="company-card">
                     <div class="company-header" onclick='showCompanyModal("${group.orgnr || ''}", ${JSON.stringify(group.companyName || '')})'>
-                        <div class="company-logo">${initial}</div>
+                        ${logoMarkup}
                         <div class="company-info">
                             <div class="company-name">${escapeHtml(group.companyName)}</div>
                             <div class="company-meta">
@@ -2045,29 +2161,33 @@
 
         function showCompanyModal(orgnr, companyName) {
             const company = orgnr ? companyData[orgnr] : null;
+            const cleanOrgnr = cleanOrgNr(orgnr);
+            const companyRecord = company || (cleanOrgnr ? companyData[cleanOrgnr] : null);
             const companyEvents = allEvents.filter(e => e.orgnr === orgnr || e.companyName === companyName);
 
             document.getElementById('modal-title').textContent = companyName;
 
+            const modalLogoUrl = companyRecord?.logoUrl || getCompanyLogoUrl(orgnr);
             document.getElementById('modal-body').innerHTML = `
+                <div class="company-header">
+                    ${renderLogoElement(modalLogoUrl, companyName)}
+                    <div class="company-info">
+                        <div class="company-name">${escapeHtml(companyName)}</div>
+                        ${orgnr ? `<div class="company-orgnr">${orgnr}</div>` : ''}
+                    </div>
+                </div>
                 <div class="detail-section">
                     <div class="detail-section-title">Företagsinformation</div>
-                    ${orgnr ? `
-                    <div class="detail-row">
-                        <span class="detail-label">Org.nr</span>
-                        <span class="detail-value">${orgnr}</span>
-                    </div>
-                    ` : ''}
-                    ${company?.sector ? `
+                    ${companyRecord?.sector ? `
                     <div class="detail-row">
                         <span class="detail-label">Sektor</span>
-                        <span class="detail-value">${escapeHtml(company.sector)}</span>
+                        <span class="detail-value">${escapeHtml(companyRecord.sector)}</span>
                     </div>
                     ` : ''}
-                    ${company?.turnover ? `
+                    ${companyRecord?.turnover ? `
                     <div class="detail-row">
                         <span class="detail-label">Omsättning</span>
-                        <span class="detail-value">${formatNumber(company.turnover)} kr</span>
+                        <span class="detail-value">${formatNumber(companyRecord.turnover)} kr</span>
                     </div>
                     ` : ''}
                 </div>
