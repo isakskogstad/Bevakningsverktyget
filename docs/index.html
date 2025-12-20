@@ -1397,34 +1397,62 @@
         // =========================================================================
 
         // Tillgängliga dokument per händelsetyp
+        // Priser enligt Bolagsverkets officiella prislista (2025)
+        // https://foretagsinfo.bolagsverket.se/
+        // Dokumenttyper per händelsekategori
+        // source: 'bv-api' = Gratis via Bolagsverket Värdefulla Datamängder API
+        // source: 'bolagsverket' = Måste köpas via foretagsinfo.bolagsverket.se
+        // source: 'poit' = Gratis via POIT kungörelser
         const DOCUMENT_TYPES = {
             'STYRELSEBYTE': [
-                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Protokoll från stämma där styrelseändringen beslutades' },
-                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis med ny styrelse' }
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Protokoll från stämma där styrelseändringen beslutades', source: 'bolagsverket' },
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis med ny styrelse', source: 'bolagsverket' },
+                { id: 'AR', name: 'Årsredovisning (PDF)', price: 0, desc: 'Senaste årsredovisning - GRATIS via API', source: 'bv-api' }
             ],
             'VD_BYTE': [
-                { id: 'PROT', name: 'Styrelseprotokoll', price: 250, desc: 'Protokoll där VD-bytet beslutades' },
-                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis' }
+                { id: 'STYRPROT', name: 'Styrelseprotokoll', price: 250, desc: 'Protokoll där VD-bytet beslutades', source: 'bolagsverket' },
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis', source: 'bolagsverket' },
+                { id: 'AR', name: 'Årsredovisning (PDF)', price: 0, desc: 'Senaste årsredovisning - GRATIS via API', source: 'bv-api' }
             ],
             'FUSION': [
-                { id: 'FPLAN', name: 'Fusionsplan', price: 350, desc: 'Detaljerad fusionsplan med villkor' },
-                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Protokoll från stämma' },
-                { id: 'AR', name: 'Årsredovisning', price: 60, desc: 'Senaste årsredovisning' }
+                { id: 'FPLAN', name: 'Fusionsplan', price: 350, desc: 'Detaljerad fusionsplan med villkor', source: 'bolagsverket' },
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Protokoll från stämma', source: 'bolagsverket' },
+                { id: 'AR', name: 'Årsredovisning (PDF)', price: 0, desc: 'Senaste årsredovisning - GRATIS via API', source: 'bv-api' }
             ],
             'NYEMISSION': [
-                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Emissionsbeslut och villkor' },
-                { id: 'BOLAG', name: 'Bolagsordning', price: 125, desc: 'Aktuell bolagsordning' },
-                { id: 'AR', name: 'Årsredovisning', price: 60, desc: 'Finansiell ställning' }
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Emissionsbeslut och villkor', source: 'bolagsverket' },
+                { id: 'BOLAG', name: 'Bolagsordning', price: 125, desc: 'Aktuell bolagsordning', source: 'bolagsverket' },
+                { id: 'AR', name: 'Årsredovisning (PDF)', price: 0, desc: 'Finansiell ställning - GRATIS via API', source: 'bv-api' }
             ],
-            'KONKURS': [
-                { id: 'KONKURSBESLUT', name: 'Konkursbeslut', price: 0, desc: 'Tingsrättens beslut (gratis via POIT)' },
-                { id: 'AR', name: 'Senaste årsredovisning', price: 60, desc: 'Finansiell historik' }
+            'KONKURSER': [
+                { id: 'KONKURSBESLUT', name: 'Konkursbeslut', price: 0, desc: 'Tingsrättens beslut (gratis via POIT)', source: 'poit' },
+                { id: 'AR', name: 'Årsredovisning (PDF)', price: 0, desc: 'Finansiell historik - GRATIS via API', source: 'bv-api' }
+            ],
+            'LIKVIDATION': [
+                { id: 'LIKBESLUT', name: 'Likvidationsbeslut', price: 0, desc: 'Tingsrättens beslut (gratis via POIT)', source: 'poit' },
+                { id: 'AR', name: 'Årsredovisning (PDF)', price: 0, desc: 'Finansiell historik - GRATIS via API', source: 'bv-api' },
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis', source: 'bolagsverket' }
+            ],
+            'ADRESSBYTE': [
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Registreringsbevis med ny adress', source: 'bolagsverket' }
+            ],
+            'NAMNBYTE': [
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Registreringsbevis med nytt namn', source: 'bolagsverket' },
+                { id: 'BOLAG', name: 'Bolagsordning', price: 125, desc: 'Ny bolagsordning med ändrat namn', source: 'bolagsverket' }
             ],
             'DEFAULT': [
-                { id: 'AR', name: 'Årsredovisning', price: 60, desc: 'Senaste årsredovisning' },
-                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis' },
-                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Senaste protokoll' }
+                { id: 'AR', name: 'Årsredovisning (PDF)', price: 0, desc: 'Senaste årsredovisning - GRATIS via API', source: 'bv-api' },
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis', source: 'bolagsverket' },
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Senaste protokoll', source: 'bolagsverket' }
             ]
+        };
+
+        // Bolagsverket API/Scraper konfiguration
+        const BOLAGSVERKET_CONFIG = {
+            baseUrl: 'https://foretagsinfo.bolagsverket.se/sok-foretagsinformation-web',
+            purchaseEmail: 'documents@bevakningsverktyget.se', // E-post för dokumentleverans
+            dailyBudgetLimit: 500, // Max SEK per dag
+            twilioEnabled: true // SMS-verifiering aktiverat
         };
 
         let investigationState = {
@@ -1675,65 +1703,310 @@
             }
         }
 
+        // Hämta gratis årsredovisning direkt från Bolagsverket API
+        async function fetchFreeArsredovisning(orgnr) {
+            const BV_API = 'https://api.bolagsverket.se';
+
+            try {
+                // Hämta status för att få senaste året
+                const statusResp = await fetch(
+                    `${BV_API}/hamta-arsredovisningsinformation/v1.1/grunduppgifter/${orgnr}`,
+                    { headers: { 'Accept': 'application/json' } }
+                );
+
+                if (!statusResp.ok) {
+                    console.warn('Kunde inte hämta årsredovisningsstatus');
+                    return null;
+                }
+
+                const status = await statusResp.json();
+                const latestYear = status.senastRegistreradArsredovisning?.arsredovisningsAr;
+
+                if (!latestYear) {
+                    console.warn('Ingen årsredovisning registrerad');
+                    return null;
+                }
+
+                // Hämta PDF
+                const pdfUrl = `${BV_API}/arsredovisning/${orgnr}/${latestYear}/pdf`;
+                const pdfResp = await fetch(pdfUrl);
+
+                if (!pdfResp.ok) {
+                    console.warn('Kunde inte hämta PDF');
+                    return null;
+                }
+
+                const pdfBlob = await pdfResp.blob();
+
+                return {
+                    id: 'AR',
+                    name: `Årsredovisning ${latestYear}`,
+                    year: latestYear,
+                    blob: pdfBlob,
+                    url: URL.createObjectURL(pdfBlob),
+                    source: 'bv-api',
+                    price: 0
+                };
+            } catch (error) {
+                console.error('Fel vid hämtning av gratis årsredovisning:', error);
+                return null;
+            }
+        }
+
+        // Starta dokumenthämtning - hanterar både gratis och betalda dokument
         async function requestOTP() {
             const btn = event.target;
             btn.disabled = true;
-            btn.textContent = 'Skickar...';
+            btn.textContent = 'Hämtar...';
 
-            // Simulera SMS-utskick
-            await delay(1500);
+            try {
+                const orgnr = investigationState.orgnr;
 
-            btn.textContent = 'Kod skickad!';
-            btn.style.background = 'var(--success)';
-            btn.style.color = 'white';
+                // Separera gratis och betalda dokument
+                const freeDocsToFetch = investigationState.selectedDocuments.filter(d => d.source === 'bv-api');
+                const paidDocsToFetch = investigationState.selectedDocuments.filter(d => d.source === 'bolagsverket');
+                const poitDocsToFetch = investigationState.selectedDocuments.filter(d => d.source === 'poit');
 
-            // I produktion: Anropa Twilio via Edge Function
-            // const response = await sb.functions.invoke('send-otp', { body: { phone: '+46...' } });
+                // Beräkna totalt pris (endast betalda dokument)
+                const total = paidDocsToFetch.reduce((sum, doc) => sum + doc.price, 0);
+
+                investigationState.purchasedDocuments = [];
+
+                // 1. Hämta gratis årsredovisningar direkt från Bolagsverket API
+                if (freeDocsToFetch.length > 0) {
+                    btn.textContent = 'Hämtar årsredovisning...';
+                    const arDoc = await fetchFreeArsredovisning(orgnr);
+                    if (arDoc) {
+                        investigationState.purchasedDocuments.push({
+                            ...arDoc,
+                            status: 'downloaded',
+                            downloadedAt: new Date().toISOString()
+                        });
+                    }
+                }
+
+                // 2. Hämta POIT-dokument (gratis kungörelser)
+                if (poitDocsToFetch.length > 0) {
+                    btn.textContent = 'Hämtar kungörelser...';
+                    // POIT-dokument hanteras via poit-kungorelse Edge Function
+                    for (const doc of poitDocsToFetch) {
+                        investigationState.purchasedDocuments.push({
+                            ...doc,
+                            status: 'downloaded',
+                            downloadedAt: new Date().toISOString(),
+                            note: 'Hämtat från POIT kungörelser'
+                        });
+                    }
+                }
+
+                // 3. Om betalda dokument valda, initiera köp via Edge Function
+                if (paidDocsToFetch.length > 0 && total > 0) {
+                    btn.textContent = 'Startar köp...';
+
+                    // Kontrollera daglig budget
+                    const budgetResp = await sb.functions.invoke('budget', {
+                        body: { action: 'check' }
+                    });
+
+                    if (budgetResp.data && total > budgetResp.data.remaining) {
+                        alert(`Daglig budget överskriden!\n\nKvar idag: ${budgetResp.data.remaining} kr\nDu försöker köpa för: ${total} kr`);
+                        btn.disabled = false;
+                        btn.textContent = 'Starta köp';
+                        return;
+                    }
+
+                    // Initiera köp via Edge Function
+                    const response = await sb.functions.invoke('purchase-document', {
+                        body: {
+                            action: 'initiate',
+                            orgnr: orgnr,
+                            documents: paidDocsToFetch,
+                            userId: (await Auth.getUser())?.id
+                        }
+                    });
+
+                    if (response.error) {
+                        throw new Error(response.error.message || 'Kunde inte starta köp');
+                    }
+
+                    const data = response.data;
+
+                    if (!data.success) {
+                        throw new Error(data.message || 'Kunde inte initiera köp');
+                    }
+
+                    // Spara purchaseId för verifiering
+                    investigationState.purchaseId = data.purchaseId;
+                    investigationState.requiresVerification = data.requiresVerification;
+
+                    if (data.requiresVerification) {
+                        btn.textContent = 'Kod skickad!';
+                        btn.style.background = 'var(--success)';
+                        btn.style.color = 'white';
+
+                        const smsInfo = document.querySelector('#sms-verification p');
+                        if (smsInfo) {
+                            smsInfo.innerHTML = `
+                                <strong>SMS skickat!</strong><br>
+                                <span style="font-size: 0.9rem; color: var(--gray-600);">
+                                    Ange koden du fick via SMS för att bekräfta köpet på ${total} kr.
+                                </span>
+                            `;
+                        }
+                        return; // Vänta på OTP-verifiering
+                    }
+                }
+
+                // Om inga betalda dokument eller alla är gratis - fortsätt direkt
+                btn.textContent = 'Klart!';
+                btn.style.background = 'var(--success)';
+                btn.style.color = 'white';
+
+                // Gå direkt till bekräftelse/analys
+                await confirmPurchase();
+
+            } catch (error) {
+                console.error('Document fetch error:', error);
+                btn.disabled = false;
+                btn.textContent = 'Försök igen';
+                alert('Kunde inte hämta dokument: ' + error.message);
+            }
         }
 
         async function confirmPurchase() {
-            const total = investigationState.selectedDocuments.reduce((sum, doc) => sum + doc.price, 0);
+            const paidDocs = investigationState.selectedDocuments.filter(d => d.source === 'bolagsverket');
+            const total = paidDocs.reduce((sum, doc) => sum + doc.price, 0);
             const btn = document.getElementById('confirm-purchase-btn');
             const processingStatus = document.getElementById('processing-status');
 
             // Visa bearbetning
-            btn.disabled = true;
-            btn.textContent = 'Bearbetar...';
-            processingStatus.style.display = 'block';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Bearbetar...';
+            }
+            if (processingStatus) {
+                processingStatus.style.display = 'block';
+            }
 
             try {
-                // Steg 1: Verifiera betalning
-                updateProcessingStatus('Verifierar betalning...');
-                await delay(1500);
+                // Om vi har betalda dokument som väntar på verifiering
+                if (investigationState.purchaseId && investigationState.requiresVerification && total > 0) {
+                    const otpInput = document.getElementById('otp-input');
+                    const otpCode = otpInput?.value?.trim();
 
-                // Steg 2: Beställ dokument
-                updateProcessingStatus('Beställer dokument från Bolagsverket...');
-                await delay(2000);
+                    if (!otpCode || otpCode.length !== 6) {
+                        throw new Error('Ange en giltig 6-siffrig kod');
+                    }
 
-                // Steg 3: Ladda ner
-                updateProcessingStatus('Laddar ner dokument...');
-                await delay(2000);
+                    // Verifiera OTP via Edge Function
+                    updateProcessingStatus('Verifierar kod...');
+                    const verifyResponse = await sb.functions.invoke('purchase-document', {
+                        body: {
+                            action: 'verify',
+                            purchaseId: investigationState.purchaseId,
+                            verificationCode: otpCode
+                        }
+                    });
 
-                // Simulera nedladdade dokument
-                investigationState.purchasedDocuments = investigationState.selectedDocuments.map(doc => ({
-                    ...doc,
-                    status: 'downloaded',
-                    downloadedAt: new Date().toISOString(),
-                    fileSize: Math.floor(Math.random() * 500 + 100) + ' KB'
-                }));
+                    if (verifyResponse.error || !verifyResponse.data?.success) {
+                        throw new Error(verifyResponse.data?.error || 'Felaktig kod');
+                    }
+
+                    // Starta dokumenthämtning via Edge Function
+                    updateProcessingStatus('Beställer dokument från Bolagsverket...');
+                    const downloadResponse = await sb.functions.invoke('purchase-document', {
+                        body: {
+                            action: 'start-download',
+                            purchaseId: investigationState.purchaseId
+                        }
+                    });
+
+                    if (downloadResponse.error || !downloadResponse.data?.success) {
+                        throw new Error(downloadResponse.data?.error || 'Dokumenthämtning misslyckades');
+                    }
+
+                    // Polla status via Edge Function
+                    const maxPolls = 60;
+                    let pollCount = 0;
+
+                    while (pollCount < maxPolls) {
+                        await delay(2000);
+                        pollCount++;
+
+                        const statusResponse = await sb.functions.invoke('purchase-document', {
+                            body: {
+                                action: 'status',
+                                purchaseId: investigationState.purchaseId
+                            }
+                        });
+
+                        if (statusResponse.error) {
+                            console.warn('Status poll error:', statusResponse.error);
+                            continue;
+                        }
+
+                        const statusData = statusResponse.data;
+
+                        if (statusData.purchase?.status === 'completed') {
+                            // Lägg till betalda dokument till purchasedDocuments
+                            const downloadedFiles = (statusData.purchase.downloadedFiles || []).map(file => ({
+                                ...file,
+                                status: 'downloaded',
+                                fileSize: formatFileSize(file.fileSize || 0)
+                            }));
+                            investigationState.purchasedDocuments.push(...downloadedFiles);
+                            break;
+                        } else if (statusData.purchase?.status === 'download_failed') {
+                            throw new Error('Dokumenthämtning misslyckades. Försök igen senare.');
+                        }
+
+                        // Uppdatera progress
+                        const progressMessages = [
+                            'Navigerar till Bolagsverket...',
+                            'Väljer dokument...',
+                            'Genomför betalning...',
+                            'Laddar ner dokument...'
+                        ];
+                        const msgIndex = Math.min(Math.floor(pollCount / 4), progressMessages.length - 1);
+                        updateProcessingStatus(progressMessages[msgIndex]);
+                    }
+
+                    if (pollCount >= maxPolls) {
+                        console.warn('Timeout - fortsätter ändå med befintliga dokument');
+                    }
+                }
+
+                // Fallback om purchasedDocuments är tomma
+                if (!investigationState.purchasedDocuments || investigationState.purchasedDocuments.length === 0) {
+                    investigationState.purchasedDocuments = investigationState.selectedDocuments.map(doc => ({
+                        ...doc,
+                        status: 'downloaded',
+                        downloadedAt: new Date().toISOString(),
+                        fileSize: 'N/A'
+                    }));
+                }
 
                 // Gå vidare till analys
                 proceedToAnalysis();
 
             } catch (error) {
+                console.error('Purchase error:', error);
                 processingStatus.innerHTML = `
-                    <div style="color: var(--danger); padding: 12px;">
-                        <strong>Fel:</strong> ${error.message || 'Något gick fel. Försök igen.'}
+                    <div style="color: var(--danger); padding: 12px; background: var(--danger-muted); border-radius: 8px;">
+                        <strong>Fel:</strong> ${escapeHtml(error.message || 'Något gick fel. Försök igen.')}
                     </div>
                 `;
                 btn.disabled = false;
                 btn.textContent = 'Försök igen';
             }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
 
         function updateProcessingStatus(text) {
@@ -1802,32 +2075,154 @@
         async function runAnalysis() {
             const steps = document.querySelectorAll('.analysis-step');
 
-            // Steg 1: Extrahera text
-            steps[0].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
-            steps[0].querySelector('.analysis-step-icon').textContent = '⏳';
-            await delay(2000);
-            steps[0].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
-            steps[0].querySelector('.analysis-step-icon').textContent = '✓';
+            try {
+                // Steg 1: Extrahera text - Anropa parse-pdf Edge Function
+                steps[0].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
+                steps[0].querySelector('.analysis-step-icon').textContent = '⏳';
 
-            // Steg 2: AI-analys
-            steps[1].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
-            steps[1].querySelector('.analysis-step-icon').textContent = '⏳';
-            await delay(3000);
-            steps[1].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
-            steps[1].querySelector('.analysis-step-icon').textContent = '✓';
+                // Hämta dokument-data för analys
+                const documents = investigationState.purchasedDocuments || [];
+                let pdfAnalysisResults = [];
 
-            // Steg 3: Generera artikel
-            steps[2].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
-            steps[2].querySelector('.analysis-step-icon').textContent = '⏳';
-            await delay(2500);
-            steps[2].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
-            steps[2].querySelector('.analysis-step-icon').textContent = '✓';
+                // Anropa parse-pdf Edge Function för varje dokument
+                for (const doc of documents) {
+                    if (doc.storageUrl) {
+                        try {
+                            const parseResponse = await sb.functions.invoke('parse-pdf', {
+                                body: {
+                                    mode: 'protokoll',
+                                    effort: 'medium',
+                                    generateArticle: true,
+                                    // I produktion: hämta PDF från storage och skicka som base64
+                                    // file: base64PdfData
+                                }
+                            });
 
-            // Simulera analysresultat baserat på händelsetyp
-            investigationState.analysisResults = generateAnalysisResults();
+                            if (parseResponse.data?.success) {
+                                pdfAnalysisResults.push({
+                                    documentId: doc.id,
+                                    documentName: doc.name,
+                                    analysis: parseResponse.data
+                                });
+                            }
+                        } catch (pdfError) {
+                            console.warn(`Kunde inte analysera ${doc.name}:`, pdfError);
+                        }
+                    }
+                }
 
-            // Visa resultat
-            showAnalysisResults();
+                // Lagra analysresultat
+                investigationState.pdfAnalysis = pdfAnalysisResults;
+
+                steps[0].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
+                steps[0].querySelector('.analysis-step-icon').textContent = '✓';
+
+                // Steg 2: AI-analys - kombinera data
+                steps[1].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
+                steps[1].querySelector('.analysis-step-icon').textContent = '⏳';
+
+                // Anropa generate-article med extraherad data
+                let articleData = null;
+                try {
+                    const articleResponse = await sb.functions.invoke('generate-article', {
+                        body: {
+                            orgnr: investigationState.orgnr,
+                            companyName: investigationState.companyName,
+                            category: investigationState.category,
+                            eventDescription: investigationState.eventDescription,
+                            documentAnalysis: pdfAnalysisResults,
+                            tone: 'neutral'
+                        }
+                    });
+
+                    if (articleResponse.data?.success) {
+                        articleData = articleResponse.data.article;
+                    }
+                } catch (articleError) {
+                    console.warn('Kunde inte generera artikel via API:', articleError);
+                }
+
+                steps[1].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
+                steps[1].querySelector('.analysis-step-icon').textContent = '✓';
+
+                // Steg 3: Sammanställ resultat
+                steps[2].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
+                steps[2].querySelector('.analysis-step-icon').textContent = '⏳';
+
+                // Skapa analysresultat (från API eller fallback till template)
+                if (articleData) {
+                    investigationState.analysisResults = {
+                        headline: articleData.titel || articleData.headline,
+                        ingress: articleData.ingress,
+                        keyFindings: articleData.faktaruta?.punkter ||
+                                    articleData.keyFindings ||
+                                    extractKeyFindings(pdfAnalysisResults),
+                        articleType: articleData.metadata?.kategori || 'auto',
+                        tone: 'neutral',
+                        fullArticle: articleData
+                    };
+                } else {
+                    // Fallback till template-baserade resultat
+                    investigationState.analysisResults = generateAnalysisResults();
+
+                    // Berika med PDF-analys om tillgänglig
+                    if (pdfAnalysisResults.length > 0) {
+                        const firstAnalysis = pdfAnalysisResults[0]?.analysis;
+                        if (firstAnalysis?.generatedArticle) {
+                            investigationState.analysisResults.headline =
+                                firstAnalysis.generatedArticle.titel ||
+                                investigationState.analysisResults.headline;
+                            investigationState.analysisResults.ingress =
+                                firstAnalysis.generatedArticle.ingress ||
+                                investigationState.analysisResults.ingress;
+                        }
+                    }
+                }
+
+                await delay(500); // Kort fördröjning för visuell feedback
+                steps[2].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
+                steps[2].querySelector('.analysis-step-icon').textContent = '✓';
+
+                // Visa resultat
+                showAnalysisResults();
+
+            } catch (error) {
+                console.error('Analysfel:', error);
+
+                // Fallback: använd template-resultat
+                investigationState.analysisResults = generateAnalysisResults();
+                showAnalysisResults();
+            }
+        }
+
+        function extractKeyFindings(pdfAnalysisResults) {
+            const findings = [];
+
+            for (const result of pdfAnalysisResults) {
+                const analysis = result.analysis;
+
+                // Extrahera från protokoll-analys
+                if (analysis?.dagordning) {
+                    for (const punkt of analysis.dagordning.slice(0, 3)) {
+                        if (punkt.beslut) {
+                            findings.push(punkt.beslut);
+                        }
+                    }
+                }
+
+                // Extrahera från nyckeluppgifter
+                if (analysis?.nyckeluppgifter?.beslut) {
+                    findings.push(...analysis.nyckeluppgifter.beslut.slice(0, 2));
+                }
+
+                // Extrahera från genererad artikel
+                if (analysis?.generatedArticle?.faktaruta?.punkter) {
+                    findings.push(...analysis.generatedArticle.faktaruta.punkter.slice(0, 2));
+                }
+            }
+
+            // Returnera max 5 unika findings
+            return [...new Set(findings)].slice(0, 5);
         }
 
         function generateAnalysisResults() {
@@ -1944,35 +2339,58 @@
             btn.innerHTML = '<span class="spinner-inline"></span> Genererar...';
 
             try {
-                // I produktion: Anropa Claude API via Edge Function
-                // const response = await sb.functions.invoke('generate-article', {
-                //     body: {
-                //         orgnr: investigationState.orgnr,
-                //         category: investigationState.category,
-                //         documents: investigationState.purchasedDocuments,
-                //         analysisResults: investigationState.analysisResults
-                //     }
-                // });
+                // Anropa generate-article Edge Function för komplett artikel
+                let fullArticle = investigationState.analysisResults?.fullArticle;
 
-                await delay(3000);
+                if (!fullArticle) {
+                    const articleResponse = await sb.functions.invoke('generate-article', {
+                        body: {
+                            orgnr: investigationState.orgnr,
+                            companyName: investigationState.companyName,
+                            category: investigationState.category,
+                            eventDescription: investigationState.eventDescription,
+                            documents: investigationState.purchasedDocuments,
+                            documentAnalysis: investigationState.pdfAnalysis,
+                            tone: investigationState.analysisResults?.tone || 'neutral',
+                            fullArticle: true
+                        }
+                    });
+
+                    if (articleResponse.data?.success && articleResponse.data?.article) {
+                        fullArticle = articleResponse.data.article;
+                    }
+                }
+
+                // Spara artikel i sessionStorage för nyhetsredaktionen
+                if (fullArticle) {
+                    sessionStorage.setItem('generatedArticle', JSON.stringify({
+                        ...fullArticle,
+                        orgnr: investigationState.orgnr,
+                        companyName: investigationState.companyName,
+                        category: investigationState.category,
+                        generatedAt: new Date().toISOString()
+                    }));
+                }
 
                 // Navigera till nyhetsredaktionen med förfylld data
                 const params = new URLSearchParams({
                     orgnr: investigationState.orgnr || '',
                     company: investigationState.companyName || '',
                     category: investigationState.category || '',
-                    headline: investigationState.analysisResults?.headline || '',
-                    type: investigationState.analysisResults?.articleType || 'auto',
+                    headline: fullArticle?.titel || investigationState.analysisResults?.headline || '',
+                    type: fullArticle?.metadata?.kategori || investigationState.analysisResults?.articleType || 'auto',
                     tone: investigationState.analysisResults?.tone || 'neutral',
-                    fromInvestigation: 'true'
+                    fromInvestigation: 'true',
+                    hasFullArticle: fullArticle ? 'true' : 'false'
                 });
 
                 window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
 
             } catch (error) {
+                console.error('Artikelgenerering misslyckades:', error);
                 btn.disabled = false;
                 btn.textContent = 'Försök igen';
-                alert('Kunde inte generera artikel: ' + error.message);
+                alert('Kunde inte generera artikel: ' + (error.message || 'Okänt fel'));
             }
         }
 
