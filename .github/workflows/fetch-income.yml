@@ -44,6 +44,7 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           RATSIT_EMAIL: ${{ secrets.RATSIT_EMAIL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RATSIT_COOKIES: ${{ secrets.RATSIT_COOKIES }}
           HEADLESS: 'true'
         run: |
           node scripts/fetch-income-action.js \

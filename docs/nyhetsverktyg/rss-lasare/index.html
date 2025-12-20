@@ -146,7 +146,7 @@
             max-width: 900px;
         }
 
-        /* Horisontellt artikelkort */
+        /* Horisontellt artikelkort - större och mer läsbart */
         .article-card {
             background: var(--white);
             border-radius: var(--radius-lg);
@@ -156,7 +156,7 @@
             transition: all var(--transition-base);
             display: flex;
             flex-direction: row;
-            min-height: 140px;
+            min-height: 180px;
         }
 
         .article-card:hover {
@@ -174,9 +174,9 @@
         }
 
         .article-card-image-wrapper {
-            width: 200px;
-            min-width: 200px;
-            height: 140px;
+            width: 240px;
+            min-width: 240px;
+            height: 180px;
             position: relative;
             overflow: hidden;
             flex-shrink: 0;
@@ -246,12 +246,12 @@
         }
 
         .article-title {
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-bold);
             line-height: var(--line-height-snug);
             margin-bottom: var(--spacing-2);
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             color: var(--gray-900);
@@ -262,14 +262,24 @@
         }
 
         .article-excerpt {
-            font-size: var(--font-size-sm);
+            font-size: var(--font-size-base);
             color: var(--gray-600);
-            line-height: var(--line-height-normal);
+            line-height: var(--line-height-relaxed);
             display: -webkit-box;
-            -webkit-line-clamp: 2;
+            -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             flex: 1;
+        }
+
+        /* Källlogotyper */
+        .article-source-logo {
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+            border-radius: 2px;
+            vertical-align: middle;
+            margin-right: 4px;
         }
 
         .article-meta {
@@ -661,6 +671,7 @@
                 <button class="filter-tab active" data-category="all">Alla</button>
                 <button class="filter-tab" data-category="relevant">🎯 Relevanta</button>
                 <button class="filter-tab" data-category="companies">🏢 Bevakade företag</button>
+                <button class="filter-tab" data-category="omni">🔍 Omni-sök</button>
                 <button class="filter-tab" data-category="tech">💻 Tech</button>
                 <button class="filter-tab" data-category="finans">💰 Finans</button>
                 <button class="filter-tab" data-category="nyheter">📰 Nyheter</button>
@@ -828,20 +839,92 @@
         let monitoredCompanies = [];
         let monitoredCompanyNames = new Set(); // För snabb lookup
 
-        // RSS feeds konfiguration - utökad lista
+        // Logotyper för nyhetskällor
+        const SOURCE_LOGOS = {
+            'breakit': 'https://www.breakit.se/favicon.ico',
+            'realtid': 'https://www.realtid.se/favicon.ico',
+            'nyteknik': 'https://www.nyteknik.se/favicon.ico',
+            'di': 'https://digital.di.se/favicon.ico',
+            'idg': 'https://www.idg.se/favicon.ico',
+            'computersweden': 'https://computersweden.idg.se/favicon.ico',
+            'svt': 'https://www.svt.se/favicon.ico',
+            'omni': 'https://omni.se/favicon.ico',
+            'dn': 'https://www.dn.se/favicon.ico',
+            'svd': 'https://www.svd.se/favicon.ico',
+            'expressen': 'https://www.expressen.se/favicon.ico',
+            'affarsvarlden': 'https://www.affarsvarlden.se/favicon.ico',
+            'privataaffarer': 'https://www.privataaffarer.se/favicon.ico',
+            'techcrunch': 'https://techcrunch.com/favicon.ico',
+            'theverge': 'https://www.theverge.com/favicon.ico',
+            'arstechnica': 'https://arstechnica.com/favicon.ico',
+            'wired': 'https://www.wired.com/favicon.ico',
+            'bloomberg': 'https://www.bloomberg.com/favicon.ico',
+            'ft': 'https://www.ft.com/favicon.ico'
+        };
+
+        // Omni-söktermer: 100+ ämnen, företag och branscher
+        const OMNI_SEARCH_TOPICS = [
+            // Svenska Unicorns & Scaleups (30+)
+            'klarna', 'spotify', 'northvolt', 'einride', 'voi', 'bolt', 'kry', 'truecaller',
+            'tink', 'pleo', 'anyfin', 'karma app', 'epidemic sound', 'storytel', 'matsmart',
+            'tibber', 'heart aerospace', 'volta trucks', 'h2 green steel', 'polarium',
+            'oatly', 'polestar', 'cellink', 'detectify', 'mentimeter', 'funnel',
+            'catena media', 'sinch', 'fortnox', 'evolution gaming', 'stillfront',
+            'embracer group', 'paradox interactive', 'mojang', 'king',
+
+            // Riskkapital & Investeringar (20+)
+            'eqt', 'kinnevik', 'industrifonden', 'almi invest', 'creandum', 'northzone',
+            'atomico', 'sequoia capital', 'accel partners', 'balderton capital', 'index ventures',
+            'investeringsrunda', 'serie a finansiering', 'serie b finansiering', 'börsnotering stockholm',
+            'riskkapital sverige', 'venture capital nordic', 'private equity sverige',
+            'affärsänglar sverige', 'startup funding', 'seed investment',
+
+            // Green Tech & Klimat (25+)
+            'greentech sverige', 'cleantech stockholm', 'klimattech', 'förnybar energi sverige',
+            'solenergi företag', 'vindkraft sverige', 'vattenfall förnybart',
+            'elbilar sverige', 'elbil laddning', 'laddstolpar företag', 'batteritech',
+            'vätgas energi', 'hydrogen företag', 'klimatomställning industri',
+            'hållbarhet företag', 'cirkulär ekonomi', 'återvinning tech',
+            'koldioxid fångst', 'co2 reduktion', 'utsläppshandel', 'fossilfritt stål',
+            'biogas sverige', 'biobränsle', 'solceller', 'energilagring',
+
+            // AI & Tech (20+)
+            'artificiell intelligens sverige', 'ai startup stockholm', 'machine learning företag',
+            'generativ ai skandinavien', 'chatgpt användning', 'ai automatisering',
+            'deeptech startup', 'robotik industri', 'automation företag',
+            'saas bolag sverige', 'fintech stockholm', 'proptech skandinavien',
+            'healthtech nordic', 'edtech sverige', 'medtech malmö', 'foodtech startup',
+            'cybersäkerhet företag', 'datasäkerhet startup', 'cloud computing sverige',
+
+            // Stora Svenska Bolag (15+)
+            'hexagon ab', 'nibe industrier', 'assa abloy', 'atlas copco', 'sandvik ab',
+            'ericsson 5g', 'volvo group', 'scania ab', 'husqvarna', 'electrolux',
+            'h&m digital', 'ikea innovation', 'skf', 'alfa laval', 'securitas',
+
+            // Branscher & Sektorer (15+)
+            'e-handel sverige', 'gaming industri', 'spelindustrin stockholm', 'life science sweden',
+            'biotech nordic', 'fashiontech', 'retailtech', 'insurtech sverige',
+            'regtech compliance', 'legaltech startup', 'traveltech', 'edtech startup',
+
+            // Affärshändelser (10+)
+            'förvärv tech', 'uppköp startup', 'fusion bolag', 'konkurs tech',
+            'företagsrekonstruktion', 'expansion utland', 'internationalisering svenska företag',
+            'nyetablering startup', 'produktlansering tech', 'avknoppning bolag'
+        ];
+
+        // RSS feeds konfiguration (utan Hacker News)
         const RSS_FEEDS = [
             // Svenska Tech/Business
             { id: 'breakit', name: 'Breakit', url: 'https://www.breakit.se/feed/artiklar', category: 'tech', enabled: true },
             { id: 'realtid', name: 'Realtid', url: 'https://www.realtid.se/rss/senaste', category: 'finans', enabled: true },
             { id: 'nyteknik', name: 'Ny Teknik', url: 'https://www.nyteknik.se/feed', category: 'tech', enabled: true },
-            { id: 'di', name: 'Di Digital', url: 'https://digital.di.se/rss', category: 'finans', enabled: true },
+            { id: 'di', name: 'Dagens Industri', url: 'https://digital.di.se/rss', category: 'finans', enabled: true },
             { id: 'idg', name: 'IDG', url: 'https://www.idg.se/rss', category: 'tech', enabled: true },
             { id: 'computersweden', name: 'Computer Sweden', url: 'https://computersweden.idg.se/rss', category: 'tech', enabled: true },
 
             // Svenska Dagstidningar
             { id: 'svt', name: 'SVT Nyheter', url: 'https://www.svt.se/nyheter/rss.xml', category: 'nyheter', enabled: true },
-            { id: 'omni', name: 'Omni', url: 'https://omni.se/rss', category: 'nyheter', enabled: true },
-            { id: 'dn', name: 'DN', url: 'https://www.dn.se/rss/', category: 'nyheter', enabled: true },
+            { id: 'dn', name: 'Dagens Nyheter', url: 'https://www.dn.se/rss/', category: 'nyheter', enabled: true },
             { id: 'svd', name: 'SvD', url: 'https://www.svd.se/feed/articles', category: 'nyheter', enabled: true },
             { id: 'expressen', name: 'Expressen', url: 'https://feeds.expressen.se/nyheter', category: 'nyheter', enabled: true },
 
@@ -852,7 +935,6 @@
             // Internationella Tech
             { id: 'techcrunch', name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: 'tech', enabled: true },
             { id: 'theverge', name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'tech', enabled: true },
-            { id: 'hackernews', name: 'Hacker News', url: 'https://hnrss.org/frontpage', category: 'tech', enabled: true },
             { id: 'arstechnica', name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', category: 'tech', enabled: true },
             { id: 'wired', name: 'Wired', url: 'https://www.wired.com/feed/rss', category: 'tech', enabled: true },
 
@@ -860,6 +942,23 @@
             { id: 'bloomberg', name: 'Bloomberg', url: 'https://feeds.bloomberg.com/technology/news.rss', category: 'finans', enabled: true },
             { id: 'ft', name: 'Financial Times', url: 'https://www.ft.com/rss/home', category: 'finans', enabled: true }
         ];
+
+        // Generera Omni-sökflöden dynamiskt
+        const OMNI_FEEDS = OMNI_SEARCH_TOPICS.map(topic => ({
+            id: `omni-${topic.replace(/\s+/g, '-').toLowerCase().substring(0, 30)}`,
+            name: `Omni: ${topic}`,
+            // Omni har inte publikt RSS för sökningar, så vi använder scraping via proxy
+            url: `https://omni.se/upptack?sok=${encodeURIComponent(topic)}`,
+            category: 'omni',
+            enabled: true,
+            isOmniSearch: true,
+            searchTopic: topic
+        }));
+
+        // Funktion för att hämta logotyp
+        function getSourceLogo(sourceId) {
+            return SOURCE_LOGOS[sourceId] || null;
+        }
 
         // State
         let articles = [];
@@ -999,10 +1098,85 @@
         }
 
         // =========================================================================
-        // FETCH RSS
+        // FETCH RSS & OMNI
         // =========================================================================
 
+        // Hämta Omni-sökresultat via proxy
+        async function fetchOmniSearch(feed) {
+            try {
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed.url)}`;
+                const response = await fetch(proxyUrl, { timeout: 15000 });
+
+                if (!response.ok) throw new Error('Omni fetch failed');
+
+                const html = await response.text();
+                return parseOmniSearchResults(html, feed);
+            } catch (error) {
+                console.warn(`Omni search failed for "${feed.searchTopic}":`, error.message);
+                return [];
+            }
+        }
+
+        // Parsa Omni-sökresultat från HTML
+        function parseOmniSearchResults(html, feed) {
+            const parsedArticles = [];
+
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Omni använder article-element för nyheter
+                const articles = doc.querySelectorAll('article, [data-testid="article"], .article-card');
+
+                articles.forEach((article, index) => {
+                    if (index >= 10) return; // Max 10 per sökterm
+
+                    const titleEl = article.querySelector('h2, h3, .headline, [class*="title"]');
+                    const linkEl = article.querySelector('a[href*="/a/"], a[href*="/article/"]');
+                    const descEl = article.querySelector('p, .summary, .excerpt');
+                    const imgEl = article.querySelector('img[src]');
+                    const timeEl = article.querySelector('time, [datetime], .timestamp');
+
+                    const title = titleEl?.textContent?.trim() || '';
+                    const link = linkEl?.href || '';
+                    const description = descEl?.textContent?.trim() || '';
+                    const image = imgEl?.src || '';
+                    const pubDateStr = timeEl?.getAttribute('datetime') || timeEl?.textContent || '';
+
+                    if (!title || !link) return;
+
+                    const articleId = simpleHash(link || `omni-${feed.searchTopic}-${index}`);
+                    const pubDate = pubDateStr ? new Date(pubDateStr) : new Date();
+
+                    parsedArticles.push({
+                        id: articleId,
+                        title: title,
+                        link: link.startsWith('http') ? link : `https://omni.se${link}`,
+                        description: description.substring(0, 400),
+                        pubDate: pubDate,
+                        author: '',
+                        image: image,
+                        source: 'Omni',
+                        sourceId: 'omni',
+                        category: 'omni',
+                        isNew: false,
+                        read: readArticles.includes(link),
+                        omniSearchTopic: feed.searchTopic
+                    });
+                });
+            } catch (e) {
+                console.warn('Omni parsing error:', e);
+            }
+
+            return parsedArticles;
+        }
+
         async function fetchFeed(feed) {
+            // Hantera Omni-sökflöden separat
+            if (feed.isOmniSearch) {
+                return fetchOmniSearch(feed);
+            }
+
             try {
                 // Använd rss2json API som returnerar JSON direkt
                 const apiUrl = RSS2JSON_API + encodeURIComponent(feed.url);
@@ -1156,18 +1330,38 @@
             articles = [];
             const enabledFeeds = RSS_FEEDS.filter(f => f.enabled);
 
-            // Hämta alla feeds parallellt
-            const results = await Promise.allSettled(
+            // Hämta alla RSS-feeds parallellt
+            const rssResults = await Promise.allSettled(
                 enabledFeeds.map(feed => fetchFeed(feed))
             );
 
             let successCount = 0;
-            results.forEach(result => {
+            rssResults.forEach(result => {
                 if (result.status === 'fulfilled' && result.value.length > 0) {
                     articles = articles.concat(result.value);
                     successCount++;
                 }
             });
+
+            // Hämta ett slumpmässigt urval av Omni-sökningar (max 20 per refresh för att inte överlasta)
+            const shuffledOmniFeeds = [...OMNI_FEEDS].sort(() => Math.random() - 0.5).slice(0, 20);
+            console.log(`🔍 Söker Omni för ${shuffledOmniFeeds.length} ämnen...`);
+
+            const omniResults = await Promise.allSettled(
+                shuffledOmniFeeds.map(feed => fetchOmniSearch(feed))
+            );
+
+            let omniSuccessCount = 0;
+            omniResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value.length > 0) {
+                    articles = articles.concat(result.value);
+                    omniSuccessCount++;
+                }
+            });
+
+            if (omniSuccessCount > 0) {
+                console.log(`📰 Hittade artiklar från ${omniSuccessCount} Omni-sökningar`);
+            }
 
             // Ta bort duplicerade artiklar (samma länk)
             const seen = new Set();
@@ -1272,8 +1466,15 @@
             const categoryNames = {
                 tech: '💻 Tech',
                 finans: '💰 Finans',
-                nyheter: '📰 Nyheter'
+                nyheter: '📰 Nyheter',
+                omni: '🔍 Omni-sök'
             };
+
+            // Lägg till Omni-artiklar som en egen kategori i sidomenyn
+            const omniCount = articles.filter(a => a.category === 'omni').length;
+            if (omniCount > 0) {
+                categories['omni'] = [{ id: 'omni', name: 'Omni-sökresultat', count: omniCount }];
+            }
 
             let html = `
                 <div class="feed-source ${!currentFeed ? 'active' : ''}" onclick="selectFeed(null)">
@@ -1407,7 +1608,10 @@
                         </div>
                         <div class="article-card-content">
                             <div class="article-source">
-                                <span class="article-source-badge">${escapeHtml(article.source)}</span>
+                                <span class="article-source-badge">
+                                    ${getSourceLogo(article.sourceId) ? `<img src="${getSourceLogo(article.sourceId)}" class="article-source-logo" alt="" onerror="this.style.display='none'">` : ''}
+                                    ${escapeHtml(article.source)}
+                                </span>
                                 <span class="article-time">${timeAgo}</span>
                                 ${article.isNew ? '<span class="new-badge">Ny</span>' : ''}
                                 ${relevanceBadge}
