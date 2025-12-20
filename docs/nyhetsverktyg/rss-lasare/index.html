@@ -19,14 +19,9 @@
 
         .rss-grid {
             display: grid;
-            grid-template-columns: 280px 1fr 400px;
+            grid-template-columns: 280px 1fr;
             gap: var(--spacing-6);
             height: calc(100vh - var(--nav-height));
-        }
-
-        @media (max-width: 1400px) {
-            .rss-grid { grid-template-columns: 250px 1fr; }
-            .article-preview { display: none; }
         }
 
         @media (max-width: 900px) {
@@ -92,7 +87,7 @@
             border-radius: var(--radius-full);
         }
 
-        /* Articles list */
+        /* Articles container */
         .articles-container {
             padding: var(--spacing-4);
             overflow-y: auto;
@@ -110,27 +105,63 @@
             font-weight: var(--font-weight-semibold);
         }
 
+        /* Articles grid - förbättrad layout */
+        .articles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: var(--spacing-4);
+        }
+
+        @media (max-width: 600px) {
+            .articles-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Förbättrade artikelkort med bilder */
         .article-card {
             background: var(--white);
             border-radius: var(--radius-lg);
             border: 1px solid var(--gray-300);
-            padding: var(--spacing-4);
-            margin-bottom: var(--spacing-3);
+            overflow: hidden;
             cursor: pointer;
             transition: all var(--transition-base);
+            display: flex;
+            flex-direction: column;
         }
 
         .article-card:hover {
             border-color: var(--dark);
-            box-shadow: var(--shadow-md);
-        }
-
-        .article-card.active {
-            border-color: var(--accent);
-            border-width: 2px;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
         }
 
         .article-card.read { opacity: 0.7; }
+
+        .article-card-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: var(--gray-200);
+        }
+
+        .article-card-image-placeholder {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, var(--gray-200) 0%, var(--gray-300) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            opacity: 0.5;
+        }
+
+        .article-card-content {
+            padding: var(--spacing-4);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
 
         .article-source {
             display: flex;
@@ -139,6 +170,7 @@
             font-size: var(--font-size-xs);
             color: var(--gray-500);
             margin-bottom: var(--spacing-2);
+            flex-wrap: wrap;
         }
 
         .article-source-badge {
@@ -149,20 +181,25 @@
         }
 
         .article-title {
-            font-size: var(--font-size-base);
+            font-size: var(--font-size-lg);
             font-weight: var(--font-weight-semibold);
             line-height: var(--line-height-snug);
             margin-bottom: var(--spacing-2);
-        }
-
-        .article-excerpt {
-            font-size: var(--font-size-sm);
-            color: var(--gray-500);
-            line-height: var(--line-height-normal);
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        .article-excerpt {
+            font-size: var(--font-size-sm);
+            color: var(--gray-600);
+            line-height: var(--line-height-normal);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex: 1;
         }
 
         .article-meta {
@@ -170,67 +207,29 @@
             align-items: center;
             gap: var(--spacing-3);
             margin-top: var(--spacing-3);
+            padding-top: var(--spacing-3);
+            border-top: 1px solid var(--gray-200);
             font-size: var(--font-size-xs);
             color: var(--gray-500);
         }
 
-        /* Article preview */
-        .article-preview {
-            background: var(--white);
-            border-left: 1px solid var(--gray-300);
-            overflow-y: auto;
-        }
-
-        .preview-header {
-            padding: var(--spacing-4);
-            border-bottom: 1px solid var(--gray-300);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .preview-content {
-            padding: var(--spacing-6);
-        }
-
-        .preview-title {
-            font-size: var(--font-size-2xl);
-            font-weight: var(--font-weight-bold);
-            line-height: var(--line-height-snug);
-            margin-bottom: var(--spacing-4);
-        }
-
-        .preview-meta {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-4);
-            font-size: var(--font-size-sm);
-            color: var(--gray-500);
-            margin-bottom: var(--spacing-6);
-            padding-bottom: var(--spacing-6);
-            border-bottom: 1px solid var(--gray-200);
-        }
-
-        .preview-image {
-            width: 100%;
-            border-radius: var(--radius-lg);
-            margin-bottom: var(--spacing-6);
-        }
-
-        .preview-text {
-            font-size: var(--font-size-base);
-            line-height: var(--line-height-relaxed);
-            color: var(--gray-700);
-        }
-
-        .preview-text p { margin-bottom: var(--spacing-4); }
-
-        .preview-actions {
+        .article-actions {
             display: flex;
             gap: var(--spacing-2);
-            margin-top: var(--spacing-6);
-            padding-top: var(--spacing-6);
-            border-top: 1px solid var(--gray-200);
+            margin-left: auto;
+        }
+
+        .article-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: var(--radius-sm);
+            transition: background var(--transition-fast);
+        }
+
+        .article-action-btn:hover {
+            background: var(--gray-100);
         }
 
         /* Keyword alerts */
@@ -238,6 +237,7 @@
             background: var(--accent-muted);
             padding: 0 4px;
             border-radius: 2px;
+            font-size: var(--font-size-xs);
         }
 
         /* Search */
@@ -286,22 +286,167 @@
         .filter-tab:hover { border-color: var(--dark); }
         .filter-tab.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
 
-        /* Empty state */
-        .empty-preview {
+        /* ============================================
+           LIGHTBOX - Artikelvisning
+           ============================================ */
+        .article-lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-4);
+            backdrop-filter: blur(4px);
+        }
+
+        .article-lightbox.show {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .lightbox-container {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .lightbox-header {
+            padding: var(--spacing-4) var(--spacing-6);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--gray-50);
+        }
+
+        .lightbox-source {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+
+        .lightbox-source-badge {
+            background: var(--dark);
+            color: var(--white);
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .lightbox-actions {
+            display: flex;
+            gap: var(--spacing-2);
+        }
+
+        .lightbox-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: var(--spacing-2);
+            border-radius: var(--radius-md);
+            transition: background var(--transition-fast);
+        }
+
+        .lightbox-close:hover {
+            background: var(--gray-200);
+        }
+
+        .lightbox-content {
+            padding: var(--spacing-6);
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .lightbox-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .lightbox-title {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            line-height: var(--line-height-snug);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .lightbox-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-4);
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            margin-bottom: var(--spacing-6);
+            padding-bottom: var(--spacing-4);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .lightbox-text {
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-relaxed);
+            color: var(--gray-700);
+        }
+
+        .lightbox-text p {
+            margin-bottom: var(--spacing-4);
+        }
+
+        .lightbox-full-content {
+            background: var(--gray-50);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-top: var(--spacing-6);
+        }
+
+        .lightbox-full-content h4 {
+            margin-bottom: var(--spacing-4);
+            color: var(--gray-600);
+            font-size: var(--font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .lightbox-loading {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            color: var(--gray-500);
-            text-align: center;
             padding: var(--spacing-8);
+            color: var(--gray-500);
         }
 
-        .empty-preview-icon {
-            font-size: 48px;
-            margin-bottom: var(--spacing-4);
-            opacity: 0.5;
+        .lightbox-footer {
+            padding: var(--spacing-4) var(--spacing-6);
+            border-top: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            gap: var(--spacing-3);
+            justify-content: flex-end;
         }
     </style>
 </head>
@@ -367,14 +512,34 @@
             </div>
         </main>
 
-        <!-- Article preview -->
-        <aside class="article-preview" id="article-preview">
-            <div class="empty-preview">
-                <div class="empty-preview-icon">📰</div>
-                <h3>Välj en artikel</h3>
-                <p class="mt-2">Klicka på en artikel till vänster för att läsa den här</p>
+    </div>
+
+    <!-- Article Lightbox -->
+    <div class="article-lightbox" id="article-lightbox" onclick="closeLightboxOnBackdrop(event)">
+        <div class="lightbox-container" onclick="event.stopPropagation()">
+            <div class="lightbox-header">
+                <div class="lightbox-source">
+                    <span class="lightbox-source-badge" id="lightbox-source"></span>
+                    <span class="text-muted" id="lightbox-date"></span>
+                </div>
+                <div class="lightbox-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="bookmarkArticle()" title="Spara">⭐</button>
+                    <button class="btn btn-secondary btn-sm" onclick="shareArticle()" title="Dela">📤</button>
+                    <button class="lightbox-close" onclick="closeLightbox()" title="Stäng">×</button>
+                </div>
             </div>
-        </aside>
+            <div class="lightbox-content" id="lightbox-content">
+                <!-- Fylls i dynamiskt -->
+            </div>
+            <div class="lightbox-footer">
+                <button class="btn btn-secondary" onclick="investigateArticle()">
+                    🔍 Undersök vidare
+                </button>
+                <a href="#" id="lightbox-link" target="_blank" class="btn btn-accent">
+                    Läs på originalkällan →
+                </a>
+            </div>
+        </div>
     </div>
 
     <!-- Settings Modal -->
@@ -651,27 +816,53 @@
                 return;
             }
 
-            container.innerHTML = filtered.map(article => {
+            // Använd grid-layout för artikelkort
+            container.innerHTML = `<div class="articles-grid">${filtered.map(article => {
                 const hasKeywords = article.keywordMatches && article.keywordMatches.length > 0;
+                const categoryIcon = getCategoryIcon(article.category);
+
                 return `
-                    <div class="article-card ${article.read ? 'read' : ''} ${selectedArticle?.id === article.id ? 'active' : ''}"
-                         onclick="selectArticle('${article.id}')">
-                        <div class="article-source">
-                            <span class="article-source-badge">${article.source}</span>
-                            ${hasKeywords ? `<span class="keyword-match">🔔 ${article.keywordMatches.join(', ')}</span>` : ''}
+                    <article class="article-card ${article.read ? 'read' : ''}"
+                             onclick="openArticleLightbox('${article.id}')">
+                        ${article.image
+                            ? `<img src="${article.image}" class="article-card-image" alt="" loading="lazy" onerror="this.outerHTML='<div class=\\'article-card-image-placeholder\\'>${categoryIcon}</div>'">`
+                            : `<div class="article-card-image-placeholder">${categoryIcon}</div>`
+                        }
+                        <div class="article-card-content">
+                            <div class="article-source">
+                                <span class="article-source-badge">${article.source}</span>
+                                ${hasKeywords ? `<span class="keyword-match">🔔 ${article.keywordMatches.join(', ')}</span>` : ''}
+                            </div>
+                            <h3 class="article-title">${escapeHtml(article.title)}</h3>
+                            <p class="article-excerpt">${escapeHtml(article.description)}</p>
+                            <div class="article-meta">
+                                <span>${Utils.formatDate(article.pubDate, { relative: true })}</span>
+                                ${article.author ? `<span>• ${escapeHtml(article.author)}</span>` : ''}
+                                <div class="article-actions">
+                                    <button class="article-action-btn" onclick="event.stopPropagation(); quickBookmark('${article.id}')" title="Spara">⭐</button>
+                                    <button class="article-action-btn" onclick="event.stopPropagation(); quickShare('${article.id}')" title="Dela">📤</button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="article-title">${escapeHtml(article.title)}</div>
-                        <div class="article-excerpt">${escapeHtml(article.description)}</div>
-                        <div class="article-meta">
-                            <span>${Utils.formatDate(article.pubDate, { relative: true })}</span>
-                            ${article.author ? `<span>• ${escapeHtml(article.author)}</span>` : ''}
-                        </div>
-                    </div>
+                    </article>
                 `;
-            }).join('');
+            }).join('')}</div>`;
         }
 
-        function selectArticle(id) {
+        function getCategoryIcon(category) {
+            const icons = {
+                'tech': '💻',
+                'finans': '💰',
+                'nyheter': '📰'
+            };
+            return icons[category] || '📄';
+        }
+
+        // =========================================================================
+        // LIGHTBOX FUNCTIONS
+        // =========================================================================
+
+        function openArticleLightbox(id) {
             selectedArticle = articles.find(a => a.id === id);
             if (!selectedArticle) return;
 
@@ -680,54 +871,220 @@
                 readArticles.push(selectedArticle.link);
                 Utils.setStorage('rss-read', readArticles);
                 selectedArticle.read = true;
+                renderArticles(); // Uppdatera UI för att visa "read" status
             }
 
-            renderArticles();
-            renderPreview();
-        }
+            // Uppdatera lightbox header
+            document.getElementById('lightbox-source').textContent = selectedArticle.source;
+            document.getElementById('lightbox-date').textContent = Utils.formatDate(selectedArticle.pubDate, { includeTime: true });
+            document.getElementById('lightbox-link').href = selectedArticle.link;
 
-        function renderPreview() {
-            const container = document.getElementById('article-preview');
-
-            if (!selectedArticle) {
-                container.innerHTML = `
-                    <div class="empty-preview">
-                        <div class="empty-preview-icon">📰</div>
-                        <h3>Välj en artikel</h3>
-                        <p class="mt-2">Klicka på en artikel till vänster för att läsa den här</p>
-                    </div>
-                `;
-                return;
-            }
-
-            container.innerHTML = `
-                <div class="preview-header">
-                    <span class="text-sm text-muted">${selectedArticle.source}</span>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-secondary btn-sm" onclick="bookmarkArticle()">⭐</button>
-                        <button class="btn btn-secondary btn-sm" onclick="shareArticle()">📤</button>
-                    </div>
+            // Rendera innehållet
+            const content = document.getElementById('lightbox-content');
+            content.innerHTML = `
+                ${selectedArticle.image ? `<img src="${selectedArticle.image}" class="lightbox-image" alt="">` : ''}
+                <h1 class="lightbox-title">${escapeHtml(selectedArticle.title)}</h1>
+                <div class="lightbox-meta">
+                    <span>📅 ${Utils.formatDate(selectedArticle.pubDate, { includeTime: true })}</span>
+                    ${selectedArticle.author ? `<span>✍️ ${escapeHtml(selectedArticle.author)}</span>` : ''}
+                    <span>📁 ${selectedArticle.category}</span>
                 </div>
-                <div class="preview-content">
-                    <h1 class="preview-title">${escapeHtml(selectedArticle.title)}</h1>
-                    <div class="preview-meta">
-                        <span>${Utils.formatDate(selectedArticle.pubDate, { includeTime: true })}</span>
-                        ${selectedArticle.author ? `<span>• ${escapeHtml(selectedArticle.author)}</span>` : ''}
-                    </div>
-                    ${selectedArticle.image ? `<img src="${selectedArticle.image}" class="preview-image" alt="Bild för artikeln ${escapeHtml(selectedArticle.title || '')}">` : ''}
-                    <div class="preview-text">
-                        <p>${escapeHtml(selectedArticle.description)}</p>
-                    </div>
-                    <div class="preview-actions">
-                        <a href="${selectedArticle.link}" target="_blank" class="btn btn-accent">
-                            Läs hela artikeln →
-                        </a>
-                        <button class="btn btn-secondary" onclick="investigateArticle()">
-                            🔍 Undersök
-                        </button>
+                <div class="lightbox-text">
+                    <p>${escapeHtml(selectedArticle.description)}</p>
+                </div>
+                <div class="lightbox-full-content" id="full-content-area">
+                    <h4>Laddar fullständigt innehåll...</h4>
+                    <div class="lightbox-loading">
+                        <div class="loader"></div>
+                        <p class="mt-2">Hämtar artikel...</p>
                     </div>
                 </div>
             `;
+
+            // Visa lightbox
+            document.getElementById('article-lightbox').classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Försök hämta fullständigt innehåll via proxy
+            fetchFullArticleContent(selectedArticle.link);
+        }
+
+        function closeLightbox() {
+            document.getElementById('article-lightbox').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function closeLightboxOnBackdrop(event) {
+            if (event.target.id === 'article-lightbox') {
+                closeLightbox();
+            }
+        }
+
+        // Stäng med Escape-tangenten
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('article-lightbox').classList.contains('show')) {
+                closeLightbox();
+            }
+        });
+
+        async function fetchFullArticleContent(url) {
+            const contentArea = document.getElementById('full-content-area');
+
+            try {
+                // Använd en CORS-proxy för att hämta innehållet
+                // Vi provar flera alternativ
+                const proxyUrls = [
+                    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                    `https://corsproxy.io/?${encodeURIComponent(url)}`
+                ];
+
+                let html = null;
+                for (const proxyUrl of proxyUrls) {
+                    try {
+                        const response = await fetch(proxyUrl, {
+                            timeout: 10000,
+                            headers: {
+                                'Accept': 'text/html'
+                            }
+                        });
+                        if (response.ok) {
+                            html = await response.text();
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn('Proxy failed:', proxyUrl, e);
+                    }
+                }
+
+                if (!html) {
+                    throw new Error('Kunde inte hämta artikeln');
+                }
+
+                // Extrahera huvudinnehållet från HTML
+                const cleanContent = extractArticleContent(html);
+
+                if (cleanContent) {
+                    contentArea.innerHTML = `
+                        <h4>Fullständigt innehåll</h4>
+                        <div class="lightbox-text">${cleanContent}</div>
+                    `;
+                } else {
+                    contentArea.innerHTML = `
+                        <h4>Förhandsgranskning</h4>
+                        <p class="text-muted">Kunde inte extrahera fullständigt innehåll. Klicka på "Läs på originalkällan" för att läsa hela artikeln.</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching article:', error);
+                contentArea.innerHTML = `
+                    <h4>Förhandsgranskning</h4>
+                    <p class="text-muted">Kunde inte hämta fullständigt innehåll. Klicka på "Läs på originalkällan" för att läsa hela artikeln.</p>
+                `;
+            }
+        }
+
+        function extractArticleContent(html) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Ta bort störande element
+                const removeSelectors = [
+                    'script', 'style', 'nav', 'header', 'footer', 'aside',
+                    '.ad', '.ads', '.advertisement', '.cookie', '.cookies',
+                    '.popup', '.modal', '.newsletter', '.subscribe',
+                    '.social', '.share', '.comments', '.related',
+                    '[class*="cookie"]', '[class*="consent"]', '[class*="gdpr"]',
+                    '[class*="banner"]', '[class*="popup"]', '[class*="modal"]',
+                    '[id*="cookie"]', '[id*="consent"]', '[id*="gdpr"]',
+                    'iframe', 'video', 'audio'
+                ];
+
+                removeSelectors.forEach(selector => {
+                    doc.querySelectorAll(selector).forEach(el => el.remove());
+                });
+
+                // Försök hitta huvudinnehållet med vanliga selectors
+                const contentSelectors = [
+                    'article',
+                    '[class*="article-body"]',
+                    '[class*="article-content"]',
+                    '[class*="post-content"]',
+                    '[class*="entry-content"]',
+                    '[class*="story-body"]',
+                    '[class*="article__body"]',
+                    '.content',
+                    'main',
+                    '[role="main"]'
+                ];
+
+                let content = null;
+                for (const selector of contentSelectors) {
+                    const el = doc.querySelector(selector);
+                    if (el && el.textContent.trim().length > 200) {
+                        content = el;
+                        break;
+                    }
+                }
+
+                if (!content) {
+                    // Fallback: ta alla paragrafer
+                    const paragraphs = doc.querySelectorAll('p');
+                    if (paragraphs.length > 0) {
+                        const div = doc.createElement('div');
+                        paragraphs.forEach(p => {
+                            if (p.textContent.trim().length > 50) {
+                                div.appendChild(p.cloneNode(true));
+                            }
+                        });
+                        if (div.textContent.trim().length > 200) {
+                            content = div;
+                        }
+                    }
+                }
+
+                if (content) {
+                    // Rensa upp innehållet
+                    content.querySelectorAll('a').forEach(a => {
+                        a.removeAttribute('href');
+                        a.style.color = 'inherit';
+                        a.style.textDecoration = 'none';
+                    });
+
+                    // Behåll endast text och bilder
+                    const cleanHTML = content.innerHTML
+                        .replace(/<img[^>]*>/gi, '') // Ta bort bilder (kan visa originalbilden istället)
+                        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+
+                    return cleanHTML;
+                }
+
+                return null;
+            } catch (e) {
+                console.error('Error extracting content:', e);
+                return null;
+            }
+        }
+
+        // Snabbåtgärder för artikelkort
+        function quickBookmark(id) {
+            const article = articles.find(a => a.id === id);
+            if (article) {
+                Components.showToast(`"${article.title.substring(0, 30)}..." sparad ⭐`, 'success');
+            }
+        }
+
+        function quickShare(id) {
+            const article = articles.find(a => a.id === id);
+            if (article) {
+                if (navigator.share) {
+                    navigator.share({ title: article.title, url: article.link });
+                } else {
+                    Utils.copyToClipboard(article.link);
+                    Components.showToast('Länk kopierad!', 'success');
+                }
+            }
         }
 
         // =========================================================================
