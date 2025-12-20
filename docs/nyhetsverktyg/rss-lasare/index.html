@@ -87,6 +87,32 @@
             border-radius: var(--radius-full);
         }
 
+        /* Auto-update indicator */
+        .auto-update-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+            padding: var(--spacing-2) var(--spacing-3);
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-3);
+        }
+
+        .auto-update-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
         /* Articles container */
         .articles-container {
             padding: var(--spacing-4);
@@ -98,6 +124,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: var(--spacing-4);
+            flex-wrap: wrap;
+            gap: var(--spacing-3);
         }
 
         .articles-header h2 {
@@ -105,54 +133,85 @@
             font-weight: var(--font-weight-semibold);
         }
 
-        /* Articles grid - förbättrad layout */
-        .articles-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: var(--spacing-4);
+        .articles-stats {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
         }
 
-        @media (max-width: 600px) {
-            .articles-grid {
-                grid-template-columns: 1fr;
-            }
+        /* Vertikal artikellista */
+        .articles-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-3);
+            max-width: 900px;
         }
 
-        /* Förbättrade artikelkort med bilder */
+        /* Horisontellt artikelkort */
         .article-card {
             background: var(--white);
             border-radius: var(--radius-lg);
-            border: 1px solid var(--gray-300);
+            border: 1px solid var(--gray-200);
             overflow: hidden;
             cursor: pointer;
             transition: all var(--transition-base);
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            min-height: 140px;
         }
 
         .article-card:hover {
             border-color: var(--dark);
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
-        .article-card.read { opacity: 0.7; }
+        .article-card.read {
+            opacity: 0.6;
+            background: var(--gray-50);
+        }
+
+        .article-card.new {
+            border-left: 4px solid #22c55e;
+        }
+
+        .article-card-image-wrapper {
+            width: 200px;
+            min-width: 200px;
+            height: 140px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 700px) {
+            .article-card {
+                flex-direction: column;
+            }
+            .article-card-image-wrapper {
+                width: 100%;
+                height: 180px;
+            }
+        }
 
         .article-card-image {
             width: 100%;
-            height: 180px;
+            height: 100%;
             object-fit: cover;
             background: var(--gray-200);
+            transition: transform 0.3s ease;
+        }
+
+        .article-card:hover .article-card-image {
+            transform: scale(1.05);
         }
 
         .article-card-image-placeholder {
             width: 100%;
-            height: 180px;
-            background: linear-gradient(135deg, var(--gray-200) 0%, var(--gray-300) 100%);
+            height: 100%;
+            background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
+            font-size: 32px;
             opacity: 0.5;
         }
 
@@ -161,6 +220,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .article-source {
@@ -178,10 +238,15 @@
             padding: 2px 8px;
             border-radius: var(--radius-sm);
             font-weight: var(--font-weight-medium);
+            color: var(--gray-700);
+        }
+
+        .article-time {
+            color: var(--gray-400);
         }
 
         .article-title {
-            font-size: var(--font-size-lg);
+            font-size: var(--font-size-base);
             font-weight: var(--font-weight-semibold);
             line-height: var(--line-height-snug);
             margin-bottom: var(--spacing-2);
@@ -189,6 +254,11 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            color: var(--gray-900);
+        }
+
+        .article-card:hover .article-title {
+            color: var(--accent);
         }
 
         .article-excerpt {
@@ -196,7 +266,7 @@
             color: var(--gray-600);
             line-height: var(--line-height-normal);
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             flex: 1;
@@ -206,16 +276,15 @@
             display: flex;
             align-items: center;
             gap: var(--spacing-3);
-            margin-top: var(--spacing-3);
-            padding-top: var(--spacing-3);
-            border-top: 1px solid var(--gray-200);
+            margin-top: auto;
+            padding-top: var(--spacing-2);
             font-size: var(--font-size-xs);
             color: var(--gray-500);
         }
 
         .article-actions {
             display: flex;
-            gap: var(--spacing-2);
+            gap: var(--spacing-1);
             margin-left: auto;
         }
 
@@ -223,21 +292,35 @@
             background: none;
             border: none;
             cursor: pointer;
-            padding: 4px;
+            padding: 6px;
             border-radius: var(--radius-sm);
-            transition: background var(--transition-fast);
+            transition: all var(--transition-fast);
+            opacity: 0.6;
         }
 
         .article-action-btn:hover {
             background: var(--gray-100);
+            opacity: 1;
         }
 
         /* Keyword alerts */
         .keyword-match {
-            background: var(--accent-muted);
-            padding: 0 4px;
-            border-radius: 2px;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
             font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        /* New article badge */
+        .new-badge {
+            background: #dcfce7;
+            color: #166534;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
         }
 
         /* Search */
@@ -285,6 +368,27 @@
 
         .filter-tab:hover { border-color: var(--dark); }
         .filter-tab.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
+
+        /* Load more button */
+        .load-more-container {
+            text-align: center;
+            padding: var(--spacing-6);
+        }
+
+        .load-more-btn {
+            padding: var(--spacing-3) var(--spacing-6);
+        }
+
+        /* Spinner animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spinning {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
 
         /* ============================================
            LIGHTBOX - Artikelvisning
@@ -473,6 +577,12 @@
     <div class="rss-grid">
         <!-- Feeds sidebar -->
         <aside class="feeds-sidebar">
+            <div class="auto-update-indicator">
+                <div class="auto-update-dot"></div>
+                <span>Auto-uppdatering aktiv</span>
+                <span id="next-update-timer" class="ml-auto">5:00</span>
+            </div>
+
             <div class="search-box">
                 <input type="text" id="feed-search" placeholder="Sök källor...">
             </div>
@@ -488,8 +598,13 @@
         <!-- Articles list -->
         <main class="articles-container">
             <div class="articles-header">
-                <h2 id="articles-title">Alla nyheter</h2>
-                <div class="d-flex gap-2">
+                <div>
+                    <h2 id="articles-title">Alla nyheter</h2>
+                    <span class="articles-stats">Laddar...</span>
+                </div>
+                <div class="d-flex gap-2 items-center">
+                    <input type="text" id="article-search" placeholder="Sök artiklar..."
+                           class="btn btn-secondary btn-sm" style="width: 200px; padding: 8px 12px;">
                     <select id="sort-select" class="btn btn-secondary btn-sm">
                         <option value="newest">Nyast först</option>
                         <option value="oldest">Äldst först</option>
@@ -499,15 +614,15 @@
 
             <div class="filter-tabs" id="category-tabs">
                 <button class="filter-tab active" data-category="all">Alla</button>
-                <button class="filter-tab" data-category="tech">Tech</button>
-                <button class="filter-tab" data-category="finans">Finans</button>
-                <button class="filter-tab" data-category="nyheter">Nyheter</button>
+                <button class="filter-tab" data-category="tech">💻 Tech</button>
+                <button class="filter-tab" data-category="finans">💰 Finans</button>
+                <button class="filter-tab" data-category="nyheter">📰 Nyheter</button>
             </div>
 
             <div id="articles-list">
                 <div class="empty-state">
                     <div class="loader loader-lg"></div>
-                    <p class="mt-4">Hämtar nyheter...</p>
+                    <p class="mt-4">Hämtar nyheter från alla källor...</p>
                 </div>
             </div>
         </main>
@@ -568,40 +683,67 @@
     <script src="../../assets/js/components.js"></script>
     <script>
         // =========================================================================
-        // RSS READER - Klientkod
+        // RSS READER - Klientkod (Förbättrad version)
         // =========================================================================
 
-        // RSS feeds konfiguration
+        // Konfiguration
+        const CONFIG = {
+            ITEMS_PER_FEED: 20,           // Fler artiklar per feed
+            AUTO_UPDATE_INTERVAL: 5 * 60 * 1000, // 5 minuter
+            INITIAL_DISPLAY_COUNT: 30,    // Visa 30 först
+            LOAD_MORE_COUNT: 20,          // Ladda 20 till
+            NEW_ARTICLE_THRESHOLD: 60 * 60 * 1000 // 1 timme = "ny"
+        };
+
+        // RSS feeds konfiguration - utökad lista
         const RSS_FEEDS = [
             // Svenska Tech/Business
             { id: 'breakit', name: 'Breakit', url: 'https://www.breakit.se/feed/artiklar', category: 'tech', enabled: true },
             { id: 'realtid', name: 'Realtid', url: 'https://www.realtid.se/rss/senaste', category: 'finans', enabled: true },
             { id: 'nyteknik', name: 'Ny Teknik', url: 'https://www.nyteknik.se/feed', category: 'tech', enabled: true },
             { id: 'di', name: 'Di Digital', url: 'https://digital.di.se/rss', category: 'finans', enabled: true },
+            { id: 'idg', name: 'IDG', url: 'https://www.idg.se/rss', category: 'tech', enabled: true },
+            { id: 'computersweden', name: 'Computer Sweden', url: 'https://computersweden.idg.se/rss', category: 'tech', enabled: true },
 
             // Svenska Dagstidningar
             { id: 'svt', name: 'SVT Nyheter', url: 'https://www.svt.se/nyheter/rss.xml', category: 'nyheter', enabled: true },
             { id: 'omni', name: 'Omni', url: 'https://omni.se/rss', category: 'nyheter', enabled: true },
+            { id: 'dn', name: 'DN', url: 'https://www.dn.se/rss/', category: 'nyheter', enabled: true },
+            { id: 'svd', name: 'SvD', url: 'https://www.svd.se/feed/articles', category: 'nyheter', enabled: true },
+            { id: 'expressen', name: 'Expressen', url: 'https://feeds.expressen.se/nyheter', category: 'nyheter', enabled: true },
+
+            // Svenska Finans
+            { id: 'affarsvarlden', name: 'Affärsvärlden', url: 'https://www.affarsvarlden.se/rss', category: 'finans', enabled: true },
+            { id: 'privataaffarer', name: 'Privata Affärer', url: 'https://www.privataaffarer.se/rss/', category: 'finans', enabled: true },
 
             // Internationella Tech
             { id: 'techcrunch', name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: 'tech', enabled: true },
             { id: 'theverge', name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'tech', enabled: true },
             { id: 'hackernews', name: 'Hacker News', url: 'https://hnrss.org/frontpage', category: 'tech', enabled: true },
+            { id: 'arstechnica', name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', category: 'tech', enabled: true },
+            { id: 'wired', name: 'Wired', url: 'https://www.wired.com/feed/rss', category: 'tech', enabled: true },
 
-            // Internationella Finans
-            { id: 'reuters', name: 'Reuters', url: 'https://www.reutersagency.com/feed/', category: 'finans', enabled: true }
+            // Internationella Finans/Business
+            { id: 'bloomberg', name: 'Bloomberg', url: 'https://feeds.bloomberg.com/technology/news.rss', category: 'finans', enabled: true },
+            { id: 'ft', name: 'Financial Times', url: 'https://www.ft.com/rss/home', category: 'finans', enabled: true }
         ];
 
         // State
         let articles = [];
+        let displayedCount = CONFIG.INITIAL_DISPLAY_COUNT;
         let selectedArticle = null;
         let currentCategory = 'all';
         let currentFeed = null;
-        let keywords = Utils.getStorage('rss-keywords', ['startup', 'greentech', 'cleantech', 'klimat']);
+        let searchQuery = '';
+        let keywords = Utils.getStorage('rss-keywords', ['startup', 'greentech', 'cleantech', 'klimat', 'AI', 'konkurs']);
         let readArticles = Utils.getStorage('rss-read', []);
+        let seenArticleIds = new Set(); // För att spåra nya artiklar
+        let autoUpdateTimer = null;
+        let countdownTimer = null;
+        let secondsUntilUpdate = 300; // 5 minuter
 
-        // RSS proxy URL - använder rss2json API som konverterar och proxar RSS
-        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
+        // RSS proxy URL - använder rss2json API med count parameter
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?count=' + CONFIG.ITEMS_PER_FEED + '&rss_url=';
 
         // =========================================================================
         // FETCH RSS
@@ -628,28 +770,76 @@
             }
         }
 
-        // Parsa rss2json response format
+        // Parsa rss2json response format med förbättrad bildhantering
         function parseRss2JsonResponse(data, feed) {
-            const articles = [];
+            const parsedArticles = [];
 
             (data.items || []).forEach((item, index) => {
                 const cleanDesc = (item.description || '').replace(/<[^>]+>/g, '').trim();
 
-                articles.push({
-                    id: `${feed.id}-${index}-${Date.now()}`,
+                // Förbättrad bildextraktion
+                let image = '';
+
+                // 1. Direkt thumbnail
+                if (item.thumbnail && isValidImageUrl(item.thumbnail)) {
+                    image = item.thumbnail;
+                }
+                // 2. Enclosure
+                else if (item.enclosure?.link && isValidImageUrl(item.enclosure.link)) {
+                    image = item.enclosure.link;
+                }
+                // 3. Sök i content/description efter img-taggar
+                else {
+                    const content = item.content || item.description || '';
+                    const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+                    if (imgMatch && isValidImageUrl(imgMatch[1])) {
+                        image = imgMatch[1];
+                    }
+                }
+
+                // 4. Sök efter og:image eller andra meta-bilder i content
+                if (!image) {
+                    const content = item.content || '';
+                    const ogMatch = content.match(/og:image[^>]+content=["']([^"']+)["']/i);
+                    if (ogMatch && isValidImageUrl(ogMatch[1])) {
+                        image = ogMatch[1];
+                    }
+                }
+
+                // Skapa unik ID baserat på länk för att kunna spåra lästa artiklar
+                const articleId = btoa(item.link || `${feed.id}-${index}`).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+
+                const pubDate = new Date(item.pubDate || Date.now());
+                const isNew = (Date.now() - pubDate.getTime()) < CONFIG.NEW_ARTICLE_THRESHOLD;
+
+                parsedArticles.push({
+                    id: articleId,
                     title: item.title || '',
                     link: item.link || '',
-                    description: cleanDesc.substring(0, 300) + (cleanDesc.length > 300 ? '...' : ''),
-                    pubDate: item.pubDate || '',
-                    author: item.author || feed.name,
-                    image: item.thumbnail || item.enclosure?.link || '',
+                    description: cleanDesc.substring(0, 400) + (cleanDesc.length > 400 ? '...' : ''),
+                    pubDate: pubDate,
+                    author: item.author || '',
+                    image: image,
                     source: feed.name,
                     sourceId: feed.id,
-                    category: feed.category
+                    category: feed.category,
+                    isNew: isNew && !seenArticleIds.has(articleId),
+                    read: readArticles.includes(item.link)
                 });
             });
 
-            return articles;
+            return parsedArticles;
+        }
+
+        // Validera att URL är en giltig bild-URL
+        function isValidImageUrl(url) {
+            if (!url) return false;
+            // Filtrera bort tracking pixels, base64, och för små bilder
+            if (url.includes('1x1') || url.includes('pixel') || url.includes('tracking')) return false;
+            if (url.startsWith('data:')) return false;
+            if (url.length < 10) return false;
+            // Kräv http/https
+            return url.startsWith('http://') || url.startsWith('https://');
         }
 
         function parseRSS(xml, feed) {
@@ -702,10 +892,12 @@
             return articles;
         }
 
-        async function refreshAllFeeds() {
+        async function refreshAllFeeds(silent = false) {
             const icon = document.getElementById('refresh-icon');
-            icon.textContent = '⏳';
-            icon.style.animation = 'spin 1s linear infinite';
+            icon.classList.add('spinning');
+
+            const previousCount = articles.length;
+            const previousIds = new Set(articles.map(a => a.id));
 
             articles = [];
             const enabledFeeds = RSS_FEEDS.filter(f => f.enabled);
@@ -715,14 +907,30 @@
                 enabledFeeds.map(feed => fetchFeed(feed))
             );
 
+            let successCount = 0;
             results.forEach(result => {
-                if (result.status === 'fulfilled') {
+                if (result.status === 'fulfilled' && result.value.length > 0) {
                     articles = articles.concat(result.value);
+                    successCount++;
                 }
             });
 
-            // Sortera efter datum
+            // Ta bort duplicerade artiklar (samma länk)
+            const seen = new Set();
+            articles = articles.filter(article => {
+                if (seen.has(article.link)) return false;
+                seen.add(article.link);
+                return true;
+            });
+
+            // Sortera efter datum (nyast först)
             articles.sort((a, b) => b.pubDate - a.pubDate);
+
+            // Markera nya artiklar
+            const newArticleCount = articles.filter(a => !previousIds.has(a.id) && !seenArticleIds.has(a.id)).length;
+
+            // Uppdatera seen-listan
+            articles.forEach(a => seenArticleIds.add(a.id));
 
             // Markera keyword-matches
             highlightKeywords();
@@ -730,10 +938,48 @@
             renderArticles();
             renderFeedsSidebar();
 
-            icon.textContent = '🔄';
-            icon.style.animation = '';
+            icon.classList.remove('spinning');
 
-            Components.showToast(`${articles.length} artiklar laddade`, 'success');
+            // Visa toast
+            if (!silent) {
+                Components.showToast(`${articles.length} artiklar från ${successCount} källor`, 'success');
+            } else if (newArticleCount > 0) {
+                Components.showToast(`${newArticleCount} nya artiklar!`, 'success');
+            }
+
+            // Starta/återställ auto-update countdown
+            startAutoUpdateCountdown();
+        }
+
+        // Auto-update funktioner
+        function startAutoUpdateCountdown() {
+            secondsUntilUpdate = CONFIG.AUTO_UPDATE_INTERVAL / 1000;
+            updateCountdownDisplay();
+
+            if (countdownTimer) clearInterval(countdownTimer);
+            if (autoUpdateTimer) clearTimeout(autoUpdateTimer);
+
+            countdownTimer = setInterval(() => {
+                secondsUntilUpdate--;
+                updateCountdownDisplay();
+
+                if (secondsUntilUpdate <= 0) {
+                    clearInterval(countdownTimer);
+                }
+            }, 1000);
+
+            autoUpdateTimer = setTimeout(() => {
+                refreshAllFeeds(true); // Silent refresh
+            }, CONFIG.AUTO_UPDATE_INTERVAL);
+        }
+
+        function updateCountdownDisplay() {
+            const timerEl = document.getElementById('next-update-timer');
+            if (timerEl) {
+                const mins = Math.floor(secondsUntilUpdate / 60);
+                const secs = secondsUntilUpdate % 60;
+                timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
         }
 
         function highlightKeywords() {
@@ -805,6 +1051,22 @@
                 filtered = filtered.filter(a => a.sourceId === currentFeed);
             }
 
+            // Sökfilter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(a =>
+                    a.title.toLowerCase().includes(query) ||
+                    a.description.toLowerCase().includes(query) ||
+                    a.source.toLowerCase().includes(query)
+                );
+            }
+
+            // Uppdatera statistik
+            const statsEl = document.querySelector('.articles-stats');
+            if (statsEl) {
+                statsEl.textContent = `${filtered.length} artiklar`;
+            }
+
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -816,37 +1078,87 @@
                 return;
             }
 
-            // Använd grid-layout för artikelkort
-            container.innerHTML = `<div class="articles-grid">${filtered.map(article => {
+            // Begränsa till displayedCount
+            const displayArticles = filtered.slice(0, displayedCount);
+            const hasMore = filtered.length > displayedCount;
+
+            // Använd vertikal lista-layout för artikelkort
+            let html = `<div class="articles-list">`;
+
+            html += displayArticles.map(article => {
                 const hasKeywords = article.keywordMatches && article.keywordMatches.length > 0;
                 const categoryIcon = getCategoryIcon(article.category);
+                const isNewClass = article.isNew ? 'new' : '';
+                const isReadClass = article.read ? 'read' : '';
+                const timeAgo = formatTimeAgo(article.pubDate);
 
                 return `
-                    <article class="article-card ${article.read ? 'read' : ''}"
+                    <article class="article-card ${isNewClass} ${isReadClass}"
                              onclick="openArticleLightbox('${article.id}')">
-                        ${article.image
-                            ? `<img src="${article.image}" class="article-card-image" alt="" loading="lazy" onerror="this.outerHTML='<div class=\\'article-card-image-placeholder\\'>${categoryIcon}</div>'">`
-                            : `<div class="article-card-image-placeholder">${categoryIcon}</div>`
-                        }
+                        <div class="article-card-image-wrapper">
+                            ${article.image
+                                ? `<img src="${article.image}" class="article-card-image" alt="" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                   <div class="article-card-image-placeholder" style="display:none;">${categoryIcon}</div>`
+                                : `<div class="article-card-image-placeholder">${categoryIcon}</div>`
+                            }
+                        </div>
                         <div class="article-card-content">
                             <div class="article-source">
-                                <span class="article-source-badge">${article.source}</span>
+                                <span class="article-source-badge">${escapeHtml(article.source)}</span>
+                                <span class="article-time">${timeAgo}</span>
+                                ${article.isNew ? '<span class="new-badge">Ny</span>' : ''}
                                 ${hasKeywords ? `<span class="keyword-match">🔔 ${article.keywordMatches.join(', ')}</span>` : ''}
                             </div>
                             <h3 class="article-title">${escapeHtml(article.title)}</h3>
                             <p class="article-excerpt">${escapeHtml(article.description)}</p>
                             <div class="article-meta">
-                                <span>${Utils.formatDate(article.pubDate, { relative: true })}</span>
-                                ${article.author ? `<span>• ${escapeHtml(article.author)}</span>` : ''}
+                                ${article.author ? `<span>✍️ ${escapeHtml(article.author)}</span>` : ''}
                                 <div class="article-actions">
                                     <button class="article-action-btn" onclick="event.stopPropagation(); quickBookmark('${article.id}')" title="Spara">⭐</button>
                                     <button class="article-action-btn" onclick="event.stopPropagation(); quickShare('${article.id}')" title="Dela">📤</button>
+                                    <button class="article-action-btn" onclick="event.stopPropagation(); window.open('${escapeHtml(article.link)}', '_blank')" title="Öppna">↗️</button>
                                 </div>
                             </div>
                         </div>
                     </article>
                 `;
-            }).join('')}</div>`;
+            }).join('');
+
+            html += `</div>`;
+
+            // Lägg till "Ladda fler" knapp
+            if (hasMore) {
+                html += `
+                    <div class="load-more-container">
+                        <button class="btn btn-secondary load-more-btn" onclick="loadMoreArticles()">
+                            Visa fler artiklar (${filtered.length - displayedCount} kvar)
+                        </button>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function loadMoreArticles() {
+            displayedCount += CONFIG.LOAD_MORE_COUNT;
+            renderArticles();
+        }
+
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just nu';
+            if (diffMins < 60) return `${diffMins} min sedan`;
+            if (diffHours < 24) return `${diffHours} tim sedan`;
+            if (diffDays === 1) return 'Igår';
+            if (diffDays < 7) return `${diffDays} dagar sedan`;
+
+            return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
         }
 
         function getCategoryIcon(category) {
@@ -1200,11 +1512,12 @@
                 return;
             }
 
-            // Event listeners
+            // Event listeners - kategori-filter
             document.querySelectorAll('.filter-tab').forEach(tab => {
                 tab.addEventListener('click', () => filterByCategory(tab.dataset.category));
             });
 
+            // Sortering
             document.getElementById('sort-select').addEventListener('change', (e) => {
                 if (e.target.value === 'oldest') {
                     articles.sort((a, b) => a.pubDate - b.pubDate);
@@ -1214,12 +1527,54 @@
                 renderArticles();
             });
 
+            // Artikelsökning med debounce
+            const articleSearchInput = document.getElementById('article-search');
+            let searchTimeout;
+            articleSearchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchQuery = e.target.value.trim();
+                    displayedCount = CONFIG.INITIAL_DISPLAY_COUNT; // Återställ paginering vid ny sökning
+                    renderArticles();
+                }, 300);
+            });
+
+            // Källsökning i sidopanelen
+            const feedSearchInput = document.getElementById('feed-search');
+            feedSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                document.querySelectorAll('.feed-source').forEach(el => {
+                    const name = el.querySelector('.feed-source-name')?.textContent.toLowerCase() || '';
+                    el.style.display = name.includes(query) || query === '' ? 'flex' : 'none';
+                });
+            });
+
+            // Nyckelord
             document.getElementById('new-keyword').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') addKeyword();
             });
 
+            // Tangentbordsnavigering
+            document.addEventListener('keydown', (e) => {
+                // R = refresh
+                if (e.key === 'r' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
+                    refreshAllFeeds();
+                }
+            });
+
             // Ladda feeds
             await refreshAllFeeds();
+
+            // Visa välkomstmeddelande
+            console.log('🗞️ RSS-läsare startat!');
+            console.log(`📰 ${RSS_FEEDS.length} källor konfigurerade`);
+            console.log('⏰ Auto-uppdatering var 5:e minut');
+        });
+
+        // Cleanup vid sidstängning
+        window.addEventListener('beforeunload', () => {
+            if (autoUpdateTimer) clearTimeout(autoUpdateTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
         });
     </script>
 </body>
