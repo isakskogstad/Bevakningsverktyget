@@ -10,1076 +10,317 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="assets/css/variables.css">
     <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/utilities.css">
     <style>
-        /* ========================================================================
-           MINIMAL DASHBOARD DESIGN
-           ======================================================================== */
-
-        :root {
-            --nav-height: 64px;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--gray-50, #f8fafc);
-            color: var(--dark, #1a1a2e);
-            line-height: 1.5;
-        }
-
-        /* ========================================================================
-           LOGIN PAGE
-           ======================================================================== */
-        .login-page {
-            min-height: 100vh;
+        /* Page-specific overrides */
+        .dashboard-main {
             display: grid;
-            grid-template-columns: 1fr 480px;
+            grid-template-columns: 280px 1fr 320px;
+            gap: var(--spacing-6);
+            min-height: calc(100vh - 64px);
         }
 
-        .login-hero {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 4rem;
+        @media (max-width: 1400px) {
+            .dashboard-main {
+                grid-template-columns: 260px 1fr;
+            }
+            .dashboard-sidebar-right { display: none; }
         }
-
-        .login-hero h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-
-        .login-hero p {
-            font-size: 1.125rem;
-            opacity: 0.8;
-            max-width: 400px;
-        }
-
-        .login-form-container {
-            background: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 4rem;
-        }
-
-        .login-logo {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 2rem;
-        }
-
-        .login-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .login-subtitle {
-            color: #64748b;
-            margin-bottom: 2rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.15s, box-shadow 0.15s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #94a3b8;
-            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.1);
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9375rem;
-            font-weight: 500;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.15s;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            width: 100%;
-            background: #1a1a2e;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #16213e;
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: #64748b;
-        }
-
-        .btn-ghost:hover {
-            background: #f1f5f9;
-            color: #1a1a2e;
-        }
-
-        .alert {
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-            display: none;
-        }
-
-        .alert.show { display: block; }
-        .alert-error { background: #fef2f2; color: #dc2626; }
-        .alert-success { background: #f0fdf4; color: #16a34a; }
-
-        .login-footer {
-            margin-top: 2rem;
-            font-size: 0.875rem;
-            color: #94a3b8;
-        }
-
-        .login-page.hide { display: none; }
 
         @media (max-width: 900px) {
-            .login-page { grid-template-columns: 1fr; }
-            .login-hero { display: none; }
+            .dashboard-main {
+                grid-template-columns: 1fr;
+            }
+            .dashboard-sidebar-left { display: none; }
         }
 
-        /* ========================================================================
-           DASHBOARD LAYOUT
-           ======================================================================== */
-        #dashboard {
-            display: none;
-            min-height: 100vh;
+        /* Left sidebar - Tools navigation */
+        .dashboard-sidebar-left {
+            background: var(--white);
+            border-right: 1px solid var(--gray-200);
+            padding: var(--spacing-4);
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
         }
 
-        #dashboard.show { display: block; }
+        .sidebar-section {
+            margin-bottom: var(--spacing-6);
+        }
 
-        /* Navigation */
-        .nav {
-            height: var(--nav-height);
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
+        .sidebar-section-title {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: var(--spacing-2) var(--spacing-3);
+            margin-bottom: var(--spacing-1);
+        }
+
+        .sidebar-link {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 1.5rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-brand {
-            font-weight: 600;
-            font-size: 1rem;
-            color: #1a1a2e;
+            gap: var(--spacing-3);
+            padding: var(--spacing-3);
+            border-radius: var(--radius-md);
             text-decoration: none;
+            color: var(--dark);
+            transition: all 0.15s ease;
+            font-size: var(--font-size-sm);
         }
 
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+        .sidebar-link:hover {
+            background: var(--gray-100);
         }
 
-        .user-pill {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.375rem 0.75rem 0.375rem 0.375rem;
-            background: #f8fafc;
-            border-radius: 100px;
-            font-size: 0.875rem;
+        .sidebar-link.active {
+            background: var(--accent-muted);
+            color: var(--dark);
         }
 
-        .user-avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #1a1a2e;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: flex;
-            min-height: calc(100vh - var(--nav-height));
-        }
-
-        /* ========================================================================
-           ICON SIDEBAR
-           ======================================================================== */
-        .icon-sidebar {
-            width: var(--sidebar-width);
-            background: white;
-            border-right: 1px solid #e2e8f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1rem 0;
-            gap: 0.25rem;
-            position: sticky;
-            top: var(--nav-height);
-            height: calc(100vh - var(--nav-height));
-        }
-
-        .sidebar-icon {
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.15s;
-            font-size: 1.25rem;
-            color: #64748b;
-            position: relative;
-            background: transparent;
-            border: none;
-        }
-
-        .sidebar-icon:hover {
-            background: #f1f5f9;
-            color: #1a1a2e;
-        }
-
-        .sidebar-icon.active {
-            background: #1a1a2e;
-            color: white;
-        }
-
-        .sidebar-icon-tooltip {
-            position: absolute;
-            left: calc(100% + 12px);
-            background: #1a1a2e;
-            color: white;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.8125rem;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.15s;
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        .sidebar-icon:hover .sidebar-icon-tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .sidebar-divider {
+        .sidebar-link-icon {
             width: 32px;
-            height: 1px;
-            background: #e2e8f0;
-            margin: 0.5rem 0;
+            height: 32px;
+            border-radius: var(--radius-md);
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
         }
 
-        .sidebar-spacer {
+        .sidebar-link:hover .sidebar-link-icon,
+        .sidebar-link.active .sidebar-link-icon {
+            background: var(--accent);
+        }
+
+        .sidebar-link-text {
             flex: 1;
         }
 
-        /* Expanded Sidebar Panel */
-        .sidebar-panel {
-            position: fixed;
-            top: var(--nav-height);
-            left: var(--sidebar-width);
-            width: calc(var(--sidebar-expanded) - var(--sidebar-width));
-            height: calc(100vh - var(--nav-height));
-            background: white;
-            border-right: 1px solid #e2e8f0;
-            transform: translateX(-100%);
-            opacity: 0;
-            transition: all 0.2s ease;
-            z-index: 40;
+        .sidebar-link-title {
+            font-weight: var(--font-weight-medium);
+            margin-bottom: 1px;
+        }
+
+        .sidebar-link-desc {
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+        }
+
+        .sidebar-link-badge {
+            background: var(--accent);
+            color: var(--dark);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+
+        /* Main content area */
+        .dashboard-content {
+            padding: var(--spacing-6);
+            background: var(--gray-50);
+        }
+
+        /* Right sidebar - Quick info */
+        .dashboard-sidebar-right {
+            background: var(--white);
+            border-left: 1px solid var(--gray-200);
+            padding: var(--spacing-4);
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
             overflow-y: auto;
-            padding: 1rem;
         }
 
-        .sidebar-panel.open {
-            transform: translateX(0);
-            opacity: 1;
+        /* Stats cards in main content */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-6);
         }
 
-        .panel-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #94a3b8;
-            margin-bottom: 0.75rem;
-            padding: 0 0.5rem;
+        @media (max-width: 1200px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
         }
 
-        .panel-link {
+        /* Quick actions section */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-6);
+        }
+
+        @media (max-width: 1000px) {
+            .quick-actions { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .quick-actions { grid-template-columns: 1fr; }
+        }
+
+        .quick-action-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            padding: var(--spacing-5);
+            text-decoration: none;
+            color: var(--dark);
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-3);
+        }
+
+        .quick-action-card:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .quick-action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-lg);
+            background: var(--accent-muted);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.625rem 0.75rem;
-            border-radius: 8px;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .quick-action-card:hover .quick-action-icon {
+            background: var(--accent);
+        }
+
+        .quick-action-title {
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-base);
+        }
+
+        .quick-action-desc {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            line-height: 1.4;
+        }
+
+        /* Settings button in nav */
+        .settings-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-full);
+            background: var(--gray-100);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+        }
+
+        .settings-btn:hover {
+            background: var(--gray-200);
+        }
+
+        /* Settings dropdown */
+        .settings-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: var(--spacing-2);
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--gray-200);
+            min-width: 200px;
+            display: none;
+            z-index: 200;
+        }
+
+        .settings-dropdown.show {
+            display: block;
+        }
+
+        .settings-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            padding: var(--spacing-3) var(--spacing-4);
             text-decoration: none;
-            color: #1a1a2e;
-            font-size: 0.875rem;
+            color: var(--dark);
+            font-size: var(--font-size-sm);
             transition: background 0.15s;
         }
 
-        .panel-link:hover {
-            background: #f1f5f9;
+        .settings-dropdown-item:hover {
+            background: var(--gray-100);
         }
 
-        .panel-link-icon {
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f1f5f9;
-            border-radius: 6px;
-            font-size: 0.875rem;
+        .settings-dropdown-item:first-child {
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
         }
 
-        .panel-link:hover .panel-link-icon {
-            background: #e2e8f0;
+        .settings-dropdown-item:last-child {
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
         }
 
-        /* ========================================================================
-           MAIN CONTENT
-           ======================================================================== */
-        .main-content {
-            flex: 1;
-            padding: 1.5rem 2rem;
-            max-width: 900px;
+        .settings-dropdown-divider {
+            height: 1px;
+            background: var(--gray-200);
+            margin: var(--spacing-2) 0;
         }
 
-        /* Filter Bar */
-        .filter-bar {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .filter-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.375rem;
-            padding: 0.5rem 0.875rem;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 100px;
-            font-size: 0.8125rem;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .filter-chip:hover {
-            border-color: #94a3b8;
-            color: #1a1a2e;
-        }
-
-        .filter-chip.active {
-            background: #1a1a2e;
-            border-color: #1a1a2e;
-            color: white;
-        }
-
-        .filter-chip .count {
-            font-size: 0.75rem;
-            padding: 0.125rem 0.375rem;
-            background: rgba(0,0,0,0.1);
-            border-radius: 100px;
-        }
-
-        .filter-chip.active .count {
-            background: rgba(255,255,255,0.2);
-        }
-
-        .filter-spacer { flex: 1; }
-
-        .refresh-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.375rem;
-            padding: 0.5rem 0.75rem;
-            background: transparent;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 0.8125rem;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .refresh-btn:hover {
-            background: #f8fafc;
-            border-color: #94a3b8;
-        }
-
-        /* Feed */
-        .feed-container {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        /* Company Card (Grouped) */
-        .company-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: box-shadow 0.15s;
-        }
-
-        .company-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        .company-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            padding: 1rem;
-            cursor: pointer;
-        }
-
-        .company-logo {
+        /* Mobile nav toggle */
+        .mobile-nav-toggle {
+            display: none;
             width: 40px;
             height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .company-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .company-name {
-            font-weight: 600;
-            font-size: 0.9375rem;
-            color: #1a1a2e;
-            margin-bottom: 0.125rem;
-        }
-
-        .company-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.8125rem;
-            color: #94a3b8;
-        }
-
-        .company-orgnr {
-            font-family: 'SF Mono', Consolas, monospace;
-            font-size: 0.75rem;
-        }
-
-        .company-time {
-            font-size: 0.8125rem;
-            color: #94a3b8;
-            white-space: nowrap;
-        }
-
-        .event-count-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.25rem 0.5rem;
-            background: #f1f5f9;
-            border-radius: 100px;
-            font-size: 0.75rem;
-            color: #64748b;
-        }
-
-        /* Event List */
-        .event-list {
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .event-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #f8fafc;
-            transition: background 0.1s;
-        }
-
-        .event-item:last-child {
-            border-bottom: none;
-        }
-
-        .event-item:hover {
-            background: #fafbfc;
-        }
-
-        .event-type-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-top: 6px;
-            flex-shrink: 0;
-        }
-
-        .event-type-indicator.konkurs { background: #ef4444; }
-        .event-type-indicator.kallelse { background: #f59e0b; }
-        .event-type-indicator.likvidation { background: #ef4444; }
-        .event-type-indicator.skuld { background: #f97316; }
-        .event-type-indicator.styrelse { background: #3b82f6; }
-        .event-type-indicator.fusion { background: #8b5cf6; }
-        .event-type-indicator.news { background: #10b981; }
-        .event-type-indicator.press { background: #06b6d4; }
-        .event-type-indicator.default { background: #94a3b8; }
-
-        .event-content {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .event-title {
-            font-size: 0.875rem;
-            color: #1a1a2e;
-            margin-bottom: 0.25rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .event-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.75rem;
-            color: #94a3b8;
-        }
-
-        .event-tag {
-            display: inline-flex;
-            padding: 0.125rem 0.375rem;
-            background: #f1f5f9;
-            border-radius: 4px;
-            font-size: 0.6875rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-
-        .event-tag.konkurs { background: #fef2f2; color: #dc2626; }
-        .event-tag.kallelse { background: #fffbeb; color: #d97706; }
-        .event-tag.likvidation { background: #fef2f2; color: #dc2626; }
-        .event-tag.skuld { background: #fff7ed; color: #ea580c; }
-        .event-tag.news { background: #ecfdf5; color: #059669; }
-        .event-tag.press { background: #ecfeff; color: #0891b2; }
-
-        .event-link {
-            color: #3b82f6;
-            text-decoration: none;
-            font-size: 0.8125rem;
-            white-space: nowrap;
-        }
-
-        .event-link:hover {
-            text-decoration: underline;
-        }
-
-        /* Single Event Card */
-        .single-event-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            transition: box-shadow 0.15s;
-        }
-
-        .single-event-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #94a3b8;
-        }
-
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .empty-state h3 {
-            color: #64748b;
-            font-size: 1.125rem;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Loading */
-        .loader {
-            width: 32px;
-            height: 32px;
-            border: 3px solid #e2e8f0;
-            border-top-color: #1a1a2e;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* ========================================================================
-           NEW DASHBOARD LAYOUT OVERRIDES
-           ======================================================================== */
-        .dashboard-shell {
-            padding: 2rem 2rem 3rem;
-        }
-
-        .dashboard-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .dashboard-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .dashboard-title {
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1.1;
-        }
-
-        .dashboard-subtitle {
-            color: #64748b;
-            max-width: 520px;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
-        .dashboard-tabs {
-            display: flex;
-            gap: 0.75rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .dashboard-tab {
-            background: transparent;
             border: none;
-            padding: 0.75rem 0.25rem;
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #64748b;
-            border-bottom: 2px solid transparent;
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
             cursor: pointer;
-        }
-
-        .dashboard-tab.active {
-            color: #1a1a2e;
-            border-bottom-color: #1a1a2e;
-        }
-
-        .tab-panel {
-            display: none;
-        }
-
-        .tab-panel.active {
-            display: block;
-        }
-
-        .main-content,
-        .panel-block {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1rem;
-        }
-
-        .panel-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .event-time {
-            font-size: 0.75rem;
-            color: #94a3b8;
-        }
-
-        .company-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .company-controls input,
-        .company-controls select {
-            padding: 0.6rem 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            min-width: 180px;
-        }
-
-        .company-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .company-table th,
-        .company-table td {
-            padding: 0.75rem 0.5rem;
-            border-bottom: 1px solid #f1f5f9;
-            text-align: left;
-            font-size: 0.875rem;
-        }
-
-        .company-table th {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #94a3b8;
-        }
-
-        .company-table tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .company-name-cell {
-            font-weight: 600;
-            color: #1a1a2e;
-        }
-
-        .company-orgnr {
-            font-family: 'SF Mono', Consolas, monospace;
-            font-size: 0.75rem;
-            color: #94a3b8;
-        }
-
-        .table-actions button {
-            border: none;
-            background: transparent;
-            color: #3b82f6;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-
-        .drawer-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.4);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-            z-index: 300;
-        }
-
-        .drawer-overlay.show {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .settings-drawer {
-            position: fixed;
-            top: 0;
-            right: 0;
-            height: 100vh;
-            width: min(420px, 100%);
-            background: white;
-            border-left: 1px solid #e2e8f0;
-            transform: translateX(100%);
-            transition: transform 0.25s ease;
-            z-index: 310;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .settings-drawer.show {
-            transform: translateX(0);
-        }
-
-        .drawer-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .drawer-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .drawer-section {
-            margin-bottom: 1.5rem;
-            border: 1px solid #f1f5f9;
-            border-radius: 12px;
-            padding: 1rem;
-        }
-
-        .drawer-section h4 {
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
-        }
-
-        .drawer-section p {
-            color: #64748b;
-            font-size: 0.85rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .drawer-field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .drawer-field input,
-        .drawer-field select {
-            padding: 0.6rem 0.75rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 0.9rem;
-        }
-
-        .drawer-actions {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
+            font-size: 1.2rem;
         }
 
         @media (max-width: 900px) {
-            .dashboard-shell {
-                padding: 1rem;
-            }
-
-            .dashboard-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .main-content,
-            .panel-block {
-                padding: 1rem;
-            }
+            .mobile-nav-toggle { display: flex; align-items: center; justify-content: center; }
         }
 
-        /* ========================================================================
-           MODAL
-           ======================================================================== */
-        .modal-overlay {
+        /* Mobile sidebar overlay */
+        .mobile-sidebar-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            padding: 1rem;
+            z-index: 150;
         }
 
-        .modal-overlay.show {
-            display: flex;
+        .mobile-sidebar-overlay.show {
+            display: block;
         }
 
-        .modal {
-            background: white;
-            border-radius: 16px;
-            max-width: 560px;
-            width: 100%;
-            max-height: 85vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .modal-title {
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .modal-close {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f1f5f9;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.25rem;
-            color: #64748b;
-        }
-
-        .modal-close:hover {
-            background: #e2e8f0;
-        }
-
-        .modal-body {
-            padding: 1.25rem;
-            overflow-y: auto;
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            padding: 1rem 1.25rem;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .btn-secondary {
-            background: #f1f5f9;
-            color: #1a1a2e;
-        }
-
-        .btn-secondary:hover {
-            background: #e2e8f0;
-        }
-
-        /* Detail sections in modal */
-        .detail-section {
-            margin-bottom: 1.25rem;
-        }
-
-        .detail-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .detail-section-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #94a3b8;
-            margin-bottom: 0.5rem;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.375rem 0;
-            font-size: 0.875rem;
-        }
-
-        .detail-label {
-            color: #64748b;
-        }
-
-        .detail-value {
-            color: #1a1a2e;
-            font-weight: 500;
-        }
-
-        /* ========================================================================
-           RESPONSIVE
-           ======================================================================== */
-        @media (max-width: 768px) {
-            .icon-sidebar {
+        @media (max-width: 900px) {
+            .dashboard-sidebar-left.mobile-open {
+                display: block;
                 position: fixed;
-                bottom: 0;
+                top: 0;
                 left: 0;
-                right: 0;
-                top: auto;
-                height: auto;
-                width: 100%;
-                flex-direction: row;
-                justify-content: space-around;
-                padding: 0.5rem 0;
-                border-right: none;
-                border-top: 1px solid #e2e8f0;
-                z-index: 100;
-            }
-
-            .sidebar-divider, .sidebar-spacer {
-                display: none;
-            }
-
-            .sidebar-icon-tooltip {
-                display: none;
-            }
-
-            .sidebar-panel {
-                display: none;
-            }
-
-            .main-content {
-                padding: 1rem;
-                padding-bottom: 80px;
+                bottom: 0;
+                width: 280px;
+                z-index: 160;
+                padding-top: var(--spacing-16);
             }
         }
     </style>
@@ -1092,7 +333,9 @@
             <p>1214 impact-företag under bevakning. Realtidsnotifikationer om bolagshändelser. Nyhetsbevakning för journalister.</p>
         </div>
         <div class="login-form-container">
-            <div class="login-logo">Bevakningsverktyget</div>
+            <div class="login-logo">
+                <span>Bevakningsverktyget</span>
+            </div>
             <h2 class="login-title">Välkommen tillbaka</h2>
             <p class="login-subtitle">Logga in för att fortsätta</p>
             <div class="alert alert-error" id="error"></div>
@@ -1114,179 +357,243 @@
         </div>
     </div>
 
-    <!-- Settings Drawer -->
-    <div class="drawer-overlay" id="settings-overlay"></div>
-    <aside class="settings-drawer" id="settings-drawer" aria-hidden="true">
-        <div class="drawer-header">
-            <strong>Inställningar</strong>
-            <button class="btn btn-ghost" id="settings-close">Stäng</button>
-        </div>
-        <div class="drawer-body">
-            <div class="drawer-section">
-                <h4>Budget</h4>
-                <p>Översikt av budget och spend.</p>
-                <div class="drawer-field">
-                    <label for="budget-daily">Daglig gräns (SEK)</label>
-                    <input type="number" id="budget-daily" min="0" step="1">
+    <!-- Dashboard (dold tills inloggad) -->
+    <div id="dashboard" style="display: none;">
+        <nav class="dashboard-nav">
+            <div class="nav-inner">
+                <div class="d-flex items-center gap-4">
+                    <button class="mobile-nav-toggle" id="mobile-nav-toggle">☰</button>
+                    <a href="./" class="nav-brand">Bevakningsverktyget</a>
                 </div>
-                <div class="drawer-field">
-                    <label for="budget-monthly">Månatlig gräns (SEK)</label>
-                    <input type="number" id="budget-monthly" min="0" step="1">
-                </div>
-                <div class="drawer-actions">
-                    <button class="btn btn-primary" id="save-budget-btn">Spara budget</button>
-                </div>
-            </div>
-
-            <div class="drawer-section">
-                <h4>SMS-notiser</h4>
-                <p>Hantera viktiga larm och telefonnummer.</p>
-                <div class="drawer-field">
-                    <label for="sms-phone">Mobilnummer</label>
-                    <input type="tel" id="sms-phone" placeholder="+46 70 000 00 00">
-                </div>
-                <div class="drawer-field">
-                    <label for="sms-important">Viktiga händelser</label>
-                    <select id="sms-important" multiple>
-                        <option value="konkurs">Konkursbeslut</option>
-                        <option value="likvidation">Likvidation</option>
-                        <option value="styrelse">Styrelseförändring</option>
-                        <option value="fusion">Fusion/uppköp</option>
-                    </select>
-                </div>
-                <div class="drawer-field">
-                    <label for="sms-orgnrs">Bevaka org.nr (komma-separerat)</label>
-                    <input type="text" id="sms-orgnrs" placeholder="5566778899, 5599990000">
-                </div>
-                <div class="drawer-actions">
-                    <button class="btn btn-primary" id="save-sms-btn">Spara SMS-inställningar</button>
-                </div>
-            </div>
-
-            <div class="drawer-section">
-                <h4>Budgetlogg</h4>
-                <p>Senaste kostnader som påverkar budgeten.</p>
-                <div id="budget-log-summary" class="event-meta" style="margin-bottom: 0.75rem;">-</div>
-                <div id="budget-log-list" class="event-meta">Laddar budgetlogg...</div>
-            </div>
-
-            <div class="drawer-section">
-                <h4>SMS-logg & Kostnad</h4>
-                <p>Senaste inkommande/utgående SMS och kostnad.</p>
-                <div id="sms-billing-summary" class="event-meta" style="margin-bottom: 0.75rem;">-</div>
-                <div id="sms-log-list" class="event-meta">Laddar SMS-logg...</div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Dashboard -->
-    <div id="dashboard">
-        <nav class="nav">
-            <a href="./" class="nav-brand">Bevakningsverktyget</a>
-            <div class="nav-right">
-                <div class="user-pill">
-                    <div class="user-avatar" id="user-avatar">IS</div>
-                    <span id="user-email-display"></span>
+                <div class="nav-right">
+                    <div class="user-pill">
+                        <div class="user-avatar" id="user-avatar">IS</div>
+                        <span class="user-name" id="user-email-display"></span>
+                        <span class="role-badge" id="user-role"></span>
+                    </div>
+                    <div style="position: relative;">
+                        <button class="settings-btn" id="settings-btn" title="Inställningar">☰</button>
+                        <div class="settings-dropdown" id="settings-dropdown">
+                            <a href="sms-notiser/" class="settings-dropdown-item">SMS-notiser</a>
+                            <div class="settings-dropdown-divider"></div>
+                            <a href="verktyg/foretagsbevakning/#companies" class="settings-dropdown-item" id="admin-companies-link" style="display: none;">Hantera företag</a>
+                            <a href="#" class="settings-dropdown-item" id="admin-api-link" style="display: none;">API-nycklar</a>
+                            <div class="settings-dropdown-divider" id="admin-divider" style="display: none;"></div>
+                            <a href="#" class="settings-dropdown-item" id="logout-link">Logga ut</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <div class="dashboard-shell">
-            <div class="dashboard-wrapper">
-                <section class="dashboard-header">
-                    <div>
-                        <h1 class="dashboard-title">Realtidsbevakning</h1>
-                        <p class="dashboard-subtitle">Samlad vy av nyheter, pressmeddelanden och bolagshändelser för Loop Impact-portföljen.</p>
-                    </div>
-                    <div class="header-actions">
-                        <button class="btn btn-secondary" id="settings-open">Inställningar</button>
-                        <button class="btn btn-ghost" id="logout-btn">Logga ut</button>
-                    </div>
-                </section>
+        <!-- Mobile sidebar overlay -->
+        <div class="mobile-sidebar-overlay" id="mobile-overlay"></div>
 
-                <div class="dashboard-tabs">
-                    <button class="dashboard-tab active" data-tab="feed">Flöde</button>
-                    <button class="dashboard-tab" data-tab="companies">Företag</button>
+        <div class="dashboard-main">
+            <!-- Left Sidebar - Navigation -->
+            <aside class="dashboard-sidebar-left" id="sidebar-left">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Nyhetsverktyg</div>
+                    <a href="nyhetsverktyg/rss-lasare/" class="sidebar-link">
+                        <div class="sidebar-link-icon">R</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">RSS-läsare</div>
+                            <div class="sidebar-link-desc">Branschnyheter i realtid</div>
+                        </div>
+                    </a>
+                    <a href="nyhetsverktyg/pressbevakning/" class="sidebar-link">
+                        <div class="sidebar-link-icon">P</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Pressbevakning</div>
+                            <div class="sidebar-link-desc">MyNewsdesk-flöden</div>
+                        </div>
+                    </a>
                 </div>
 
-                <section class="tab-panel active" id="tab-feed">
-                    <div class="main-content">
-                        <div class="panel-header">
-                            <div class="panel-title">Samlat flöde</div>
-                            <button class="refresh-btn" id="refresh-btn">↻ Uppdatera</button>
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Företagsbevakning</div>
+                    <a href="verktyg/foretagsbevakning/" class="sidebar-link active">
+                        <div class="sidebar-link-icon">B</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Bolagshändelser</div>
+                            <div class="sidebar-link-desc">Konkurser, kallelser, m.m.</div>
                         </div>
-                        <div class="filter-bar">
-                            <button class="filter-chip active" data-filter="all">
-                                Alla <span class="count" id="count-all">0</span>
-                            </button>
-                            <button class="filter-chip" data-filter="poit">
-                                Bolagshändelser <span class="count" id="count-poit">0</span>
-                            </button>
-                            <button class="filter-chip" data-filter="news">
-                                Nyheter <span class="count" id="count-news">0</span>
-                            </button>
-                            <button class="filter-chip" data-filter="press">
-                                Press <span class="count" id="count-press">0</span>
-                            </button>
+                        <span class="sidebar-link-badge" id="poit-badge">0</span>
+                    </a>
+                    <a href="verktyg/foretagsbevakning/#companies" class="sidebar-link">
+                        <div class="sidebar-link-icon">F</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Företagslista</div>
+                            <div class="sidebar-link-desc">1214 bevakade företag</div>
                         </div>
+                    </a>
+                    <a href="verktyg/allabolag/" class="sidebar-link">
+                        <div class="sidebar-link-icon">A</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Allabolag Sökning</div>
+                            <div class="sidebar-link-desc">Styrelse, ledning, ekonomi</div>
+                        </div>
+                    </a>
+                </div>
 
-                        <div class="feed-container" id="feed-container">
-                            <div class="empty-state">
-                                <div class="loader"></div>
-                                <p>Laddar händelser...</p>
-                            </div>
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Notifikationer</div>
+                    <a href="sms-notiser/" class="sidebar-link">
+                        <div class="sidebar-link-icon">S</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">SMS-notiser</div>
+                            <div class="sidebar-link-desc">Konfigurera varningar</div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Konto</div>
+                    <a href="installningar/" class="sidebar-link">
+                        <div class="sidebar-link-icon">I</div>
+                        <div class="sidebar-link-text">
+                            <div class="sidebar-link-title">Inställningar</div>
+                            <div class="sidebar-link-desc">Profil och preferenser</div>
+                        </div>
+                    </a>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="dashboard-content">
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stat-card highlight">
+                        <div class="stat-label">Bevakade företag</div>
+                        <div class="stat-value" id="stat-companies">1214</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Bolagshändelser denna vecka</div>
+                        <div class="stat-value" id="stat-poit">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Totalt antal händelser</div>
+                        <div class="stat-value" id="stat-total">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">RSS-artiklar</div>
+                        <div class="stat-value" id="stat-rss">-</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <h2 class="font-semibold mb-4">Snabbstart</h2>
+                <div class="quick-actions">
+                    <a href="nyhetsverktyg/rss-lasare/" class="quick-action-card">
+                        <div class="quick-action-icon">→</div>
+                        <div class="quick-action-title">Läs branschnyheter</div>
+                        <div class="quick-action-desc">Breakit, Di, TechCrunch och fler - allt samlat med nyckelordsbevakning</div>
+                    </a>
+                    <a href="nyhetsverktyg/pressbevakning/" class="quick-action-card">
+                        <div class="quick-action-icon">→</div>
+                        <div class="quick-action-title">Bevaka pressreleaser</div>
+                        <div class="quick-action-desc">Följ pressmeddelanden från Northvolt, Klarna, Spotify och andra företag</div>
+                    </a>
+                    <a href="verktyg/foretagsbevakning/" class="quick-action-card">
+                        <div class="quick-action-icon">→</div>
+                        <div class="quick-action-title">Se Bolagshändelser</div>
+                        <div class="quick-action-desc">Konkurser, likvidationer, kallelser och skulder för bevakade företag</div>
+                    </a>
+                </div>
+
+                <!-- Bolagshändelser Feed Section -->
+                <section class="feed-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <span class="live-dot"></span>
+                            Bolagshändelser
+                        </h2>
+                        <div class="section-actions">
+                            <button class="btn btn-ghost btn-sm" onclick="refreshFeed()">↻ Uppdatera</button>
                         </div>
                     </div>
-                </section>
 
-                <section class="tab-panel" id="tab-companies">
-                    <div class="panel-block">
-                        <div class="panel-header">
-                            <div class="panel-title">Företagsöversikt</div>
-                            <span id="company-count-label" class="event-meta">- företag</span>
-                        </div>
-                        <div class="company-controls">
-                            <input type="text" id="company-search-input" placeholder="Sök företag eller orgnr...">
-                            <select id="company-sector-filter">
-                                <option value="">Alla sektorer</option>
-                            </select>
-                        </div>
-                        <div style="overflow-x: auto;">
-                            <table class="company-table">
-                                <thead>
-                                    <tr>
-                                        <th>Företag</th>
-                                        <th>Sektor</th>
-                                        <th>Omsättning</th>
-                                        <th>Org.nr</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="company-table-body">
-                                    <tr>
-                                        <td colspan="5" class="empty-state">Laddar företag...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <!-- Kategorifilter -->
+                    <div class="filter-chips" id="category-filters">
+                        <button class="filter-chip active" data-category="all" onclick="filterByCategory('all', this)">
+                            Alla <span class="count" id="count-all">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="konkurs" onclick="filterByCategory('konkurs', this)">
+                            Konkurser <span class="count" id="count-konkurs">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="kallelse" onclick="filterByCategory('kallelse', this)">
+                            Kallelser <span class="count" id="count-kallelse">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="likvidation" onclick="filterByCategory('likvidation', this)">
+                            Likvidationer <span class="count" id="count-likvidation">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="skuld" onclick="filterByCategory('skuld', this)">
+                            Skuld <span class="count" id="count-skuld">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="styrelse" onclick="filterByCategory('styrelse', this)">
+                            Styrelsebyte <span class="count" id="count-styrelse">0</span>
+                        </button>
+                        <button class="filter-chip" data-category="fusion" onclick="filterByCategory('fusion', this)">
+                            Fusion <span class="count" id="count-fusion">0</span>
+                        </button>
+                    </div>
+
+                    <div id="feed-list" class="feed-list">
+                        <div class="empty-state">
+                            <div class="loader"></div>
+                            <p class="mt-4">Laddar händelser...</p>
                         </div>
                     </div>
+                    <div style="margin-top: 16px; text-align: center;">
+                        <button class="btn btn-secondary" id="load-more-btn" onclick="loadMoreEvents()" style="display: none;">
+                            Ladda fler händelser
+                        </button>
+                    </div>
                 </section>
-            </div>
+            </main>
+
+            <!-- Right Sidebar - Quick Info -->
+            <aside class="dashboard-sidebar-right">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Senaste nytt</div>
+                    <div id="latest-news">
+                        <p class="text-muted text-sm p-3">
+                            Använd RSS-läsaren eller Pressbevakning för att se de senaste nyheterna.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Tips</div>
+                    <div class="p-3">
+                        <p class="text-sm text-muted mb-3">
+                            <strong>Nyckelordsbevakning:</strong> I RSS-läsaren kan du markera nyckelord för att snabbt hitta relevanta artiklar.
+                        </p>
+                        <p class="text-sm text-muted mb-3">
+                            <strong>SMS-varningar:</strong> Konfigurera SMS-notiser för att få varningar vid konkurser eller andra viktiga händelser.
+                        </p>
+                        <p class="text-sm text-muted">
+                            <strong>1214 företag:</strong> Alla Loop Impact-företag bevakas automatiskt för bolagshändelser.
+                        </p>
+                    </div>
+                </div>
+            </aside>
         </div>
     </div>
 
-    <!-- Event Detail Modal -->
-    <div class="modal-overlay" id="modal-overlay">
-        <div class="modal">
+    <!-- Investigation Modal -->
+    <div class="modal" id="investigate-modal">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" id="modal-title">Händelsedetaljer</h3>
-                <button class="modal-close" id="modal-close">&times;</button>
+                <h3 class="modal-title">Undersök händelse</h3>
+                <button class="modal-close" onclick="closeModal()" aria-label="Stäng modal">&times;</button>
             </div>
             <div class="modal-body" id="modal-body">
-                <!-- Dynamic content -->
+                <div id="event-details"></div>
+                <div id="investigation-steps" style="margin-top: 20px;"></div>
             </div>
             <div class="modal-footer" id="modal-footer">
-                <button class="btn btn-secondary" id="modal-close-btn">Stäng</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
             </div>
         </div>
     </div>
@@ -1294,68 +601,24 @@
     <script src="assets/js/config.js"></script>
     <script>
         // =========================================================================
-        // STATE
+        // MAIN DASHBOARD
         // =========================================================================
-        let sb = null;
-        let currentUser = null;
-        let allEvents = [];          // Combined events (POIT + News)
-        let filteredEvents = [];
-        let currentFilter = 'all';
-        let companyData = {};        // orgnr -> company info
-        let allCompanies = [];
-        let filteredCompanies = [];
-        let newsItems = [];
-        let poitEvents = [];
-        let companySearchQuery = '';
-        let companySectorFilter = '';
-        const LOGO_BUCKET_NAME = 'company-logos';
-        const logoCache = {};
 
-        function cleanOrgNr(orgnr) {
-            if (!orgnr) return '';
-            return orgnr.replace(/\D/g, '');
-        }
-
-        function getCompanyLogoUrl(orgnr) {
-            if (!orgnr || !sb) return null;
-            const clean = cleanOrgNr(orgnr);
-            if (!clean) return null;
-
-            if (logoCache[clean] === undefined) {
-                try {
-                    const { data } = sb.storage.from(LOGO_BUCKET_NAME).getPublicUrl(`${clean}.png`);
-                    logoCache[clean] = data?.publicUrl || null;
-                } catch (error) {
-                    console.error('Logo fetch failed', error);
-                    logoCache[clean] = null;
-                }
-            }
-
-            return logoCache[clean];
-        }
-
-        function renderLogoElement(logoUrl, label) {
-            const text = (label || 'Företag').split(' ').filter(Boolean);
-            const initials = (text.length >= 2 ? text.slice(0, 2) : text).map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2) || 'FB';
-
-            if (logoUrl) {
-                const safeUrl = escapeHtml(logoUrl);
-                return `<div class="company-logo"><img src="${safeUrl}" alt="${escapeHtml(label || 'Företag')} logo" loading="lazy" onerror="this.remove();"></div>`;
-            }
-
-            return `<div class="company-logo">${escapeHtml(initials)}</div>`;
-        }
-
-        // RSS feeds (samma som nyhetsflöde)
-        const RSS_FEEDS = [
-            { name: 'Breakit', url: 'https://www.breakit.se/feed/artiklar', type: 'news' },
-            { name: 'DI Digital', url: 'https://www.di.se/rss/nyheter/', type: 'news' },
-            { name: 'Ny Teknik', url: 'https://www.nyteknik.se/feed', type: 'news' }
-        ];
+        // App state - use var to allow redefinition
+        var sb = null;
+        var currentUser = null;
+        var events = [];
+        var allEvents = []; // Alla händelser för filtrering
+        var currentOffset = 0;
+        var pageSize = 20;
+        var watchedOrgnrs = [];
+        var companyNames = {};
+        var activeFilter = 'all';
 
         // =========================================================================
         // INITIALIZATION
         // =========================================================================
+
         async function initSupabase() {
             try {
                 sb = window.supabase.createClient(CONFIG.supabase.url, CONFIG.supabase.anonKey);
@@ -1372,6 +635,7 @@
         // =========================================================================
         // AUTHENTICATION
         // =========================================================================
+
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('email').value;
@@ -1403,6 +667,11 @@
             }
         }
 
+        function getInitials(email) {
+            const parts = email.split('@')[0].split('.');
+            return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : email.substring(0, 2).toUpperCase();
+        }
+
         async function showDashboard() {
             document.getElementById('login-form').classList.add('hide');
             document.getElementById('dashboard').classList.add('show');
@@ -1411,9 +680,29 @@
             document.getElementById('user-email-display').textContent = email;
             document.getElementById('user-avatar').textContent = getInitials(email);
 
-            await loadCompanyData();
-            await loadAllEvents();
-            await loadSettings();
+            try {
+                const { data: profile } = await sb
+                    .from('user_profiles')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profile) {
+                    const roleEl = document.getElementById('user-role');
+                    roleEl.textContent = profile.role === 'admin' ? 'Admin' : 'Medlem';
+                    roleEl.className = 'role-badge ' + profile.role;
+                    if (profile.role === 'admin') {
+                        // Show admin links in settings dropdown
+                        document.getElementById('admin-companies-link').style.display = 'flex';
+                        document.getElementById('admin-api-link').style.display = 'flex';
+                        document.getElementById('admin-divider').style.display = 'block';
+                    }
+                }
+            } catch (e) { console.error(e); }
+
+            await loadWatchedCompanies();
+            await loadStats();
+            await loadPoitEvents();
         }
 
         async function handleLogout() {
@@ -1421,884 +710,349 @@
             currentUser = null;
             document.getElementById('dashboard').classList.remove('show');
             document.getElementById('login-form').classList.remove('hide');
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.dashboard-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.tab === tabId);
-            });
-            document.querySelectorAll('.tab-panel').forEach(panel => {
-                panel.classList.toggle('active', panel.id === `tab-${tabId}`);
-            });
-        }
-
-        function openSettingsDrawer() {
-            document.getElementById('settings-drawer').classList.add('show');
-            document.getElementById('settings-overlay').classList.add('show');
-            document.getElementById('settings-drawer').setAttribute('aria-hidden', 'false');
-        }
-
-        function closeSettingsDrawer() {
-            document.getElementById('settings-drawer').classList.remove('show');
-            document.getElementById('settings-overlay').classList.remove('show');
-            document.getElementById('settings-drawer').setAttribute('aria-hidden', 'true');
-        }
-
-        function getInitials(email) {
-            const parts = email.split('@')[0].split('.');
-            return parts.length >= 2
-                ? (parts[0][0] + parts[1][0]).toUpperCase()
-                : email.substring(0, 2).toUpperCase();
+            document.getElementById('admin-companies-link').style.display = 'none';
+            document.getElementById('admin-api-link').style.display = 'none';
+            document.getElementById('admin-divider').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
         }
 
         // =========================================================================
         // DATA LOADING
         // =========================================================================
-        async function loadCompanyData() {
+
+        async function loadWatchedCompanies() {
             const { data } = await sb
                 .from('loop_table')
-                .select('orgnr, company_name, sector, turnover_2024_sek, website, city, ceo_name, chairman_name')
+                .select('orgnr, company_name, sector, turnover_2024_sek')
                 .limit(1500);
-
-            allCompanies = data || [];
-            companyData = {};
-            allCompanies.forEach(c => {
-                if (c.orgnr) {
-                    const logoUrl = getCompanyLogoUrl(c.orgnr);
-                    companyData[c.orgnr] = {
+            watchedOrgnrs = (data || []).map(c => c.orgnr);
+            // Skapa lookup-map för företagsnamn, sektor och omsättning
+            companyNames = {};
+            (data || []).forEach(c => {
+                if (c.orgnr && c.company_name) {
+                    companyNames[c.orgnr] = {
                         name: c.company_name,
                         sector: c.sector,
-                        turnover: c.turnover_2024_sek,
-                        website: c.website,
-                        city: c.city,
-                        ceo: c.ceo_name,
-                        chairman: c.chairman_name,
-                        logoUrl
+                        turnover: c.turnover_2024_sek
                     };
-                    c.logoUrl = logoUrl;
                 }
             });
-
-            initCompanyFilters();
-            applyCompanyFilters();
+            document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
         }
 
-        async function loadAllEvents() {
-            // Ladda POIT-händelser
-            await loadPoitEvents();
+        async function loadStats() {
+            const today = new Date();
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-            // Ladda nyheter från RSS + pressrum
-            await loadNewsEvents();
+            // Bolagshändelser denna vecka - ENDAST för Loop's bevakade företag
+            const { count: poitWeekCount } = await sb
+                .from('loop_poit_events')
+                .select('*', { count: 'exact', head: true })
+                .not('matched_orgnr', 'is', null)
+                .gte('announcement_date', sevenDaysAgoStr);
 
-            // Kombinera och sortera
-            combineAndRenderEvents();
+            // Totalt antal händelser (endast matchade)
+            const { count: poitTotalCount } = await sb
+                .from('loop_poit_events')
+                .select('*', { count: 'exact', head: true })
+                .not('matched_orgnr', 'is', null);
+
+            const weekValue = poitWeekCount || 0;
+            const totalValue = poitTotalCount || 0;
+
+            document.getElementById('stat-poit').textContent = weekValue;
+            document.getElementById('stat-total').textContent = totalValue;
+            document.getElementById('poit-badge').textContent = weekValue;
         }
 
         async function loadPoitEvents() {
+            // Hämta ENDAST bolagshändelser för Loop's 1214 bevakade företag
+            // Filtrera på matched_orgnr för att endast få matchade händelser
             const { data, error } = await sb
                 .from('loop_poit_events')
                 .select('*')
+                .not('matched_orgnr', 'is', null)
                 .order('announcement_date', { ascending: false })
-                .limit(100);
+                .range(currentOffset, currentOffset + pageSize - 1);
 
             if (error) {
-                console.error('Error loading POIT events:', error);
+                console.error('Error loading events:', error);
                 return;
             }
 
-            // Filtrera till endast matchade företag (matched_orgnr finns)
-            poitEvents = (data || [])
-                .filter(e => e.matched_orgnr) // Endast händelser som matchats mot bevakade bolag
-                .map(e => ({
-                    id: `poit-${e.id}`,
-                    type: 'poit',
-                    category: e.category || 'Okänd',
-                    title: e.title || e.content,
-                    content: e.content,
-                    date: e.announcement_date,
-                    timestamp: new Date(e.announcement_date).getTime(),
-                    orgnr: e.matched_orgnr, // Använd matched_orgnr istället för orgnr
-                    companyName: e.matched_company_name || getCompanyName(e.matched_orgnr) || 'Okänt företag',
-                    logoUrl: getCompanyLogoUrl(e.matched_orgnr),
-                    source: 'Bolagsverket',
-                    sector: e.matched_sector,
-                    originalEvent: e
-                }));
-        }
+            // Använd matched_orgnr för företagsuppslag
+            allEvents = (data || []).map(e => ({
+                ...e,
+                orgnr: e.matched_orgnr || e.orgnr,
+                company_name: e.matched_company_name || e.company_name
+            }));
+            updateCategoryCounts();
+            applyFilter();
 
-        async function loadNewsEvents() {
-            // Hämta nyheter från RSS-flöden
-            const rssPromises = RSS_FEEDS.map(feed => fetchRSSFeed(feed));
-            const rssResults = await Promise.allSettled(rssPromises);
-
-            newsItems = [];
-            const seenLinks = new Set();
-            rssResults.forEach((result, i) => {
-                if (result.status === 'fulfilled' && result.value) {
-                    result.value.forEach(item => {
-                        const linkKey = item.link || item.guid;
-                        if (linkKey && seenLinks.has(linkKey)) return;
-                        if (linkKey) seenLinks.add(linkKey);
-                        const matchedOrg = matchCompanyToNews(item);
-                        newsItems.push({
-                            id: `news-${item.guid || item.link}`,
-                            type: 'news',
-                            category: 'Nyhet',
-                            title: item.title,
-                            date: item.pubDate,
-                            timestamp: new Date(item.pubDate).getTime(),
-                            orgnr: matchedOrg,
-                            logoUrl: matchedOrg ? getCompanyLogoUrl(matchedOrg) : null,
-                            companyName: item.matchedCompany || RSS_FEEDS[i].name,
-                            source: RSS_FEEDS[i].name,
-                            link: item.link
-                        });
-                    });
-                }
-            });
-
-            // Hämta pressmeddelanden
-            await loadPressReleases();
-        }
-
-        async function fetchRSSFeed(feed) {
-            try {
-                const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&api_key=bnfk5nmimynubkjxqgdrfwetavgjt6hbkgvnbmsu&count=20`;
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                return data.status === 'ok' ? data.items : [];
-            } catch (e) {
-                console.error(`RSS fetch error for ${feed.name}:`, e);
-                return [];
+            if (allEvents.length === pageSize) {
+                document.getElementById('load-more-btn').style.display = 'inline-flex';
             }
         }
 
-        async function loadPressReleases() {
-            const { data } = await sb
-                .from('company_pressrooms')
-                .select('orgnr, company_name, rss_feed_url')
-                .not('rss_feed_url', 'is', null)
-                .limit(30);
-
-            if (!data || data.length === 0) return;
-
-            const pressPromises = data.map(async (pressroom) => {
-                const items = await fetchRSSFeed({
-                    name: pressroom.company_name || 'Pressrum',
-                    url: pressroom.rss_feed_url,
-                    type: 'press'
-                });
-
-                items.forEach(item => {
-                    newsItems.push({
-                        id: `press-${item.guid || item.link}`,
-                        type: 'press',
-                        category: 'Press',
-                        title: item.title,
-                        date: item.pubDate,
-                        timestamp: new Date(item.pubDate).getTime(),
-                        orgnr: pressroom.orgnr,
-                        logoUrl: getCompanyLogoUrl(pressroom.orgnr),
-                        companyName: pressroom.company_name || 'Pressrum',
-                        source: pressroom.company_name || 'Pressrum',
-                        link: item.link
-                    });
-                });
-            });
-
-            await Promise.allSettled(pressPromises);
-        }
-
-        function matchCompanyToNews(item) {
-            const title = (item.title || '').toLowerCase();
-            for (const orgnr in companyData) {
-                const name = (companyData[orgnr].name || '').toLowerCase();
-                if (name.length > 3 && title.includes(name)) {
-                    item.matchedCompany = companyData[orgnr].name;
-                    item.matchedOrgNr = orgnr;
-                    return orgnr;
-                }
-            }
-            return null;
-        }
-
-        function getCompanyName(orgnr) {
-            return companyData[orgnr]?.name || null;
-        }
-
-        // =========================================================================
-        // COMPANY LIST
-        // =========================================================================
-        function initCompanyFilters() {
-            const sectorSelect = document.getElementById('company-sector-filter');
-            if (!sectorSelect) return;
-
-            const sectors = Array.from(new Set(allCompanies.map(c => c.sector).filter(Boolean))).sort();
-            sectorSelect.innerHTML = ['<option value="">Alla sektorer</option>']
-                .concat(sectors.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`))
-                .join('');
-
-            document.getElementById('company-count-label').textContent = `${allCompanies.length} företag`;
-        }
-
-        function applyCompanyFilters() {
-            const query = companySearchQuery.toLowerCase();
-            filteredCompanies = allCompanies.filter(c => {
-                const matchesQuery = !query ||
-                    (c.company_name || '').toLowerCase().includes(query) ||
-                    (c.orgnr || '').toLowerCase().includes(query);
-                const matchesSector = !companySectorFilter || c.sector === companySectorFilter;
-                return matchesQuery && matchesSector;
-            });
-            renderCompanyTable();
-        }
-
-        function renderCompanyTable() {
-            const tbody = document.getElementById('company-table-body');
-            if (!tbody) return;
-
-            if (!filteredCompanies.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Inga företag matchar filtret.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = filteredCompanies.slice(0, 200).map(c => {
-                const logoUrl = c.logoUrl || companyData[c.orgnr]?.logoUrl || getCompanyLogoUrl(c.orgnr);
-                const meta = c.city || c.ceo || c.chairman || c.sector || '';
-                return `
-                <tr>
-                    <td>
-                        <div class="company-cell">
-                            ${renderLogoElement(logoUrl, c.company_name)}
-                            <div class="company-cell-info">
-                                <span class="company-name">${escapeHtml(c.company_name || '-')}</span>
-                                <span class="company-cell-meta">${escapeHtml(meta)}</span>
-                            </div>
-                        </div>
-                    </td>
-                    <td>${escapeHtml(c.sector || '-')}</td>
-                    <td>${c.turnover_2024_sek ? formatNumber(c.turnover_2024_sek) + ' kr' : '-'}</td>
-                    <td>${escapeHtml(c.orgnr || '-')}</td>
-                    <td class="table-actions">
-                        <button onclick='showCompanyModal("${c.orgnr || ''}", ${JSON.stringify(c.company_name || '')})'>Öppna</button>
-                    </td>
-                </tr>
-            `;
-            }).join('');
-        }
-
-        // =========================================================================
-        // SETTINGS
-        // =========================================================================
-        async function loadSettings() {
-            if (!currentUser) return;
-
-            await Promise.all([
-                loadBudgetSettings(),
-                loadSmsSettings(),
-                loadSmsLogs(),
-                loadSmsBilling(),
-                loadBudgetLogOverview()
-            ]);
-        }
-
-        async function loadBudgetSettings() {
-            try {
-                const { data } = await sb
-                    .from('user_budget_limits')
-                    .select('daily_limit, monthly_limit')
-                    .eq('user_id', currentUser.id)
-                    .single();
-
-                if (data) {
-                    document.getElementById('budget-daily').value = data.daily_limit ?? '';
-                    document.getElementById('budget-monthly').value = data.monthly_limit ?? '';
-                }
-            } catch (error) {
-                console.error('Budget settings load failed:', error);
-            }
-        }
-
-        async function saveBudgetSettings() {
-            if (!currentUser) return;
-            const daily = parseFloat(document.getElementById('budget-daily').value || '0');
-            const monthly = parseFloat(document.getElementById('budget-monthly').value || '0');
-
-            try {
-                await sb.from('user_budget_limits')
-                    .upsert({
-                        user_id: currentUser.id,
-                        daily_limit: daily,
-                        monthly_limit: monthly
-                    });
-            } catch (error) {
-                console.error('Budget settings save failed:', error);
-            }
-        }
-
-        async function loadSmsSettings() {
-            try {
-                const { data } = await sb
-                    .from('sms_preferences')
-                    .select('phone_number, important_events, important_orgnrs')
-                    .eq('user_id', currentUser.id)
-                    .single();
-
-                if (data) {
-                    document.getElementById('sms-phone').value = data.phone_number || '';
-                    const select = document.getElementById('sms-important');
-                    if (Array.isArray(data.important_events)) {
-                        Array.from(select.options).forEach(opt => {
-                            opt.selected = data.important_events.includes(opt.value);
-                        });
-                    }
-                    if (Array.isArray(data.important_orgnrs)) {
-                        document.getElementById('sms-orgnrs').value = data.important_orgnrs.join(', ');
-                    }
-                }
-            } catch (error) {
-                console.error('SMS settings load failed:', error);
-            }
-        }
-
-        async function saveSmsSettings() {
-            if (!currentUser) return;
-            const phone = document.getElementById('sms-phone').value.trim();
-            const select = document.getElementById('sms-important');
-            const importantEvents = Array.from(select.selectedOptions).map(opt => opt.value);
-            const orgnrInput = document.getElementById('sms-orgnrs').value || '';
-            const importantOrgnrs = orgnrInput
-                .split(',')
-                .map(v => v.trim())
-                .filter(Boolean);
-
-            try {
-                await sb.from('sms_preferences')
-                    .upsert({
-                        user_id: currentUser.id,
-                        phone_number: phone,
-                        important_events: importantEvents,
-                        important_orgnrs: importantOrgnrs
-                    });
-            } catch (error) {
-                console.error('SMS settings save failed:', error);
-            }
-        }
-
-        async function loadSmsLogs() {
-            const container = document.getElementById('sms-log-list');
-            if (!container) return;
-
-            try {
-                const { data } = await sb
-                    .from('sms_logs')
-                    .select('to_phone, from_phone, message, status, sent_at, cost_sek')
-                    .order('sent_at', { ascending: false })
-                    .limit(5);
-
-                if (!data || data.length === 0) {
-                    container.textContent = 'Inga SMS-loggar ännu.';
-                    return;
-                }
-
-                container.innerHTML = data.map(log => `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <div>
-                            <strong>${escapeHtml(log.from_phone || log.to_phone || '')}</strong>
-                            <div class="event-time">${formatDate(log.sent_at)} ${formatTime(log.sent_at)}</div>
-                            <div>${escapeHtml(truncate(log.message || '', 80))}</div>
-                        </div>
-                        <div class="event-time">${log.cost_sek ? log.cost_sek + ' kr' : ''}</div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('SMS log load failed:', error);
-                container.textContent = 'Kunde inte ladda SMS-logg.';
-            }
-        }
-
-        async function loadSmsBilling() {
-            const summary = document.getElementById('sms-billing-summary');
-            if (!summary) return;
-
-            try {
-                const { data } = await sb
-                    .from('budget_logs')
-                    .select('cost_sek, created_at')
-                    .eq('service', 'twilio')
-                    .order('created_at', { ascending: false })
-                    .limit(100);
-
-                const total = (data || []).reduce((sum, row) => sum + (row.cost_sek || 0), 0);
-                summary.textContent = `Twilio kostnad (senaste 100): ${total.toFixed(2)} kr`;
-            } catch (error) {
-                console.error('SMS billing load failed:', error);
-                summary.textContent = 'Kunde inte ladda kostnad.';
-            }
-        }
-
-        async function loadBudgetLogOverview() {
-            const summary = document.getElementById('budget-log-summary');
-            const list = document.getElementById('budget-log-list');
-            if (!summary || !list) return;
-
-            try {
-                const { data, error } = await sb
-                    .from('budget_logs')
-                    .select('service,operation,cost_sek,created_at')
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    summary.textContent = 'Inga budgetnoteringar ännu.';
-                    list.textContent = '';
-                    return;
-                }
-
-                const total = data.reduce((sum, row) => sum + (row.cost_sek || 0), 0);
-                summary.textContent = `Budgetkostnad (senaste ${data.length}): ${total.toFixed(2)} kr`;
-                list.innerHTML = data.map(row => `
-                    <div class="log-entry">
-                        <div>
-                            <strong>${escapeHtml(row.service || 'Okänt')}</strong> ${escapeHtml(row.operation || '')}
-                            <div class="event-time" style="font-size: var(--font-size-xxs);">
-                                ${formatDate(row.created_at)} ${formatTime(row.created_at)}
-                            </div>
-                        </div>
-                        <div class="event-time">${row.cost_sek ? row.cost_sek.toFixed(2) + ' kr' : '-'}</div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Budget log load failed:', error);
-                summary.textContent = 'Kunde inte ladda budgetlogg.';
-                list.textContent = '';
-            }
-        }
-
-        async function loadCompanyDocumentsInline(orgnr) {
-            const container = document.getElementById('company-documents-inline');
-            if (!container) return;
-
-            try {
-                const cleanOrgnr = (orgnr || '').replace(/-/g, '');
-                const { data, error } = await sb
-                    .from('company_documents')
-                    .select('title, document_type, source_url, created_at')
-                    .eq('org_nr', cleanOrgnr)
-                    .order('created_at', { ascending: false })
-                    .limit(5);
-
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    container.textContent = 'Inga dokument ännu.';
-                    return;
-                }
-
-                container.innerHTML = data.map(doc => `
-                    <div style="margin-bottom: 0.5rem;">
-                        ${doc.source_url ? `<a href="${doc.source_url}" target="_blank" class="event-link">${escapeHtml(doc.title || doc.document_type || 'Dokument')}</a>` : `<span>${escapeHtml(doc.title || doc.document_type || 'Dokument')}</span>`}
-                        <div class="event-time">${formatDate(doc.created_at)}</div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Company documents load failed:', error);
-                container.textContent = 'Kunde inte ladda dokument.';
-            }
-        }
-
-        // =========================================================================
-        // COMBINE & GROUP EVENTS
-        // =========================================================================
-        function combineAndRenderEvents() {
-            // Kombinera alla events
-            allEvents = [...poitEvents, ...newsItems].sort((a, b) => b.timestamp - a.timestamp);
-
-            // Uppdatera räknare
-            updateCounts();
-
-            // Applicera filter och rendera
-            applyFilter(currentFilter);
-        }
-
-        function updateCounts() {
+        // Räkna händelser per kategori
+        function updateCategoryCounts() {
             const counts = {
                 all: allEvents.length,
-                poit: poitEvents.length,
-                news: newsItems.filter(n => n.type === 'news').length,
-                press: newsItems.filter(n => n.type === 'press').length
+                konkurs: 0,
+                kallelse: 0,
+                likvidation: 0,
+                skuld: 0,
+                styrelse: 0,
+                fusion: 0
             };
 
+            allEvents.forEach(e => {
+                const cat = (e.category || '').toLowerCase();
+                if (cat.includes('konkurs')) counts.konkurs++;
+                else if (cat.includes('kallelse')) counts.kallelse++;
+                else if (cat.includes('likvidation')) counts.likvidation++;
+                else if (cat.includes('skuld')) counts.skuld++;
+                else if (cat.includes('styrelse')) counts.styrelse++;
+                else if (cat.includes('fusion')) counts.fusion++;
+            });
+
+            // Uppdatera badge-räknare
             document.getElementById('count-all').textContent = counts.all;
-            document.getElementById('count-poit').textContent = counts.poit;
-            document.getElementById('count-news').textContent = counts.news;
-            document.getElementById('count-press').textContent = counts.press;
+            document.getElementById('count-konkurs').textContent = counts.konkurs;
+            document.getElementById('count-kallelse').textContent = counts.kallelse;
+            document.getElementById('count-likvidation').textContent = counts.likvidation;
+            document.getElementById('count-skuld').textContent = counts.skuld;
+            document.getElementById('count-styrelse').textContent = counts.styrelse;
+            document.getElementById('count-fusion').textContent = counts.fusion;
         }
 
-        function applyFilter(filter) {
-            currentFilter = filter;
+        // Filtrera efter kategori
+        function filterByCategory(category, button) {
+            activeFilter = category;
 
             // Uppdatera aktiv chip
             document.querySelectorAll('.filter-chip').forEach(chip => {
-                chip.classList.toggle('active', chip.dataset.filter === filter);
+                chip.classList.remove('active');
             });
+            button.classList.add('active');
 
-            // Filtrera events
-            if (filter === 'all') {
-                filteredEvents = [...allEvents];
-            } else if (filter === 'poit') {
-                filteredEvents = allEvents.filter(e => e.type === 'poit');
-            } else if (filter === 'news') {
-                filteredEvents = allEvents.filter(e => e.type === 'news');
-            } else if (filter === 'press') {
-                filteredEvents = allEvents.filter(e => e.type === 'press');
-            }
-
-            renderFeed();
+            applyFilter();
         }
 
-        // =========================================================================
-        // GROUPING - Konsolidera händelser per företag och dag
-        // =========================================================================
-        function groupEventsByCompanyAndDay(events) {
-            const groups = {};
-
-            events.forEach(e => {
-                const dateKey = e.date ? e.date.split('T')[0] : 'unknown';
-                const companyKey = e.orgnr || e.companyName || 'unknown';
-                const groupKey = `${companyKey}_${dateKey}`;
-
-                if (!groups[groupKey]) {
-                    groups[groupKey] = {
-                        key: groupKey,
-                        companyName: e.companyName,
-                        orgnr: e.orgnr,
-                        date: dateKey,
-                        latestTimestamp: e.timestamp,
-                        events: [],
-                        logoUrl: e.logoUrl || null
-                    };
-                }
-
-                groups[groupKey].events.push(e);
-                if (e.timestamp > groups[groupKey].latestTimestamp) {
-                    groups[groupKey].latestTimestamp = e.timestamp;
-                }
-
-                if (!groups[groupKey].logoUrl && e.logoUrl) {
-                    groups[groupKey].logoUrl = e.logoUrl;
-                }
-            });
-
-            // Sortera grupper efter senaste händelse
-            return Object.values(groups)
-                .map(group => {
-                    if (!group.logoUrl && group.orgnr) {
-                        group.logoUrl = getCompanyLogoUrl(group.orgnr);
-                    }
-                    return group;
-                })
-                .sort((a, b) => b.latestTimestamp - a.latestTimestamp);
+        // Tillämpa aktivt filter
+        function applyFilter() {
+            if (activeFilter === 'all') {
+                events = [...allEvents];
+            } else {
+                events = allEvents.filter(e => {
+                    const cat = (e.category || '').toLowerCase();
+                    return cat.includes(activeFilter);
+                });
+            }
+            renderEvents();
         }
 
         // =========================================================================
         // RENDERING
         // =========================================================================
-        function renderFeed() {
-            const container = document.getElementById('feed-container');
 
-            if (filteredEvents.length === 0) {
+        function renderEvents() {
+            const container = document.getElementById('feed-list');
+
+            if (events.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <h3>Inga händelser</h3>
-                        <p>Nya händelser visas här i realtid</p>
+                        <h3>Inga händelser hittade</h3>
+                        <p>Nya bolagshändelser visas här i realtid</p>
                     </div>
                 `;
                 return;
             }
 
-            // Gruppera events
-            const groups = groupEventsByCompanyAndDay(filteredEvents);
+            // Gruppera händelser per företag och dag
+            const grouped = groupEventsByCompanyAndDate(events);
 
-            container.innerHTML = groups.map(group => {
-                if (group.events.length === 1) {
-                    // Enskild händelse
-                    return renderSingleEvent(group.events[0]);
+            container.innerHTML = Object.values(grouped).map(group => {
+                const eventCount = group.events.length;
+                const isMultiple = eventCount > 1;
+
+                const sector = getCompanySector(group.orgnr);
+                const turnover = getCompanyTurnover(group.orgnr);
+
+                if (isMultiple) {
+                    // Flera händelser för samma företag/dag - grupperad vy
+                    return `
+                        <div class="feed-item-group" data-group-key="${group.key}">
+                            <div class="feed-group-header">
+                                <div class="feed-group-meta">
+                                    <span class="feed-time">${formatDate(group.date)}</span>
+                                    <span class="event-count">${eventCount} händelser</span>
+                                </div>
+                                <div class="feed-company">${escapeHtml(group.companyName)}</div>
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+                                    ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                                    ${sector ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• ${escapeHtml(sector)}</span>` : ''}
+                                    ${turnover ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• Oms: ${formatNumber(turnover)} kr</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="feed-group-events">
+                                ${group.events.map(e => `
+                                    <div class="feed-event-item" data-event-id="${e.id}">
+                                        <div class="feed-event-row">
+                                            <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
+                                            <button class="btn-link" onclick="showEventDetails('${e.id}')">
+                                                Se detaljer
+                                            </button>
+                                        </div>
+                                        <p class="feed-event-title">${escapeHtml(e.title || '')}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="feed-group-actions">
+                                <button class="btn btn-accent btn-sm" onclick="investigateCompany('${group.orgnr}', '${escapeHtml(group.companyName)}')">
+                                    Undersök företaget
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="ignoreGroup('${group.key}')">
+                                    Bortse
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 } else {
-                    // Grupperad vy
-                    return renderGroupedCard(group);
+                    // Enskild händelse - standard vy
+                    const e = group.events[0];
+                    return `
+                        <div class="feed-item" data-id="${e.id}">
+                            <div class="feed-item-header">
+                                <span class="feed-category ${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
+                                <span class="feed-time">${formatDate(e.announcement_date)}</span>
+                            </div>
+                            <div class="feed-company">${escapeHtml(group.companyName)}</div>
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px;">
+                                ${group.orgnr ? `<div class="feed-orgnr">${group.orgnr}</div>` : ''}
+                                ${sector ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• ${escapeHtml(sector)}</span>` : ''}
+                                ${turnover ? `<span style="font-size: var(--font-size-xs); color: var(--gray-500);">• Oms: ${formatNumber(turnover)} kr</span>` : ''}
+                            </div>
+                            <div class="feed-description">${escapeHtml(e.title || '')}</div>
+                            <div class="feed-actions">
+                                <button class="btn btn-accent btn-sm" onclick="showEventDetails('${e.id}')">
+                                    Se detaljer
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="ignoreEvent('${e.id}')">
+                                    Bortse
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 }
             }).join('');
         }
 
-        function renderSingleEvent(e) {
-            const typeClass = getTypeClass(e);
-            const logoUrl = e.logoUrl || getCompanyLogoUrl(e.orgnr);
-            const logoMarkup = renderLogoElement(logoUrl, e.companyName);
+        // Gruppera händelser per företag och datum
+        function groupEventsByCompanyAndDate(eventList) {
+            const groups = {};
 
-            return `
-                <div class="single-event-card" onclick="showEventModal('${e.id}')">
-                    ${logoMarkup}
-                    <div class="event-content">
-                        <div class="company-name">${escapeHtml(e.companyName)}</div>
-                        <div class="event-title">
-                            ${e.link ? `<a href="${e.link}" target="_blank" class="event-link" onclick="event.stopPropagation()">${escapeHtml(e.title || '')}</a>` : escapeHtml(e.title || '')}
-                        </div>
-                        <div class="event-meta">
-                            <span class="event-tag ${typeClass}">${escapeHtml(e.category)}</span>
-                            <span>${formatDate(e.date)}</span>
-                            <span class="event-time">${formatTime(e.date)}</span>
-                            <span>• ${e.source}</span>
-                        </div>
-                    </div>
-                    ${e.link ? `<a href="${e.link}" target="_blank" class="event-link" onclick="event.stopPropagation()">Läs ↗</a>` : ''}
-                </div>
-            `;
+            eventList.forEach(e => {
+                const companyName = e.matched_company_name || getCompanyNameFromEvent(e);
+                const date = e.announcement_date ? e.announcement_date.split('T')[0] : 'unknown';
+                const orgnr = e.orgnr || '';
+
+                // Skapa unik nyckel per företag och dag
+                const key = `${orgnr || companyName}_${date}`;
+
+                if (!groups[key]) {
+                    groups[key] = {
+                        key: key,
+                        companyName: companyName,
+                        orgnr: orgnr,
+                        date: date,
+                        events: []
+                    };
+                }
+
+                groups[key].events.push(e);
+            });
+
+            // Sortera grupper efter datum (nyast först)
+            return Object.fromEntries(
+                Object.entries(groups).sort((a, b) => b[1].date.localeCompare(a[1].date))
+            );
         }
 
-        function renderGroupedCard(group) {
-            const logoUrl = group.logoUrl || getCompanyLogoUrl(group.orgnr);
-            const logoMarkup = renderLogoElement(logoUrl, group.companyName);
-            const eventCount = group.events.length;
+        function getCompanyNameFromEvent(event) {
+            // Om vi har orgnr och det finns i vår lookup, använd det
+            if (event.orgnr && companyNames[event.orgnr]) {
+                return companyNames[event.orgnr].name;
+            }
 
-            return `
-                <div class="company-card">
-                    <div class="company-header" onclick='showCompanyModal("${group.orgnr || ''}", ${JSON.stringify(group.companyName || '')})'>
-                        ${logoMarkup}
-                        <div class="company-info">
-                            <div class="company-name">${escapeHtml(group.companyName)}</div>
-                            <div class="company-meta">
-                                ${group.orgnr ? `<span class="company-orgnr">${group.orgnr}</span>` : ''}
-                            </div>
-                        </div>
-                        <span class="company-time">${formatDate(group.date)}</span>
-                        <span class="event-count-badge">${eventCount} händelser</span>
-                    </div>
-                    <div class="event-list">
-                        ${group.events.map(e => renderEventItem(e)).join('')}
-                    </div>
-                </div>
-            `;
+            // Försök extrahera företagsnamn från content
+            // Format: "K123456/25 Stockholms tingsrätt Konkursbeslut FÖRETAGSNAMN 2025-12-19"
+            if (event.content) {
+                // Ta bort mål-ID, tingsrätt, och typ i början, samt datum i slutet
+                const content = event.content;
+                // Regex: ta bort K-nummer, tingsrätt (ord+tingsrätt), typ (Konkursbeslut etc), datum
+                const match = content.match(/K\d+\/\d+\s+\w+\s+tingsrätt\s+\w+\s+(.+?)\s+\d{4}-\d{2}-\d{2}/i);
+                if (match && match[1]) {
+                    return match[1].trim();
+                }
+                // Fallback: försök enklare extrahering
+                const parts = content.split(/\s+/);
+                if (parts.length > 4) {
+                    // Hoppa över K-nummer, tingsrätt (2 ord), typ (1 ord), ta resten minus datum
+                    const nameParts = parts.slice(4, -1);
+                    if (nameParts.length > 0) {
+                        return nameParts.join(' ');
+                    }
+                }
+            }
+
+            // Fallback till title om inget annat fungerar
+            return event.title || 'Okänt företag';
         }
 
-        function renderEventItem(e) {
-            const typeClass = getTypeClass(e);
-
-            return `
-                <div class="event-item" onclick="showEventModal('${e.id}')">
-                    <div class="event-type-indicator ${typeClass}"></div>
-                    <div class="event-content">
-                        <div class="event-title">
-                            ${e.link ? `<a href="${e.link}" target="_blank" class="event-link" onclick="event.stopPropagation()">${escapeHtml(truncate(e.title || '', 100))}</a>` : escapeHtml(truncate(e.title || '', 100))}
-                        </div>
-                        <div class="event-meta">
-                            <span class="event-tag ${typeClass}">${escapeHtml(e.category)}</span>
-                            <span class="event-time">${formatTime(e.date)}</span>
-                            <span>• ${e.source}</span>
-                        </div>
-                    </div>
-                    ${e.link ? `<a href="${e.link}" target="_blank" class="event-link" onclick="event.stopPropagation()">↗</a>` : ''}
-                </div>
-            `;
+        function getCompanySector(orgnr) {
+            if (orgnr && companyNames[orgnr] && companyNames[orgnr].sector) {
+                return companyNames[orgnr].sector;
+            }
+            return null;
         }
 
-        function getTypeClass(e) {
-            if (e.type === 'news') return 'news';
-            if (e.type === 'press') return 'press';
+        function getCompanyTurnover(orgnr) {
+            if (orgnr && companyNames[orgnr] && companyNames[orgnr].turnover) {
+                return companyNames[orgnr].turnover;
+            }
+            return null;
+        }
 
-            const cat = (e.category || '').toLowerCase();
-            if (cat.includes('konkurs')) return 'konkurs';
+        function getCategoryClass(category) {
+            if (!category) return 'registrering';
+            const cat = category.toLowerCase();
+            if (cat.includes('konkurs') || cat.includes('likvidation')) return 'konkurs';
             if (cat.includes('kallelse')) return 'kallelse';
-            if (cat.includes('likvidation')) return 'likvidation';
             if (cat.includes('skuld')) return 'skuld';
-            if (cat.includes('styrelse')) return 'styrelse';
-            if (cat.includes('fusion')) return 'fusion';
-            return 'default';
+            return 'registrering';
         }
 
-        // =========================================================================
-        // MODAL
-        // =========================================================================
-        function showEventModal(eventId) {
-            const event = allEvents.find(e => e.id === eventId);
-            if (!event) return;
-
-            document.getElementById('modal-title').textContent = event.companyName;
-
-            document.getElementById('modal-body').innerHTML = `
-                <div class="detail-section">
-                    <div class="detail-section-title">Händelse</div>
-                    <p style="margin-bottom: 1rem;">${escapeHtml(event.title || event.content || '')}</p>
-                    <div class="detail-row">
-                        <span class="detail-label">Typ</span>
-                        <span class="detail-value"><span class="event-tag ${getTypeClass(event)}">${escapeHtml(event.category)}</span></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Datum</span>
-                        <span class="detail-value">${formatDate(event.date)}</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Källa</span>
-                        <span class="detail-value">${escapeHtml(event.source)}</span>
-                    </div>
-                    ${event.orgnr ? `
-                    <div class="detail-row">
-                        <span class="detail-label">Org.nr</span>
-                        <span class="detail-value">${event.orgnr}</span>
-                    </div>
-                    ` : ''}
-                </div>
-                ${event.link ? `
-                <div class="detail-section">
-                    <a href="${event.link}" target="_blank" class="btn btn-primary" style="width: 100%;">
-                        Öppna källa ↗
-                    </a>
-                </div>
-                ` : ''}
-            `;
-
-            document.getElementById('modal-overlay').classList.add('show');
-        }
-
-        function showCompanyModal(orgnr, companyName) {
-            const company = orgnr ? companyData[orgnr] : null;
-            const cleanOrgnr = cleanOrgNr(orgnr);
-            const companyRecord = company || (cleanOrgnr ? companyData[cleanOrgnr] : null);
-            const companyEvents = allEvents.filter(e => e.orgnr === orgnr || e.companyName === companyName);
-
-            document.getElementById('modal-title').textContent = companyName;
-
-            const modalLogoUrl = companyRecord?.logoUrl || getCompanyLogoUrl(orgnr);
-            document.getElementById('modal-body').innerHTML = `
-                <div class="company-header">
-                    ${renderLogoElement(modalLogoUrl, companyName)}
-                    <div class="company-info">
-                        <div class="company-name">${escapeHtml(companyName)}</div>
-                        ${orgnr ? `<div class="company-orgnr">${orgnr}</div>` : ''}
-                    </div>
-                </div>
-                <div class="detail-section">
-                    <div class="detail-section-title">Företagsinformation</div>
-                    ${companyRecord?.sector ? `
-                    <div class="detail-row">
-                        <span class="detail-label">Sektor</span>
-                        <span class="detail-value">${escapeHtml(companyRecord.sector)}</span>
-                    </div>
-                    ` : ''}
-                    ${companyRecord?.turnover ? `
-                    <div class="detail-row">
-                        <span class="detail-label">Omsättning</span>
-                        <span class="detail-value">${formatNumber(companyRecord.turnover)} kr</span>
-                    </div>
-                    ` : ''}
-                </div>
-                <div class="detail-section">
-                    <div class="detail-section-title">Händelser (${companyEvents.length})</div>
-                    <div style="max-height: 300px; overflow-y: auto;">
-                        ${companyEvents.map(e => `
-                            <div class="event-item" style="padding: 0.5rem 0;">
-                                <div class="event-type-indicator ${getTypeClass(e)}"></div>
-                                <div class="event-content">
-                                    <div class="event-title">${escapeHtml(truncate(e.title || '', 80))}</div>
-                                    <div class="event-meta">
-                                        <span class="event-tag ${getTypeClass(e)}">${escapeHtml(e.category)}</span>
-                                        <span>${formatDate(e.date)}</span>
-                                        <span class="event-time">${formatTime(e.date)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                <div class="detail-section">
-                    <div class="detail-section-title">Dokument</div>
-                    <div id="company-documents-inline" class="event-meta">Laddar dokument...</div>
-                </div>
-            `;
-
-            document.getElementById('modal-footer').innerHTML = `
-                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
-                ${orgnr ? `<button class="btn btn-primary" onclick="refreshCompanyData('${orgnr}', this)">Uppdatera data</button>` : ''}
-            `;
-
-            document.getElementById('modal-overlay').classList.add('show');
-            if (orgnr) {
-                loadCompanyDocumentsInline(orgnr);
-            }
-        }
-
-        function closeModal() {
-            document.getElementById('modal-overlay').classList.remove('show');
-        }
-
-        async function refreshCompanyData(orgnr, button) {
-            if (button) {
-                button.disabled = true;
-                button.textContent = 'Uppdaterar...';
-            }
-
-            try {
-                const cleanOrgnr = (orgnr || '').replace(/-/g, '');
-                const response = await fetch(`${CONFIG.supabase.url}/functions/v1/allabolag-proxy`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${CONFIG.supabase.anonKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ orgnr: cleanOrgnr, save: true })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Kunde inte uppdatera data');
-                }
-
-                await loadCompanyData();
-                if (companyData[cleanOrgnr]?.name) {
-                    showCompanyModal(cleanOrgnr, companyData[cleanOrgnr].name);
-                }
-            } catch (error) {
-                console.error('Company refresh failed:', error);
-            } finally {
-                if (button) {
-                    button.disabled = false;
-                    button.textContent = 'Uppdatera data';
-                }
-            }
-        }
-
-        // =========================================================================
-        // UTILITIES
-        // =========================================================================
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const date = new Date(dateStr);
-            const now = new Date();
-
-            if (date.toDateString() === now.toDateString()) return 'Idag';
-
-            const yesterday = new Date(now);
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) {
+                return 'Idag';
+            }
+            const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
-            if (date.toDateString() === yesterday.toDateString()) return 'Igår';
-
+            if (date.toDateString() === yesterday.toDateString()) {
+                return 'Igår';
+            }
             return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
         }
 
-        function formatTime(dateStr) {
-            if (!dateStr) return '-';
-            const date = new Date(dateStr);
-            return date.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
-        }
-
-        function formatNumber(num) {
-            if (!num) return '-';
-            return new Intl.NumberFormat('sv-SE').format(num);
-        }
-
         function truncate(text, length) {
-            if (!text) return '';
+            if (!text) return '-';
             return text.length > length ? text.substring(0, length) + '...' : text;
         }
 
@@ -2309,70 +1063,554 @@
         }
 
         // =========================================================================
-        // EVENT LISTENERS
+        // ACTIONS
         // =========================================================================
+
+        async function refreshFeed() {
+            currentOffset = 0;
+            await loadPoitEvents();
+        }
+
+        async function loadMoreEvents() {
+            currentOffset += pageSize;
+            const { data } = await sb
+                .from('poit_announcements')
+                .select('*')
+                .order('announcement_date', { ascending: false })
+                .range(currentOffset, currentOffset + pageSize - 1);
+
+            if (data && data.length > 0) {
+                events = [...events, ...data];
+                renderEvents();
+                if (data.length < pageSize) {
+                    document.getElementById('load-more-btn').style.display = 'none';
+                }
+            } else {
+                document.getElementById('load-more-btn').style.display = 'none';
+            }
+        }
+
+        // =========================================================================
+        // INVESTIGATION MODAL
+        // =========================================================================
+
+        let currentEventId = null;
+
+        function investigateEvent(eventId) {
+            currentEventId = eventId;
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            // Använd matched_company_name från loop_poit_events view
+            const companyName = event.matched_company_name || getCompanyNameFromEvent(event);
+            document.getElementById('event-details').innerHTML = `
+                <div style="margin-bottom: 16px;">
+                    <div class="feed-category ${getCategoryClass(event.category)}" style="margin-bottom: 8px;">
+                        ${escapeHtml(event.category)}
+                    </div>
+                    <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(companyName)}</h4>
+                    <p style="color: var(--gray-500);">${escapeHtml(event.title || '')}</p>
+                </div>
+            `;
+
+            document.getElementById('investigation-steps').innerHTML = `
+                <h4 style="margin-bottom: 12px;">Undersökningsprocess</h4>
+                <div class="investigation-step">
+                    <div class="step-icon pending">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Sök företagsinfo</div>
+                        <div class="step-desc">Hämta grundläggande data från Bolagsverket</div>
+                    </div>
+                </div>
+                <div class="investigation-step">
+                    <div class="step-icon pending">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Köp underlag</div>
+                        <div class="step-desc">Beställ relevant dokumentation (protokoll, årsredovisning)</div>
+                    </div>
+                </div>
+                <div class="investigation-step">
+                    <div class="step-icon pending">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Analysera dokument</div>
+                        <div class="step-desc">AI-driven analys av innehållet</div>
+                    </div>
+                </div>
+                <div class="investigation-step">
+                    <div class="step-icon pending">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Sammanställ resultat</div>
+                        <div class="step-desc">Presentera fynd och rekommendationer</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Avbryt</button>
+                <button class="btn btn-accent" onclick="startInvestigation('${eventId}')">Starta undersökning</button>
+            `;
+
+            document.getElementById('investigate-modal').classList.add('show');
+        }
+
+        async function startInvestigation(eventId) {
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            const steps = document.querySelectorAll('.investigation-step .step-icon');
+
+            // Step 1: Search
+            steps[0].className = 'step-icon active';
+            await delay(1500);
+            steps[0].className = 'step-icon done';
+            steps[0].textContent = '✓';
+
+            // Step 2: Would trigger document purchase
+            steps[1].className = 'step-icon active';
+            await delay(2000);
+            steps[1].className = 'step-icon done';
+            steps[1].textContent = '✓';
+
+            // Step 3: Analysis
+            steps[2].className = 'step-icon active';
+            await delay(2000);
+            steps[2].className = 'step-icon done';
+            steps[2].textContent = '✓';
+
+            // Step 4: Complete
+            steps[3].className = 'step-icon active';
+            await delay(1000);
+            steps[3].className = 'step-icon done';
+            steps[3].textContent = '✓';
+
+            // Show results
+            document.getElementById('investigation-steps').innerHTML += `
+                <div style="margin-top: 20px; padding: 16px; background: var(--gray-100); border-radius: 8px;">
+                    <h4 style="margin-bottom: 12px;">Undersökning klar</h4>
+                    <p style="margin-bottom: 16px; color: var(--gray-500);">
+                        Händelsen har analyserats. Välj hur du vill fortsätta:
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="ignoreEventFromModal()">Bortse från händelse</button>
+                <button class="btn btn-secondary" onclick="digDeeper()">Gräv vidare</button>
+                <button class="btn btn-accent" onclick="createArticle()">Ta fram nyhetsartikel</button>
+            `;
+        }
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function createArticle() {
+            const event = events.find(e => e.id === currentEventId);
+            if (event) {
+                // Navigate to news editor with pre-filled data
+                const params = new URLSearchParams({
+                    orgnr: event.orgnr || '',
+                    category: event.category || '',
+                    title: event.title || ''
+                });
+                window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
+            }
+        }
+
+        function digDeeper() {
+            alert('Funktionen "Gräv vidare" kommer snart. Detta skulle starta en djupare undersökning med fler datakällor.');
+        }
+
+        function ignoreEvent(eventId) {
+            const item = document.querySelector(`.feed-item[data-id="${eventId}"]`);
+            if (item) {
+                item.style.opacity = '0.5';
+                item.style.pointerEvents = 'none';
+            }
+        }
+
+        function ignoreGroup(groupKey) {
+            const group = document.querySelector(`.feed-item-group[data-group-key="${groupKey}"]`);
+            if (group) {
+                group.style.opacity = '0.5';
+                group.style.pointerEvents = 'none';
+            }
+        }
+
+        function ignoreEventFromModal() {
+            ignoreEvent(currentEventId);
+            closeModal();
+        }
+
+        function closeModal() {
+            document.getElementById('investigate-modal').classList.remove('show');
+            currentEventId = null;
+        }
+
+        // Visa detaljer för en specifik händelse
+        function showEventDetails(eventId) {
+            currentEventId = eventId;
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+
+            const companyName = event.matched_company_name || getCompanyNameFromEvent(event);
+
+            // Extrahera kungörelse-ID från content eller title
+            let kungorelseId = '';
+            if (event.content) {
+                const match = event.content.match(/K(\d+)\/(\d+)/);
+                if (match) {
+                    kungorelseId = `K${match[1]}-${match[2]}`;
+                }
+            }
+
+            const poitUrl = kungorelseId
+                ? `https://poit.bolagsverket.se/poit-app/kungorelse/${kungorelseId}`
+                : '';
+
+            document.getElementById('event-details').innerHTML = `
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Kungörelsedetaljer</h4>
+                    <dl class="detail-list">
+                        <dt>Typ</dt>
+                        <dd><span class="feed-category ${getCategoryClass(event.category)}">${escapeHtml(event.category || 'Okänd')}</span></dd>
+
+                        <dt>Företag</dt>
+                        <dd>${escapeHtml(companyName)}</dd>
+
+                        ${event.orgnr ? `
+                        <dt>Org.nummer</dt>
+                        <dd>${event.orgnr}</dd>
+                        ` : ''}
+
+                        <dt>Datum</dt>
+                        <dd>${formatDate(event.announcement_date)}</dd>
+
+                        ${kungorelseId ? `
+                        <dt>Kungörelse-ID</dt>
+                        <dd>${kungorelseId}</dd>
+                        ` : ''}
+                    </dl>
+                </div>
+
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Kungörelsetext</h4>
+                    <div class="announcement-text">${escapeHtml(event.content || event.title || 'Ingen text tillgänglig')}</div>
+                </div>
+
+                ${poitUrl ? `
+                <div class="event-detail-section">
+                    <h4 class="detail-section-title">Källa</h4>
+                    <a href="${poitUrl}" target="_blank" rel="noopener" class="poit-link">
+                        Öppna på Bolagsverket
+                    </a>
+                </div>
+                ` : ''}
+            `;
+
+            document.getElementById('investigation-steps').innerHTML = '';
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
+                <button class="btn btn-secondary" onclick="ignoreEventFromModal()">Bortse</button>
+                <button class="btn btn-accent" onclick="investigateEvent('${eventId}')">Undersök vidare</button>
+            `;
+
+            document.getElementById('investigate-modal').classList.add('show');
+        }
+
+        // Undersök ett företag (alla händelser) - förbättrad modal med tabs
+        async function investigateCompany(orgnr, companyName) {
+            // Hitta alla händelser för detta företag
+            const companyEvents = events.filter(e =>
+                e.orgnr === orgnr || e.matched_company_name === companyName
+            );
+
+            // Hämta företagsdata från loop_table om tillgängligt
+            let companyData = null;
+            if (orgnr) {
+                const { data } = await sb
+                    .from('loop_table')
+                    .select('*')
+                    .eq('orgnr', orgnr.replace(/-/g, ''))
+                    .single();
+                companyData = data;
+            }
+
+            // Skapa initial för logotyp
+            const initial = companyName ? companyName.charAt(0).toUpperCase() : '?';
+
+            document.getElementById('event-details').innerHTML = `
+                <!-- Företagsheader -->
+                <div class="company-header">
+                    <div class="company-logo">${initial}</div>
+                    <div class="company-info">
+                        <div class="company-name">${escapeHtml(companyName)}</div>
+                        ${orgnr ? `<div class="company-orgnr">${orgnr}</div>` : ''}
+                        <div class="company-status">
+                            ${companyEvents.length > 0 ? `
+                                <span class="badge badge-member">${companyEvents.length} händelse${companyEvents.length > 1 ? 'r' : ''}</span>
+                            ` : ''}
+                            ${companyData?.website ? `
+                                <a href="${companyData.website}" target="_blank" class="btn-link" style="font-size: var(--font-size-sm);">
+                                    Webbplats ↗
+                                </a>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="company-tabs">
+                    <button class="company-tab active" onclick="showCompanyTab('events', this)">Händelser</button>
+                    <button class="company-tab" onclick="showCompanyTab('documents', this)">Dokument</button>
+                    <button class="company-tab" onclick="showCompanyTab('financials', this)">Ekonomi</button>
+                    <button class="company-tab" onclick="showCompanyTab('info', this)">Information</button>
+                </div>
+
+                <!-- Tab: Händelser -->
+                <div id="tab-events" class="company-tab-content active">
+                    ${companyEvents.length > 0 ? `
+                        <div class="company-events-list">
+                            ${companyEvents.map(e => {
+                                let kungorelseId = '';
+                                if (e.content) {
+                                    const match = e.content.match(/K(\d+)\/(\d+)/);
+                                    if (match) kungorelseId = `K${match[1]}-${match[2]}`;
+                                }
+                                const poitUrl = kungorelseId
+                                    ? `https://poit.bolagsverket.se/poit-app/kungorelse/${kungorelseId}`
+                                    : '';
+
+                                return `
+                                    <div class="company-event-item" onclick="showEventDetails('${e.id}')">
+                                        <div class="company-event-date">${formatDate(e.announcement_date)}</div>
+                                        <div class="company-event-content">
+                                            <div class="company-event-type">
+                                                <span class="tag tag-${getCategoryClass(e.category)}">${escapeHtml(e.category || 'Okänd')}</span>
+                                            </div>
+                                            <p class="company-event-desc">${escapeHtml(truncate(e.title || e.content || '', 100))}</p>
+                                        </div>
+                                        ${poitUrl ? `
+                                            <a href="${poitUrl}" target="_blank" class="btn-link" onclick="event.stopPropagation()">
+                                                POIT ↗
+                                            </a>
+                                        ` : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : `
+                        <div class="empty-state" style="padding: var(--spacing-6);">
+                            <p>Inga händelser registrerade för detta företag.</p>
+                        </div>
+                    `}
+                </div>
+
+                <!-- Tab: Dokument -->
+                <div id="tab-documents" class="company-tab-content">
+                    <div class="document-list">
+                        <p style="color: var(--gray-500); margin-bottom: var(--spacing-4);">
+                            Årsredovisningar och andra dokument hämtas automatiskt via Bolagsverkets VDM-API.
+                        </p>
+                        <div class="document-item" onclick="fetchAnnualReport('${orgnr}')">
+                            <div class="document-icon pdf">📄</div>
+                            <div class="document-info">
+                                <div class="document-name">Senaste årsredovisning</div>
+                                <div class="document-meta">Klicka för att hämta från Bolagsverket</div>
+                            </div>
+                            <div class="document-action">→</div>
+                        </div>
+                        <div class="document-item" style="opacity: 0.6; cursor: not-allowed;">
+                            <div class="document-icon xbrl">📊</div>
+                            <div class="document-info">
+                                <div class="document-name">XBRL-data</div>
+                                <div class="document-meta">Parsad finansiell data (kommer snart)</div>
+                            </div>
+                            <div class="document-action">→</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Ekonomi -->
+                <div id="tab-financials" class="company-tab-content">
+                    ${companyData && (companyData.revenue || companyData.employees) ? `
+                        <table class="financial-table">
+                            <thead>
+                                <tr>
+                                    <th>Nyckeltal</th>
+                                    <th class="number">Värde</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${companyData.revenue ? `
+                                    <tr>
+                                        <td>Omsättning</td>
+                                        <td class="number">${formatNumber(companyData.revenue)} kr</td>
+                                    </tr>
+                                ` : ''}
+                                ${companyData.employees ? `
+                                    <tr>
+                                        <td>Anställda</td>
+                                        <td class="number">${companyData.employees}</td>
+                                    </tr>
+                                ` : ''}
+                                ${companyData.profit ? `
+                                    <tr>
+                                        <td>Resultat</td>
+                                        <td class="number ${companyData.profit >= 0 ? 'positive' : 'negative'}">
+                                            ${formatNumber(companyData.profit)} kr
+                                        </td>
+                                    </tr>
+                                ` : ''}
+                            </tbody>
+                        </table>
+                    ` : `
+                        <div class="empty-state" style="padding: var(--spacing-6);">
+                            <p>Ingen finansiell data tillgänglig ännu.</p>
+                            <p style="font-size: var(--font-size-sm); color: var(--gray-500);">
+                                Hämta årsredovisningen för att extrahera ekonomiska nyckeltal.
+                            </p>
+                        </div>
+                    `}
+                </div>
+
+                <!-- Tab: Information -->
+                <div id="tab-info" class="company-tab-content">
+                    <div class="detail-list">
+                        <div class="detail-row">
+                            <span class="detail-label">Företagsnamn</span>
+                            <span class="detail-value">${escapeHtml(companyName)}</span>
+                        </div>
+                        ${orgnr ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Org.nummer</span>
+                                <span class="detail-value">${orgnr}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.address ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Adress</span>
+                                <span class="detail-value">${escapeHtml(companyData.address)}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.ceo_name ? `
+                            <div class="detail-row">
+                                <span class="detail-label">VD</span>
+                                <span class="detail-value">${escapeHtml(companyData.ceo_name)}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.chairman_name ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Ordförande</span>
+                                <span class="detail-value">${escapeHtml(companyData.chairman_name)}</span>
+                            </div>
+                        ` : ''}
+                        ${companyData?.website ? `
+                            <div class="detail-row">
+                                <span class="detail-label">Webbplats</span>
+                                <span class="detail-value">
+                                    <a href="${companyData.website}" target="_blank">${companyData.website}</a>
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('investigation-steps').innerHTML = '';
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
+                <button class="btn btn-accent" onclick="createArticleForCompany('${orgnr}', '${escapeHtml(companyName)}')">Ta fram artikel</button>
+            `;
+
+            document.getElementById('investigate-modal').classList.add('show');
+        }
+
+        // Visa specifik tab i bolagsmodalen
+        function showCompanyTab(tabId, button) {
+            // Dölj alla tabs
+            document.querySelectorAll('.company-tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.company-tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Visa vald tab
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            button.classList.add('active');
+        }
+
+        // Hämta årsredovisning via VDM API (placeholder)
+        async function fetchAnnualReport(orgnr) {
+            alert(`Hämtar årsredovisning för ${orgnr}...\n\nDetta skulle anropa Bolagsverkets VDM-API för att ladda ner dokumentet.`);
+            // TODO: Implementera anrop till Edge Function för VDM API
+        }
+
+        // Formatera nummer med tusentalsavgränsare
+        function formatNumber(num) {
+            if (!num) return '-';
+            return new Intl.NumberFormat('sv-SE').format(num);
+        }
+
+        function createArticleForCompany(orgnr, companyName) {
+            const params = new URLSearchParams({
+                orgnr: orgnr || '',
+                company: companyName || ''
+            });
+            window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
+        }
+
+        // =========================================================================
+        // UI INTERACTIONS
+        // =========================================================================
+
+        function toggleSettingsDropdown() {
+            const dropdown = document.getElementById('settings-dropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar-left');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('mobile-open');
+            overlay.classList.toggle('show');
+        }
+
+        // =========================================================================
+        // INIT
+        // =========================================================================
+
         document.addEventListener('DOMContentLoaded', function() {
             // Login form
             document.getElementById('login-form-element').addEventListener('submit', handleLogin);
 
-            // Logout
-            document.getElementById('logout-btn').addEventListener('click', handleLogout);
-
-            // Filter chips
-            document.querySelectorAll('.filter-chip').forEach(chip => {
-                chip.addEventListener('click', () => applyFilter(chip.dataset.filter));
+            // Logout link
+            document.getElementById('logout-link').addEventListener('click', function(e) {
+                e.preventDefault();
+                handleLogout();
             });
 
-            // Refresh button
-            document.getElementById('refresh-btn').addEventListener('click', loadAllEvents);
+            // Settings dropdown
+            document.getElementById('settings-btn').addEventListener('click', toggleSettingsDropdown);
 
-            // Tabs
-            document.querySelectorAll('.dashboard-tab').forEach(tab => {
-                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-            });
-
-            // Company filters
-            const companySearchInput = document.getElementById('company-search-input');
-            if (companySearchInput) {
-                companySearchInput.addEventListener('input', (e) => {
-                    companySearchQuery = e.target.value || '';
-                    applyCompanyFilters();
-                });
-            }
-
-            const companySectorSelect = document.getElementById('company-sector-filter');
-            if (companySectorSelect) {
-                companySectorSelect.addEventListener('change', (e) => {
-                    companySectorFilter = e.target.value || '';
-                    applyCompanyFilters();
-                });
-            }
-
-            // Settings drawer
-            document.getElementById('settings-open').addEventListener('click', openSettingsDrawer);
-            document.getElementById('settings-close').addEventListener('click', closeSettingsDrawer);
-            document.getElementById('settings-overlay').addEventListener('click', closeSettingsDrawer);
-            document.getElementById('save-budget-btn').addEventListener('click', saveBudgetSettings);
-            document.getElementById('save-sms-btn').addEventListener('click', saveSmsSettings);
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    closeSettingsDrawer();
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const dropdown = document.getElementById('settings-dropdown');
+                const settingsBtn = document.getElementById('settings-btn');
+                if (!dropdown.contains(e.target) && !settingsBtn.contains(e.target)) {
+                    dropdown.classList.remove('show');
                 }
             });
 
-            // Modal close
-            document.getElementById('modal-close').addEventListener('click', closeModal);
-            document.getElementById('modal-close-btn').addEventListener('click', closeModal);
-            document.getElementById('modal-overlay').addEventListener('click', (e) => {
-                if (e.target === document.getElementById('modal-overlay')) closeModal();
-            });
+            // Mobile navigation
+            document.getElementById('mobile-nav-toggle').addEventListener('click', toggleMobileSidebar);
+            document.getElementById('mobile-overlay').addEventListener('click', toggleMobileSidebar);
 
             // Initialize Supabase
             initSupabase();
-
-            // Auto-refresh every minute
-            setInterval(loadAllEvents, 60 * 1000);
         });
     </script>
 </body>
