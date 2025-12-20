@@ -145,17 +145,43 @@
             margin-bottom: 4px;
         }
 
-        /* Warning box */
-        .warning-box {
+        /* Server status */
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+        .server-status.online {
+            background: var(--success-bg);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+        .server-status.offline {
+            background: var(--error-bg);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+        .server-status.checking {
             background: var(--warning-bg);
             border: 1px solid var(--warning);
-            border-radius: var(--radius-md);
-            padding: 16px 20px;
-            margin-bottom: 24px;
+            color: var(--warning);
         }
-        .warning-box p {
-            font-size: 0.875rem;
-            color: var(--gray-700);
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .status-dot.pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
         /* Form */
@@ -184,6 +210,10 @@
         }
         .form-input::placeholder {
             color: var(--gray-500);
+        }
+        .form-input:disabled {
+            background: var(--gray-100);
+            cursor: not-allowed;
         }
         .form-row {
             display: grid;
@@ -234,7 +264,7 @@
             margin-top: 24px;
         }
 
-        /* Loading */
+        /* Loading (legacy - hidden when progress bar is active) */
         .loading {
             display: none;
             align-items: center;
@@ -258,6 +288,166 @@
         .loading-text {
             margin-left: 12px;
             color: var(--gray-500);
+        }
+
+        /* ============================================
+           PROGRESS BAR COMPONENT
+           ============================================ */
+        .progress-container {
+            display: none;
+            padding: 40px;
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            margin-bottom: 24px;
+        }
+        .progress-container.active {
+            display: block;
+        }
+        .progress-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .progress-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .progress-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .progress-subtitle {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+        }
+
+        /* Progress Bar Track */
+        .progress-bar-wrapper {
+            margin-bottom: 32px;
+        }
+        .progress-bar-track {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 100%);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: 0 0 20px rgba(212, 255, 0, 0.5);
+        }
+        .progress-bar-fill.active {
+            animation: glow 2s ease-in-out infinite;
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(212, 255, 0, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(212, 255, 0, 0.8); }
+        }
+        .progress-percentage {
+            text-align: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-top: 8px;
+        }
+
+        /* Progress Steps */
+        .progress-steps {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            margin-bottom: 8px;
+            border-radius: var(--radius-md);
+            transition: all 0.3s ease;
+            background: transparent;
+        }
+        .progress-step.completed {
+            background: var(--success-bg);
+        }
+        .progress-step.active {
+            background: var(--accent-muted);
+            animation: pulse-step 2s ease-in-out infinite;
+        }
+        @keyframes pulse-step {
+            0%, 100% { background: var(--accent-muted); }
+            50% { background: rgba(212, 255, 0, 0.3); }
+        }
+        .progress-step.pending {
+            opacity: 0.5;
+        }
+        .progress-step-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .progress-step.pending .progress-step-icon {
+            background: var(--gray-200);
+            border: 2px solid var(--gray-300);
+        }
+        .progress-step.active .progress-step-icon {
+            background: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        .progress-step.completed .progress-step-icon {
+            background: var(--success);
+            border: 2px solid var(--success);
+        }
+        .progress-step-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+        .progress-step.active .progress-step-icon .step-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--dark);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .progress-step.completed .progress-step-icon svg {
+            stroke: var(--white);
+            stroke-width: 3;
+        }
+        .progress-step.pending .progress-step-icon .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-500);
+        }
+        .progress-step-content {
+            flex: 1;
+        }
+        .progress-step-label {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        .progress-step.pending .progress-step-label {
+            color: var(--gray-500);
+        }
+        .progress-step-time {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-top: 2px;
         }
 
         /* Error message */
@@ -352,6 +542,32 @@
             color: var(--error);
         }
 
+        /* Income Year Tabs */
+        .income-year-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .income-year-tab {
+            padding: 8px 16px;
+            background: var(--gray-100);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+        .income-year-tab:hover {
+            background: var(--gray-200);
+        }
+        .income-year-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--dark);
+        }
+
         /* Details list */
         .details-list {
             list-style: none;
@@ -372,6 +588,42 @@
         .details-list .value {
             font-weight: 500;
             text-align: right;
+        }
+
+        /* Search results list */
+        .search-results-list {
+            margin-top: 16px;
+        }
+        .search-result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .search-result-item:hover {
+            border-color: var(--accent);
+            background: var(--accent-muted);
+        }
+        .search-result-info {
+            flex: 1;
+        }
+        .search-result-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .search-result-meta {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+        .search-result-action {
+            color: var(--dark);
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
         /* CLI Section */
@@ -433,6 +685,39 @@
             background: var(--warning-bg);
             color: var(--warning);
         }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gray-500);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: all 0.15s;
+        }
+        .tab-btn:hover {
+            color: var(--dark);
+        }
+        .tab-btn.active {
+            color: var(--dark);
+            border-bottom-color: var(--accent);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -453,73 +738,171 @@
     <div class="container">
         <header class="page-header">
             <h1 class="page-title">Inkomstdeklaration</h1>
-            <p class="page-subtitle">Hamta inkomstuppgifter fran Ratsit.se for personer i bevakade foretag</p>
+            <p class="page-subtitle">Hämta inkomstuppgifter från Ratsit.se för personer</p>
         </header>
+
+        <!-- Server status -->
+        <div class="server-status checking" id="serverStatus">
+            <div class="status-dot pulse"></div>
+            <span>Kontrollerar server...</span>
+        </div>
 
         <div class="info-box">
             <h4>Om detta verktyg</h4>
-            <p>Detta verktyg anvander ditt Ratsit-foretagskonto for att hamta inkomstdeklarationer. Kostnader debiteras automatiskt enligt din betaltjanst.</p>
+            <p>Detta verktyg hämtar inkomstuppgifter via Lönekollen. Data för de senaste 3 åren extraheras automatiskt.</p>
             <ul>
-                <li><strong>Forvarsinkomst:</strong> Lon, pension, sjukpenning etc.</li>
-                <li><strong>Kapitalinkomst:</strong> Ranta, utdelning, kapitalvinster</li>
-                <li><strong>Slutlig skatt:</strong> Total skatt efter avdrag</li>
+                <li><strong>Förvärvsinkomst:</strong> Lön, pension, sjukpenning etc.</li>
+                <li><strong>Kapitalinkomst:</strong> Ränta, utdelning, kapitalvinster</li>
+                <li><strong>Löneranking:</strong> Placering inom postnumret</li>
             </ul>
         </div>
 
-        <div class="warning-box">
-            <p><strong>OBS:</strong> Detta verktyg kräver att scrapern körs lokalt via CLI. Webbgränssnittet är endast för demonstration. Se CLI-instruktioner nedan.</p>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="income" onclick="switchTab('income')">Hämta inkomst</button>
+            <button class="tab-btn" data-tab="search" onclick="switchTab('search')">Sök person</button>
         </div>
 
-        <!-- Search form -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Sok person</h2>
+        <!-- Income Tab -->
+        <div class="tab-content active" id="tab-income">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Hämta inkomstuppgifter</h2>
+                </div>
+                <div class="card-body">
+                    <form id="incomeForm">
+                        <div class="form-group">
+                            <label class="form-label" for="incomeNameInput">Personnamn *</label>
+                            <input type="text" id="incomeNameInput" class="form-input" placeholder="t.ex. Anna Andersson" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="incomeLocationInput">Ort (valfritt)</label>
+                                <input type="text" id="incomeLocationInput" class="form-input" placeholder="t.ex. Stockholm">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="incomeBirthYearInput">Födelseår (valfritt)</label>
+                                <input type="number" id="incomeBirthYearInput" class="form-input" placeholder="t.ex. 1985" min="1900" max="2010">
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary" id="incomeBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2v20M2 12h20"/>
+                                </svg>
+                                Hämta inkomst
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearIncomeForm()">Rensa</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="card-body">
-                <form id="searchForm">
-                    <div class="form-group">
-                        <label class="form-label" for="nameInput">Personnamn</label>
-                        <input type="text" id="nameInput" class="form-input" placeholder="t.ex. Anna Andersson" required>
-                    </div>
-                    <div class="form-row">
+        </div>
+
+        <!-- Search Tab -->
+        <div class="tab-content" id="tab-search">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Sök person</h2>
+                </div>
+                <div class="card-body">
+                    <form id="searchForm">
                         <div class="form-group">
-                            <label class="form-label" for="locationInput">Ort (valfritt)</label>
-                            <input type="text" id="locationInput" class="form-input" placeholder="t.ex. Stockholm">
+                            <label class="form-label" for="searchNameInput">Personnamn *</label>
+                            <input type="text" id="searchNameInput" class="form-input" placeholder="t.ex. Anna Andersson" required>
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="birthYearInput">Fodelsear (valfritt)</label>
-                            <input type="number" id="birthYearInput" class="form-input" placeholder="t.ex. 1985" min="1900" max="2010">
+                            <label class="form-label" for="searchLocationInput">Ort (valfritt)</label>
+                            <input type="text" id="searchLocationInput" class="form-input" placeholder="t.ex. Stockholm">
                         </div>
-                    </div>
-                    <div class="btn-group">
-                        <button type="submit" class="btn btn-primary" id="searchBtn">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="11" cy="11" r="8"/>
-                                <path d="M21 21l-4.35-4.35"/>
-                            </svg>
-                            Sok person
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="clearBtn">Rensa</button>
-                    </div>
-                </form>
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary" id="searchBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="M21 21l-4.35-4.35"/>
+                                </svg>
+                                Sök
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearSearchForm()">Rensa</button>
+                        </div>
+                    </form>
+
+                    <!-- Search Results -->
+                    <div class="search-results-list" id="searchResults" style="display: none;"></div>
+                </div>
             </div>
         </div>
 
         <!-- Error message -->
         <div class="error-message" id="errorMessage"></div>
 
-        <!-- Loading -->
+        <!-- Progress Bar -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-wrapper">
+                <div class="progress-header">
+                    <h3 class="progress-title" id="progressTitle">Hämtar uppgifter</h3>
+                    <p class="progress-subtitle">Detta kan ta några sekunder...</p>
+                </div>
+
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill active" id="progressBarFill"></div>
+                    </div>
+                    <div class="progress-percentage" id="progressPercentage">0%</div>
+                </div>
+
+                <ul class="progress-steps" id="progressSteps">
+                    <li class="progress-step pending" data-step="0">
+                        <div class="progress-step-icon"><div class="step-dot"></div></div>
+                        <div class="progress-step-content">
+                            <div class="progress-step-label">Inhämtar uppgifter</div>
+                            <div class="progress-step-time"></div>
+                        </div>
+                    </li>
+                    <li class="progress-step pending" data-step="1">
+                        <div class="progress-step-icon"><div class="step-dot"></div></div>
+                        <div class="progress-step-content">
+                            <div class="progress-step-label">Analyserar underlag</div>
+                            <div class="progress-step-time"></div>
+                        </div>
+                    </li>
+                    <li class="progress-step pending" data-step="2">
+                        <div class="progress-step-icon"><div class="step-dot"></div></div>
+                        <div class="progress-step-content">
+                            <div class="progress-step-label">Extraherar data</div>
+                            <div class="progress-step-time"></div>
+                        </div>
+                    </li>
+                    <li class="progress-step pending" data-step="3">
+                        <div class="progress-step-icon"><div class="step-dot"></div></div>
+                        <div class="progress-step-content">
+                            <div class="progress-step-label">Kontrollerar resultat</div>
+                            <div class="progress-step-time"></div>
+                        </div>
+                    </li>
+                    <li class="progress-step pending" data-step="4">
+                        <div class="progress-step-icon"><div class="step-dot"></div></div>
+                        <div class="progress-step-content">
+                            <div class="progress-step-label">Strax visas uppgifterna</div>
+                            <div class="progress-step-time"></div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Legacy Loading (fallback) -->
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <span class="loading-text">Soker...</span>
+            <span class="loading-text" id="loadingText">Söker...</span>
         </div>
 
         <!-- Results -->
         <div class="results-container" id="results">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">Resultat</h2>
-                    <span class="badge badge-success" id="sourceLabel">Ratsit.se</span>
+                    <h2 class="card-title">Inkomstuppgifter</h2>
+                    <span class="badge badge-success" id="sourceLabel">Lönekollen</span>
                 </div>
                 <div class="card-body" id="resultsContent">
                     <!-- Results will be inserted here -->
@@ -529,120 +912,644 @@
 
         <!-- CLI Section -->
         <div class="cli-section">
-            <h3>CLI-anvaendning</h3>
+            <h3>Starta API-servern</h3>
             <div class="cli-code">
-<span class="comment"># Installera dependencies</span>
-<span class="prompt">$</span> <span class="command">cd lib/scrapers && npm install</span>
+<span class="comment"># 1. Gå till projektmappen</span>
+<span class="prompt">$</span> <span class="command">cd ~/Bevakningsverktyget</span>
 
-<span class="comment"># Konfigurera miljovariabler</span>
+<span class="comment"># 2. Konfigurera miljövariabler</span>
 <span class="prompt">$</span> <span class="command">export RATSIT_EMAIL="ditt@foretag.se"</span>
 <span class="prompt">$</span> <span class="command">export RATSIT_PASSWORD="ditt-losenord"</span>
 
-<span class="comment"># Sok efter person</span>
-<span class="prompt">$</span> <span class="command">node ratsit-income-scraper.js search "Anna Andersson"</span>
-<span class="prompt">$</span> <span class="command">node ratsit-income-scraper.js search "Erik Eriksson" --location=Stockholm</span>
+<span class="comment"># 3. Starta API-servern</span>
+<span class="prompt">$</span> <span class="command">npm run ratsit-server</span>
 
-<span class="comment"># Hamta inkomstuppgifter</span>
-<span class="prompt">$</span> <span class="command">node ratsit-income-scraper.js income "Isak Skogstad"</span>
-<span class="prompt">$</span> <span class="command">node ratsit-income-scraper.js income "Anna Andersson" --birth-year=1985 --location=Goteborg</span>
-
-<span class="comment"># Hamta fran specifik profil</span>
-<span class="prompt">$</span> <span class="command">node ratsit-income-scraper.js profile "https://www.ratsit.se/person/..."</span>
-
-<span class="comment"># Visa browser (for debug/CAPTCHA)</span>
-<span class="prompt">$</span> <span class="command">node ratsit-income-scraper.js income "Test" --visible</span>
+<span class="comment"># Alternativt med synlig browser (för CAPTCHA)</span>
+<span class="prompt">$</span> <span class="command">HEADLESS=false npm run ratsit-server</span>
 </div>
         </div>
     </div>
 
     <script>
-        // Form handling
-        const searchForm = document.getElementById('searchForm');
-        const searchBtn = document.getElementById('searchBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const loading = document.getElementById('loading');
-        const errorMessage = document.getElementById('errorMessage');
-        const results = document.getElementById('results');
-        const resultsContent = document.getElementById('resultsContent');
+        // ============================================
+        // KONFIGURATION
+        // ============================================
 
-        // Handle form submit
-        searchForm.addEventListener('submit', async (e) => {
+        const API_BASE_URL = 'http://localhost:3847';
+        let serverOnline = false;
+
+        // Progress step definitions
+        const PROGRESS_STEPS = [
+            { percent: 0, label: 'Inhämtar uppgifter', index: 0 },
+            { percent: 20, label: 'Analyserar underlag', index: 1 },
+            { percent: 40, label: 'Extraherar data', index: 2 },
+            { percent: 70, label: 'Kontrollerar resultat', index: 3 },
+            { percent: 90, label: 'Strax visas uppgifterna', index: 4 }
+        ];
+
+        // ============================================
+        // PROGRESS BAR CLASS
+        // ============================================
+
+        class ProgressBar {
+            constructor() {
+                this.container = document.getElementById('progressContainer');
+                this.fillBar = document.getElementById('progressBarFill');
+                this.percentage = document.getElementById('progressPercentage');
+                this.title = document.getElementById('progressTitle');
+                this.steps = document.querySelectorAll('.progress-step');
+                this.currentProgress = 0;
+                this.currentStepIndex = -1;
+                this.stepStartTimes = {};
+            }
+
+            show() {
+                this.container.classList.add('active');
+                this.reset();
+            }
+
+            hide() {
+                this.container.classList.remove('active');
+            }
+
+            reset() {
+                this.currentProgress = 0;
+                this.currentStepIndex = -1;
+                this.stepStartTimes = {};
+                this.fillBar.style.width = '0%';
+                this.fillBar.classList.add('active');
+                this.percentage.textContent = '0%';
+
+                this.steps.forEach(step => {
+                    step.className = 'progress-step pending';
+                    step.querySelector('.progress-step-icon').innerHTML = '<div class="step-dot"></div>';
+                    step.querySelector('.progress-step-time').textContent = '';
+                });
+            }
+
+            setProgress(percent, stepLabel = null) {
+                this.currentProgress = Math.min(100, Math.max(0, percent));
+                this.fillBar.style.width = `${this.currentProgress}%`;
+                this.percentage.textContent = `${Math.round(this.currentProgress)}%`;
+
+                // Find which step we're on
+                let stepIndex = -1;
+                for (let i = PROGRESS_STEPS.length - 1; i >= 0; i--) {
+                    if (this.currentProgress >= PROGRESS_STEPS[i].percent) {
+                        stepIndex = i;
+                        break;
+                    }
+                }
+
+                // Update steps
+                if (stepIndex !== this.currentStepIndex) {
+                    this.updateSteps(stepIndex);
+                    this.currentStepIndex = stepIndex;
+                }
+
+                // Update title if step label provided
+                if (stepLabel) {
+                    this.title.textContent = stepLabel;
+                }
+            }
+
+            updateSteps(activeIndex) {
+                this.steps.forEach((step, index) => {
+                    const icon = step.querySelector('.progress-step-icon');
+                    const timeEl = step.querySelector('.progress-step-time');
+
+                    if (index < activeIndex) {
+                        // Completed step
+                        step.className = 'progress-step completed';
+                        icon.innerHTML = `
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        `;
+
+                        if (this.stepStartTimes[index]) {
+                            const elapsed = Date.now() - this.stepStartTimes[index];
+                            timeEl.textContent = `${(elapsed / 1000).toFixed(1)}s`;
+                        }
+                    } else if (index === activeIndex) {
+                        // Active step
+                        step.className = 'progress-step active';
+                        icon.innerHTML = '<div class="step-spinner"></div>';
+
+                        if (!this.stepStartTimes[index]) {
+                            this.stepStartTimes[index] = Date.now();
+                        }
+
+                        timeEl.textContent = 'Pågår...';
+                    } else {
+                        // Pending step
+                        step.className = 'progress-step pending';
+                        icon.innerHTML = '<div class="step-dot"></div>';
+                        timeEl.textContent = '';
+                    }
+                });
+            }
+
+            complete() {
+                this.setProgress(100, 'Klart!');
+                this.fillBar.classList.remove('active');
+
+                this.steps.forEach((step, index) => {
+                    const icon = step.querySelector('.progress-step-icon');
+                    const timeEl = step.querySelector('.progress-step-time');
+
+                    step.className = 'progress-step completed';
+                    icon.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    `;
+
+                    if (this.stepStartTimes[index]) {
+                        const elapsed = Date.now() - this.stepStartTimes[index];
+                        timeEl.textContent = `${(elapsed / 1000).toFixed(1)}s`;
+                    }
+                });
+            }
+
+            error() {
+                this.fillBar.classList.remove('active');
+                this.title.textContent = 'Ett fel uppstod';
+            }
+        }
+
+        // Initialize progress bar instance
+        const progressBar = new ProgressBar();
+
+        // ============================================
+        // SERVER STATUS
+        // ============================================
+
+        async function checkServerStatus() {
+            const statusEl = document.getElementById('serverStatus');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/ratsit/status`, {
+                    method: 'GET',
+                    timeout: 5000
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    serverOnline = true;
+
+                    statusEl.className = 'server-status online';
+                    statusEl.innerHTML = `
+                        <div class="status-dot"></div>
+                        <span>Server online ${data.isLoggedIn ? '- Inloggad' : ''}</span>
+                    `;
+
+                    enableForms(true);
+                } else {
+                    throw new Error('Server svarade inte korrekt');
+                }
+            } catch (error) {
+                serverOnline = false;
+                statusEl.className = 'server-status offline';
+                statusEl.innerHTML = `
+                    <div class="status-dot"></div>
+                    <span>Server offline - Starta med: npm run ratsit-server</span>
+                `;
+                enableForms(false);
+            }
+        }
+
+        function enableForms(enabled) {
+            document.querySelectorAll('.form-input').forEach(input => {
+                input.disabled = !enabled;
+            });
+            document.getElementById('incomeBtn').disabled = !enabled;
+            document.getElementById('searchBtn').disabled = !enabled;
+        }
+
+        // Check status on load and every 30 seconds
+        checkServerStatus();
+        setInterval(checkServerStatus, 30000);
+
+        // ============================================
+        // TAB SWITCHING
+        // ============================================
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabId);
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tabId}`);
+            });
+
+            hideResults();
+            hideError();
+            progressBar.hide();
+        }
+
+        // ============================================
+        // INCOME FORM WITH PROGRESS
+        // ============================================
+
+        document.getElementById('incomeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const name = document.getElementById('nameInput').value.trim();
-            const location = document.getElementById('locationInput').value.trim();
-            const birthYear = document.getElementById('birthYearInput').value.trim();
+            if (!serverOnline) {
+                showError('Servern är inte igång. Starta den med: npm run ratsit-server');
+                return;
+            }
+
+            const name = document.getElementById('incomeNameInput').value.trim();
+            const location = document.getElementById('incomeLocationInput').value.trim();
+            const birthYear = document.getElementById('incomeBirthYearInput').value.trim();
 
             if (!name) {
                 showError('Ange ett namn');
                 return;
             }
 
-            // Show demo result (since actual scraping requires backend)
-            showDemoResult(name, location, birthYear);
-        });
-
-        // Clear form
-        clearBtn.addEventListener('click', () => {
-            searchForm.reset();
             hideError();
             hideResults();
+
+            // Show progress bar
+            progressBar.show();
+            progressBar.setProgress(5, 'Inhämtar uppgifter');
+
+            try {
+                // Start the fetch job
+                const startResponse = await fetch(`${API_BASE_URL}/api/ratsit/fetch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ personName: name, location, birthYear })
+                });
+
+                const startData = await startResponse.json();
+
+                if (!startResponse.ok || !startData.jobId) {
+                    throw new Error(startData.error || 'Kunde inte starta hämtning');
+                }
+
+                const jobId = startData.jobId;
+                progressBar.setProgress(10, 'Inhämtar uppgifter');
+
+                // Poll for job status
+                let attempts = 0;
+                const maxAttempts = 120; // 2 minutes max
+
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+
+                    try {
+                        const statusResponse = await fetch(`${API_BASE_URL}/api/ratsit/job/${jobId}`);
+                        const statusData = await statusResponse.json();
+
+                        if (statusData.progress) {
+                            // Map backend progress to our steps
+                            let stepLabel = 'Inhämtar uppgifter';
+                            let percent = statusData.progress;
+
+                            if (percent >= 10 && percent < 30) {
+                                stepLabel = 'Analyserar underlag';
+                                percent = 20 + ((percent - 10) / 20) * 20;
+                            } else if (percent >= 30 && percent < 70) {
+                                stepLabel = 'Extraherar data';
+                                percent = 40 + ((percent - 30) / 40) * 30;
+                            } else if (percent >= 70 && percent < 90) {
+                                stepLabel = 'Kontrollerar resultat';
+                                percent = 70 + ((percent - 70) / 20) * 20;
+                            } else if (percent >= 90) {
+                                stepLabel = 'Strax visas uppgifterna';
+                            }
+
+                            progressBar.setProgress(percent, stepLabel);
+                        }
+
+                        if (statusData.status === 'completed' && statusData.result) {
+                            clearInterval(pollInterval);
+                            progressBar.complete();
+
+                            setTimeout(() => {
+                                progressBar.hide();
+                                displayIncomeResults(statusData.result);
+                            }, 800);
+                        } else if (statusData.status === 'failed') {
+                            clearInterval(pollInterval);
+                            progressBar.error();
+                            progressBar.hide();
+                            showError(statusData.error || 'Hämtningen misslyckades');
+                        }
+
+                        if (attempts >= maxAttempts) {
+                            clearInterval(pollInterval);
+                            progressBar.error();
+                            progressBar.hide();
+                            showError('Tidsgräns överskreds');
+                        }
+                    } catch (pollError) {
+                        console.error('Poll error:', pollError);
+                    }
+                }, 1000);
+
+            } catch (error) {
+                progressBar.error();
+                progressBar.hide();
+                showError(error.message);
+            }
         });
 
-        // Show demo result
-        function showDemoResult(name, location, birthYear) {
+        function clearIncomeForm() {
+            document.getElementById('incomeForm').reset();
             hideError();
             hideResults();
-            showLoading(true);
-
-            // Simulate loading
-            setTimeout(() => {
-                showLoading(false);
-
-                // Generate demo data
-                const demoData = generateDemoData(name, location, birthYear);
-                displayResults(demoData);
-            }, 1500);
+            progressBar.hide();
         }
 
-        // Generate demo data
-        function generateDemoData(name, location, birthYear) {
-            const year = birthYear ? parseInt(birthYear) : 1980;
-            const age = new Date().getFullYear() - year;
+        // ============================================
+        // SEARCH FORM
+        // ============================================
 
-            return {
-                name: name,
-                address: location ? `${location}` : 'Stockholm',
-                age: age,
-                birthYear: year,
-                taxableIncome: Math.floor(Math.random() * 800000) + 200000,
-                capitalIncome: Math.floor(Math.random() * 100000) - 20000,
-                totalTax: Math.floor(Math.random() * 300000) + 100000,
-                finalTax: Math.floor(Math.random() * 50000) + 10000,
-                incomeYear: 2023,
-                profileUrl: '#demo',
-                scrapedAt: new Date().toISOString(),
-                isDemo: true
-            };
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!serverOnline) {
+                showError('Servern är inte igång. Starta den med: npm run ratsit-server');
+                return;
+            }
+
+            const name = document.getElementById('searchNameInput').value.trim();
+            const location = document.getElementById('searchLocationInput').value.trim();
+
+            if (!name) {
+                showError('Ange ett namn');
+                return;
+            }
+
+            hideError();
+            hideResults();
+            document.getElementById('searchResults').style.display = 'none';
+            showLoading('Söker...');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/ratsit/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, location })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Sökningen misslyckades');
+                }
+
+                displaySearchResults(data.results || []);
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        function clearSearchForm() {
+            document.getElementById('searchForm').reset();
+            document.getElementById('searchResults').style.display = 'none';
+            hideError();
+            hideResults();
         }
 
-        // Display results
-        function displayResults(data) {
-            const capitalClass = data.capitalIncome >= 0 ? 'positive' : 'negative';
+        function displaySearchResults(results) {
+            const container = document.getElementById('searchResults');
 
-            resultsContent.innerHTML = `
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">🔍</div>
+                        <p>Inga resultat hittades</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = results.map(person => `
+                    <div class="search-result-item" onclick="fetchIncomeFromProfile('${escapeHtml(person.profileUrl)}')">
+                        <div class="search-result-info">
+                            <div class="search-result-name">${escapeHtml(person.name)}</div>
+                            <div class="search-result-meta">
+                                ${person.age ? person.age + ' år' : ''}
+                                ${person.address ? ' · ' + escapeHtml(person.address) : ''}
+                            </div>
+                        </div>
+                        <div class="search-result-action">Hämta inkomst →</div>
+                    </div>
+                `).join('');
+            }
+
+            container.style.display = 'block';
+        }
+
+        async function fetchIncomeFromProfile(profileUrl) {
+            if (!serverOnline) {
+                showError('Servern är inte igång');
+                return;
+            }
+
+            hideError();
+            hideResults();
+            progressBar.show();
+            progressBar.setProgress(10, 'Inhämtar uppgifter');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/ratsit/profile`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profileUrl })
+                });
+
+                progressBar.setProgress(50, 'Extraherar data');
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Kunde inte hämta inkomst');
+                }
+
+                progressBar.setProgress(90, 'Kontrollerar resultat');
+
+                if (data.success && data.data) {
+                    progressBar.complete();
+                    setTimeout(() => {
+                        progressBar.hide();
+                        displayIncomeResults(data.data);
+                    }, 500);
+                } else {
+                    throw new Error('Ingen data hittades');
+                }
+
+            } catch (error) {
+                progressBar.error();
+                progressBar.hide();
+                showError(error.message);
+            }
+        }
+
+        // ============================================
+        // DISPLAY RESULTS (Multi-Year Support)
+        // ============================================
+
+        let currentIncomeData = null;
+        let selectedYear = null;
+
+        function displayIncomeResults(data) {
+            // Normalize data format from API
+            // Backend can return either:
+            // 1. data.incomes (new format from ratsit-server.js with PDF parser)
+            // 2. data.inkomster (old format/direct PDF parser output)
+            if (data.incomes && Array.isArray(data.incomes)) {
+                // Convert new format to expected format
+                data.inkomster = data.incomes.map(inc => ({
+                    inkomstar: inc.year,
+                    lon_forvarvsinkomst: inc.taxableIncome,
+                    kapitalinkomst: inc.capitalIncome,
+                    loneranking: inc.salaryRanking,
+                    alder: inc.age,
+                    betalningsanmarkning: inc.hasPaymentRemarks
+                }));
+                data.namn = data.personName || data.namn;
+                data.adress = data.address || data.adress;
+            }
+
+            currentIncomeData = data;
+
+            // Check if this is multi-year data (from PDF parser)
+            const hasMultipleYears = data.inkomster && Array.isArray(data.inkomster) && data.inkomster.length > 0;
+
+            if (hasMultipleYears) {
+                displayMultiYearResults(data);
+            } else {
+                displaySingleYearResults(data);
+            }
+        }
+
+        function displayMultiYearResults(data) {
+            const years = data.inkomster.map(i => i.inkomstar).sort((a, b) => b - a);
+            selectedYear = years[0]; // Start with most recent year
+
+            const yearTabsHtml = years.map(year => `
+                <button class="income-year-tab ${year === selectedYear ? 'active' : ''}"
+                        onclick="selectIncomeYear(${year})">${year}</button>
+            `).join('');
+
+            const incomeForYear = data.inkomster.find(i => i.inkomstar === selectedYear);
+            const capitalClass = (incomeForYear.kapitalinkomst || 0) >= 0 ? 'positive' : 'negative';
+
+            document.getElementById('resultsContent').innerHTML = `
                 <div class="person-card">
                     <div class="person-header">
                         <div>
-                            <div class="person-name">${escapeHtml(data.name)}</div>
-                            <div class="person-meta">${data.age} ar | ${escapeHtml(data.address)} | Inkomstar ${data.incomeYear}</div>
+                            <div class="person-name">${escapeHtml(data.namn || 'Okänd')}</div>
+                            <div class="person-meta">
+                                ${data.adress ? escapeHtml(data.adress) : ''}
+                            </div>
                         </div>
-                        ${data.isDemo ? '<span class="badge badge-warning">DEMO</span>' : '<span class="person-badge">Verifierad</span>'}
+                        <span class="person-badge">${years.length} år</span>
+                    </div>
+
+                    <div class="income-year-tabs" id="yearTabs">
+                        ${yearTabsHtml}
+                    </div>
+
+                    <div id="yearIncomeDisplay">
+                        ${renderYearIncome(incomeForYear)}
+                    </div>
+
+                    <ul class="details-list">
+                        <li><span class="label">Adress</span><span class="value">${escapeHtml(data.adress || '-')}</span></li>
+                        <li><span class="label">Källa</span><span class="value">Lönekollen PDF</span></li>
+                        ${data.pdfPath ? `<li><span class="label">PDF</span><span class="value"><a href="#" onclick="downloadPdf('${escapeHtml(data.pdfPath)}'); return false;">Ladda ner ↓</a></span></li>` : ''}
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('results').classList.add('active');
+        }
+
+        async function downloadPdf(storagePath) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/ratsit/pdf-url/${encodeURIComponent(storagePath)}`);
+                const data = await response.json();
+
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                } else {
+                    showError('Kunde inte hämta PDF-länk');
+                }
+            } catch (error) {
+                showError('Fel vid nedladdning: ' + error.message);
+            }
+        }
+
+        function renderYearIncome(income) {
+            const capitalClass = (income.kapitalinkomst || 0) >= 0 ? 'positive' : 'negative';
+
+            return `
+                <div class="income-grid">
+                    <div class="income-item">
+                        <div class="income-label">Förvärvsinkomst</div>
+                        <div class="income-value">${formatCurrency(income.lon_forvarvsinkomst)}</div>
+                    </div>
+                    <div class="income-item">
+                        <div class="income-label">Kapitalinkomst</div>
+                        <div class="income-value ${capitalClass}">${formatCurrency(income.kapitalinkomst)}</div>
+                    </div>
+                    <div class="income-item">
+                        <div class="income-label">Löneranking</div>
+                        <div class="income-value">#${income.loneranking || '-'}</div>
+                    </div>
+                </div>
+                <ul class="details-list" style="margin-top: 16px;">
+                    <li><span class="label">Ålder (${income.inkomstar})</span><span class="value">${income.alder || '-'} år</span></li>
+                    <li><span class="label">Betalningsanmärkning</span><span class="value">${income.betalningsanmarkning ? 'Ja' : 'Nej'}</span></li>
+                </ul>
+            `;
+        }
+
+        function selectIncomeYear(year) {
+            selectedYear = year;
+
+            // Update tabs
+            document.querySelectorAll('.income-year-tab').forEach(tab => {
+                tab.classList.toggle('active', parseInt(tab.textContent) === year);
+            });
+
+            // Update income display
+            const income = currentIncomeData.inkomster.find(i => i.inkomstar === year);
+            if (income) {
+                document.getElementById('yearIncomeDisplay').innerHTML = renderYearIncome(income);
+            }
+        }
+
+        function displaySingleYearResults(data) {
+            const capitalClass = (data.capitalIncome || 0) >= 0 ? 'positive' : 'negative';
+            const incomeYear = data.incomeYear || new Date().getFullYear() - 1;
+
+            document.getElementById('resultsContent').innerHTML = `
+                <div class="person-card">
+                    <div class="person-header">
+                        <div>
+                            <div class="person-name">${escapeHtml(data.name || 'Okänd')}</div>
+                            <div class="person-meta">
+                                ${data.age ? data.age + ' år' : ''}
+                                ${data.address ? ' · ' + escapeHtml(data.address) : ''}
+                                · Inkomstår ${incomeYear}
+                            </div>
+                        </div>
+                        <span class="person-badge">Verifierad</span>
                     </div>
 
                     <div class="income-grid">
                         <div class="income-item">
-                            <div class="income-label">Forvarsinkomst</div>
+                            <div class="income-label">Förvärvsinkomst</div>
                             <div class="income-value">${formatCurrency(data.taxableIncome)}</div>
                         </div>
                         <div class="income-item">
@@ -656,36 +1563,45 @@
                     </div>
 
                     <ul class="details-list">
-                        <li>
-                            <span class="label">Fodelsear</span>
-                            <span class="value">${data.birthYear}</span>
-                        </li>
-                        <li>
-                            <span class="label">Adress</span>
-                            <span class="value">${escapeHtml(data.address)}</span>
-                        </li>
-                        <li>
-                            <span class="label">Inkomstar</span>
-                            <span class="value">${data.incomeYear}</span>
-                        </li>
-                        <li>
-                            <span class="label">Hamtad</span>
-                            <span class="value">${new Date(data.scrapedAt).toLocaleString('sv-SE')}</span>
-                        </li>
+                        ${data.birthYear ? `<li><span class="label">Födelseår</span><span class="value">${data.birthYear}</span></li>` : ''}
+                        ${data.address ? `<li><span class="label">Adress</span><span class="value">${escapeHtml(data.address)}</span></li>` : ''}
+                        ${data.personnummer ? `<li><span class="label">Personnummer</span><span class="value">${escapeHtml(data.personnummer)}</span></li>` : ''}
+                        <li><span class="label">Inkomstår</span><span class="value">${incomeYear}</span></li>
+                        <li><span class="label">Hämtad</span><span class="value">${new Date(data.scrapedAt || Date.now()).toLocaleString('sv-SE')}</span></li>
+                        ${data.profileUrl ? `<li><span class="label">Källa</span><span class="value"><a href="${data.profileUrl}" target="_blank">Ratsit.se</a></span></li>` : ''}
                     </ul>
-                </div>
 
-                ${data.isDemo ? `
-                <div class="warning-box" style="margin-top: 16px;">
-                    <p><strong>Demo-data:</strong> Detta ar exempeldata. For att hamta riktiga uppgifter, anvand CLI-verktyget ovan med dina Ratsit-inloggningsuppgifter.</p>
+                    ${data.properties && data.properties.length > 0 ? `
+                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--gray-100);">
+                            <h4 style="font-size: 0.9rem; color: var(--gray-500); margin-bottom: 12px;">Fastigheter</h4>
+                            ${data.properties.map(p => `
+                                <div style="font-size: 0.9rem; padding: 8px 0; border-bottom: 1px solid var(--gray-100);">
+                                    <strong>${escapeHtml(p.designation)}</strong> - ${escapeHtml(p.description)}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${data.vehicles && data.vehicles.length > 0 ? `
+                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--gray-100);">
+                            <h4 style="font-size: 0.9rem; color: var(--gray-500); margin-bottom: 12px;">Fordon</h4>
+                            ${data.vehicles.map(v => `
+                                <div style="font-size: 0.9rem; padding: 8px 0; border-bottom: 1px solid var(--gray-100);">
+                                    <strong>${escapeHtml(v.registration)}</strong> - ${escapeHtml(v.description)}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
                 </div>
-                ` : ''}
             `;
 
-            results.classList.add('active');
+            document.getElementById('results').classList.add('active');
         }
 
-        // Helper functions
+        // ============================================
+        // HELPER FUNCTIONS
+        // ============================================
+
         function formatCurrency(amount) {
             if (amount === null || amount === undefined) return '-';
             return new Intl.NumberFormat('sv-SE', {
@@ -703,22 +1619,33 @@
             return div.innerHTML;
         }
 
-        function showLoading(show) {
-            loading.classList.toggle('active', show);
-            searchBtn.disabled = show;
+        function showLoading(text = 'Laddar...') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('incomeBtn').disabled = true;
+            document.getElementById('searchBtn').disabled = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+            if (serverOnline) {
+                document.getElementById('incomeBtn').disabled = false;
+                document.getElementById('searchBtn').disabled = false;
+            }
         }
 
         function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.add('active');
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.classList.add('active');
         }
 
         function hideError() {
-            errorMessage.classList.remove('active');
+            document.getElementById('errorMessage').classList.remove('active');
         }
 
         function hideResults() {
-            results.classList.remove('active');
+            document.getElementById('results').classList.remove('active');
         }
     </script>
 </body>
