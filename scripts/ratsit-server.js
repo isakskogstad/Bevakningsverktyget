@@ -398,9 +398,9 @@ app.get('/api/ratsit/income/:personName', async (req, res) => {
  * GET /api/ratsit/pdf-url/:storagePath
  * Hämta signerad URL för PDF-nedladdning
  */
-app.get('/api/ratsit/pdf-url/*', async (req, res) => {
+app.get('/api/ratsit/pdf-url/:storagePath', async (req, res) => {
     try {
-        const storagePath = req.params[0];
+        const storagePath = decodeURIComponent(req.params.storagePath);
 
         if (!storagePath) {
             return res.status(400).json({ error: 'Missing storage path' });
