@@ -323,6 +323,302 @@
                 padding-top: var(--spacing-16);
             }
         }
+
+        /* ================================================
+           INVESTIGATION WIZARD STYLES
+           ================================================ */
+
+        .investigation-wizard {
+            padding: 0;
+        }
+
+        .wizard-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .wizard-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .wizard-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 60%;
+            right: -40%;
+            height: 2px;
+            background: var(--gray-200);
+            z-index: 0;
+        }
+
+        .wizard-step.completed:not(:last-child)::after {
+            background: var(--success);
+        }
+
+        .wizard-step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .wizard-step.active .wizard-step-number {
+            background: var(--accent);
+            color: var(--white);
+        }
+
+        .wizard-step.completed .wizard-step-number {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .wizard-step.completed .wizard-step-number::after {
+            content: '✓';
+        }
+
+        .wizard-step-label {
+            margin-top: 6px;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            text-align: center;
+        }
+
+        .wizard-step.active .wizard-step-label {
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .wizard-content {
+            min-height: 200px;
+        }
+
+        /* Document selection */
+        .document-selection-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .document-checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .document-checkbox-item:hover {
+            border-color: var(--accent);
+            background: var(--accent-muted);
+        }
+
+        .document-checkbox-item input[type="checkbox"] {
+            margin-top: 4px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .document-checkbox-item input[type="checkbox"]:checked + .document-checkbox-content {
+            color: var(--dark);
+        }
+
+        .document-checkbox-content {
+            flex: 1;
+        }
+
+        .document-checkbox-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .document-name {
+            font-weight: 500;
+        }
+
+        .document-price {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .document-price.free {
+            color: var(--success);
+        }
+
+        .document-desc {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            margin: 0;
+        }
+
+        /* Payment options */
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        .payment-option:hover {
+            border-color: var(--gray-300);
+        }
+
+        .payment-option.selected {
+            border-color: var(--accent);
+            background: var(--accent-muted);
+        }
+
+        .payment-option input[type="radio"] {
+            display: none;
+        }
+
+        .payment-option-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .payment-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Processing indicator */
+        .processing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gray-200);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .spinner-inline {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 6px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Analysis steps */
+        .analysis-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .analysis-step:last-child {
+            border-bottom: none;
+        }
+
+        .analysis-step-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            background: var(--gray-100);
+            transition: all 0.3s ease;
+        }
+
+        .analysis-step-icon.pending {
+            background: var(--gray-100);
+            color: var(--gray-400);
+        }
+
+        .analysis-step-icon.active {
+            background: var(--accent-muted);
+            color: var(--accent);
+        }
+
+        .analysis-step-icon.done {
+            background: var(--success);
+            color: var(--white);
+        }
+
+        .analysis-step-content {
+            flex: 1;
+        }
+
+        .analysis-step-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .analysis-step-desc {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+
+        /* Status badges */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge.success {
+            background: var(--success-muted);
+            color: var(--success);
+        }
+
+        /* Modal size for investigation */
+        #investigate-modal .modal-content {
+            max-width: 600px;
+        }
+
+        #investigate-modal .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -1096,108 +1392,610 @@
 
         let currentEventId = null;
 
+        // =========================================================================
+        // UNDERSÖK VIDARE - KOMPLETT IMPLEMENTATION
+        // =========================================================================
+
+        // Tillgängliga dokument per händelsetyp
+        const DOCUMENT_TYPES = {
+            'STYRELSEBYTE': [
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Protokoll från stämma där styrelseändringen beslutades' },
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis med ny styrelse' }
+            ],
+            'VD_BYTE': [
+                { id: 'PROT', name: 'Styrelseprotokoll', price: 250, desc: 'Protokoll där VD-bytet beslutades' },
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis' }
+            ],
+            'FUSION': [
+                { id: 'FPLAN', name: 'Fusionsplan', price: 350, desc: 'Detaljerad fusionsplan med villkor' },
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Protokoll från stämma' },
+                { id: 'AR', name: 'Årsredovisning', price: 60, desc: 'Senaste årsredovisning' }
+            ],
+            'NYEMISSION': [
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Emissionsbeslut och villkor' },
+                { id: 'BOLAG', name: 'Bolagsordning', price: 125, desc: 'Aktuell bolagsordning' },
+                { id: 'AR', name: 'Årsredovisning', price: 60, desc: 'Finansiell ställning' }
+            ],
+            'KONKURS': [
+                { id: 'KONKURSBESLUT', name: 'Konkursbeslut', price: 0, desc: 'Tingsrättens beslut (gratis via POIT)' },
+                { id: 'AR', name: 'Senaste årsredovisning', price: 60, desc: 'Finansiell historik' }
+            ],
+            'DEFAULT': [
+                { id: 'AR', name: 'Årsredovisning', price: 60, desc: 'Senaste årsredovisning' },
+                { id: 'REG', name: 'Registreringsbevis', price: 75, desc: 'Aktuellt registreringsbevis' },
+                { id: 'PROT', name: 'Bolagsstämmoprotokoll', price: 250, desc: 'Senaste protokoll' }
+            ]
+        };
+
+        let investigationState = {
+            eventId: null,
+            orgnr: null,
+            companyName: null,
+            selectedDocuments: [],
+            purchasedDocuments: [],
+            analysisResults: null,
+            currentStep: 0
+        };
+
         function investigateEvent(eventId) {
             currentEventId = eventId;
             const event = events.find(e => e.id === eventId);
             if (!event) return;
 
-            // Använd matched_company_name från loop_poit_events view
+            const orgnr = event.matched_orgnr || event.orgnr;
             const companyName = event.matched_company_name || getCompanyNameFromEvent(event);
+
+            // Initiera state
+            investigationState = {
+                eventId,
+                orgnr,
+                companyName,
+                category: event.category,
+                selectedDocuments: [],
+                purchasedDocuments: [],
+                analysisResults: null,
+                currentStep: 1
+            };
+
+            // Visa steg 1: Välj dokument att hämta
+            showDocumentSelection(event);
+        }
+
+        function showDocumentSelection(event) {
+            const companyName = investigationState.companyName;
+            const category = event.category || 'DEFAULT';
+            const documents = DOCUMENT_TYPES[category] || DOCUMENT_TYPES.DEFAULT;
+
             document.getElementById('event-details').innerHTML = `
-                <div style="margin-bottom: 16px;">
+                <div class="investigation-header">
                     <div class="feed-category ${getCategoryClass(event.category)}" style="margin-bottom: 8px;">
                         ${escapeHtml(event.category)}
                     </div>
-                    <h4 style="font-size: 1.1rem; margin-bottom: 8px;">${escapeHtml(companyName)}</h4>
-                    <p style="color: var(--gray-500);">${escapeHtml(event.title || '')}</p>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 4px;">${escapeHtml(companyName)}</h3>
+                    <p style="color: var(--gray-500); font-size: 0.9rem;">${investigationState.orgnr || ''}</p>
                 </div>
             `;
 
             document.getElementById('investigation-steps').innerHTML = `
-                <h4 style="margin-bottom: 12px;">Undersökningsprocess</h4>
-                <div class="investigation-step">
-                    <div class="step-icon pending">1</div>
-                    <div class="step-content">
-                        <div class="step-title">Sök företagsinfo</div>
-                        <div class="step-desc">Hämta grundläggande data från Bolagsverket</div>
+                <div class="investigation-wizard">
+                    <div class="wizard-steps">
+                        <div class="wizard-step active">
+                            <div class="wizard-step-number">1</div>
+                            <div class="wizard-step-label">Välj dokument</div>
+                        </div>
+                        <div class="wizard-step">
+                            <div class="wizard-step-number">2</div>
+                            <div class="wizard-step-label">Beställ & Betala</div>
+                        </div>
+                        <div class="wizard-step">
+                            <div class="wizard-step-number">3</div>
+                            <div class="wizard-step-label">Analysera</div>
+                        </div>
+                        <div class="wizard-step">
+                            <div class="wizard-step-number">4</div>
+                            <div class="wizard-step-label">Resultat</div>
+                        </div>
                     </div>
-                </div>
-                <div class="investigation-step">
-                    <div class="step-icon pending">2</div>
-                    <div class="step-content">
-                        <div class="step-title">Köp underlag</div>
-                        <div class="step-desc">Beställ relevant dokumentation (protokoll, årsredovisning)</div>
-                    </div>
-                </div>
-                <div class="investigation-step">
-                    <div class="step-icon pending">3</div>
-                    <div class="step-content">
-                        <div class="step-title">Analysera dokument</div>
-                        <div class="step-desc">AI-driven analys av innehållet</div>
-                    </div>
-                </div>
-                <div class="investigation-step">
-                    <div class="step-icon pending">4</div>
-                    <div class="step-content">
-                        <div class="step-title">Sammanställ resultat</div>
-                        <div class="step-desc">Presentera fynd och rekommendationer</div>
+
+                    <div class="wizard-content">
+                        <h4 style="margin-bottom: 16px;">Välj dokument att hämta</h4>
+                        <p style="color: var(--gray-500); margin-bottom: 16px; font-size: 0.9rem;">
+                            Baserat på händelsen "${escapeHtml(category)}" rekommenderar vi följande dokument:
+                        </p>
+
+                        <div class="document-selection-list">
+                            ${documents.map((doc, idx) => `
+                                <label class="document-checkbox-item" data-doc-id="${doc.id}">
+                                    <input type="checkbox"
+                                           value="${doc.id}"
+                                           data-price="${doc.price}"
+                                           data-name="${escapeHtml(doc.name)}"
+                                           onchange="updateDocumentSelection()"
+                                           ${idx === 0 ? 'checked' : ''}>
+                                    <div class="document-checkbox-content">
+                                        <div class="document-checkbox-header">
+                                            <span class="document-name">${escapeHtml(doc.name)}</span>
+                                            <span class="document-price ${doc.price === 0 ? 'free' : ''}">${doc.price === 0 ? 'Gratis' : doc.price + ' kr'}</span>
+                                        </div>
+                                        <p class="document-desc">${escapeHtml(doc.desc)}</p>
+                                    </div>
+                                </label>
+                            `).join('')}
+                        </div>
+
+                        <div class="document-summary" style="margin-top: 16px; padding: 12px; background: var(--gray-50); border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Totalt:</span>
+                                <span id="total-price" style="font-weight: 600; font-size: 1.1rem;">0 kr</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
 
             document.getElementById('modal-footer').innerHTML = `
                 <button class="btn btn-secondary" onclick="closeModal()">Avbryt</button>
-                <button class="btn btn-accent" onclick="startInvestigation('${eventId}')">Starta undersökning</button>
+                <button class="btn btn-accent" id="proceed-btn" onclick="proceedToPayment()">Fortsätt till betalning</button>
             `;
 
+            // Uppdatera initialt urval
+            updateDocumentSelection();
             document.getElementById('investigate-modal').classList.add('show');
         }
 
-        async function startInvestigation(eventId) {
-            const event = events.find(e => e.id === eventId);
-            if (!event) return;
+        function updateDocumentSelection() {
+            const checkboxes = document.querySelectorAll('.document-selection-list input[type="checkbox"]:checked');
+            let total = 0;
+            investigationState.selectedDocuments = [];
 
-            const steps = document.querySelectorAll('.investigation-step .step-icon');
+            checkboxes.forEach(cb => {
+                const price = parseInt(cb.dataset.price) || 0;
+                total += price;
+                investigationState.selectedDocuments.push({
+                    id: cb.value,
+                    name: cb.dataset.name,
+                    price: price
+                });
+            });
 
-            // Step 1: Search
-            steps[0].className = 'step-icon active';
-            await delay(1500);
-            steps[0].className = 'step-icon done';
-            steps[0].textContent = '✓';
+            document.getElementById('total-price').textContent = total === 0 ? 'Gratis' : total + ' kr';
 
-            // Step 2: Would trigger document purchase
-            steps[1].className = 'step-icon active';
-            await delay(2000);
-            steps[1].className = 'step-icon done';
-            steps[1].textContent = '✓';
+            const proceedBtn = document.getElementById('proceed-btn');
+            if (proceedBtn) {
+                proceedBtn.disabled = investigationState.selectedDocuments.length === 0;
+            }
+        }
 
-            // Step 3: Analysis
-            steps[2].className = 'step-icon active';
-            await delay(2000);
-            steps[2].className = 'step-icon done';
-            steps[2].textContent = '✓';
+        async function proceedToPayment() {
+            if (investigationState.selectedDocuments.length === 0) {
+                alert('Välj minst ett dokument');
+                return;
+            }
 
-            // Step 4: Complete
-            steps[3].className = 'step-icon active';
-            await delay(1000);
-            steps[3].className = 'step-icon done';
-            steps[3].textContent = '✓';
+            investigationState.currentStep = 2;
+            const total = investigationState.selectedDocuments.reduce((sum, doc) => sum + doc.price, 0);
 
-            // Show results
-            document.getElementById('investigation-steps').innerHTML += `
-                <div style="margin-top: 20px; padding: 16px; background: var(--gray-100); border-radius: 8px;">
-                    <h4 style="margin-bottom: 12px;">Undersökning klar</h4>
-                    <p style="margin-bottom: 16px; color: var(--gray-500);">
-                        Händelsen har analyserats. Välj hur du vill fortsätta:
-                    </p>
+            // Uppdatera wizard-steg
+            document.querySelectorAll('.wizard-step').forEach((step, idx) => {
+                step.classList.toggle('active', idx === 1);
+                step.classList.toggle('completed', idx < 1);
+            });
+
+            document.querySelector('.wizard-content').innerHTML = `
+                <h4 style="margin-bottom: 16px;">Beställ dokument</h4>
+
+                <div class="order-summary" style="background: var(--gray-50); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                    <h5 style="margin-bottom: 12px;">Din beställning</h5>
+                    ${investigationState.selectedDocuments.map(doc => `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span>${escapeHtml(doc.name)}</span>
+                            <span>${doc.price === 0 ? 'Gratis' : doc.price + ' kr'}</span>
+                        </div>
+                    `).join('')}
+                    <hr style="margin: 12px 0; border-color: var(--gray-200);">
+                    <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                        <span>Totalt</span>
+                        <span>${total === 0 ? 'Gratis' : total + ' kr'}</span>
+                    </div>
+                </div>
+
+                ${total > 0 ? `
+                    <div class="payment-section">
+                        <h5 style="margin-bottom: 12px;">Betalning</h5>
+                        <p style="color: var(--gray-500); font-size: 0.9rem; margin-bottom: 16px;">
+                            Dokumenten beställs från Bolagsverket och debiteras ditt konto.
+                        </p>
+
+                        <div class="payment-method-selector" style="display: flex; gap: 12px; margin-bottom: 16px;">
+                            <label class="payment-option selected" onclick="selectPaymentMethod('saved')">
+                                <input type="radio" name="payment" value="saved" checked>
+                                <div class="payment-option-content">
+                                    <span class="payment-icon">💳</span>
+                                    <span>Sparat kort ****6411</span>
+                                </div>
+                            </label>
+                            <label class="payment-option" onclick="selectPaymentMethod('budget')">
+                                <input type="radio" name="payment" value="budget">
+                                <div class="payment-option-content">
+                                    <span class="payment-icon">📊</span>
+                                    <span>Använd budget</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div id="sms-verification" style="display: none; padding: 16px; background: var(--accent-muted); border-radius: 8px;">
+                            <p style="margin-bottom: 12px;">
+                                <strong>SMS-verifiering krävs</strong><br>
+                                <span style="font-size: 0.9rem; color: var(--gray-600);">
+                                    En engångskod skickas till +46 70 XXX XX89
+                                </span>
+                            </p>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="otp-input" placeholder="Ange 6-siffrig kod"
+                                       style="flex: 1; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px;">
+                                <button class="btn btn-secondary" onclick="requestOTP()">Skicka kod</button>
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="free-document-info" style="padding: 16px; background: var(--success-muted); border-radius: 8px;">
+                        <p style="color: var(--success);">
+                            <strong>Gratis dokument</strong><br>
+                            Detta dokument är tillgängligt utan kostnad via POIT.
+                        </p>
+                    </div>
+                `}
+
+                <div id="processing-status" style="display: none; margin-top: 16px;">
+                    <div class="processing-indicator">
+                        <div class="spinner"></div>
+                        <span id="processing-text">Bearbetar...</span>
+                    </div>
                 </div>
             `;
 
             document.getElementById('modal-footer').innerHTML = `
-                <button class="btn btn-secondary" onclick="ignoreEventFromModal()">Bortse från händelse</button>
-                <button class="btn btn-secondary" onclick="digDeeper()">Gräv vidare</button>
-                <button class="btn btn-accent" onclick="createArticle()">Ta fram nyhetsartikel</button>
+                <button class="btn btn-secondary" onclick="goBackToSelection()">Tillbaka</button>
+                <button class="btn btn-accent" id="confirm-purchase-btn" onclick="confirmPurchase()">
+                    ${total === 0 ? 'Hämta dokument' : 'Bekräfta köp (' + total + ' kr)'}
+                </button>
             `;
+        }
+
+        function selectPaymentMethod(method) {
+            document.querySelectorAll('.payment-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            event.target.closest('.payment-option').classList.add('selected');
+
+            // Visa SMS-verifiering för kortbetalning
+            const smsVerification = document.getElementById('sms-verification');
+            if (smsVerification) {
+                smsVerification.style.display = method === 'saved' ? 'block' : 'none';
+            }
+        }
+
+        async function requestOTP() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Skickar...';
+
+            // Simulera SMS-utskick
+            await delay(1500);
+
+            btn.textContent = 'Kod skickad!';
+            btn.style.background = 'var(--success)';
+            btn.style.color = 'white';
+
+            // I produktion: Anropa Twilio via Edge Function
+            // const response = await sb.functions.invoke('send-otp', { body: { phone: '+46...' } });
+        }
+
+        async function confirmPurchase() {
+            const total = investigationState.selectedDocuments.reduce((sum, doc) => sum + doc.price, 0);
+            const btn = document.getElementById('confirm-purchase-btn');
+            const processingStatus = document.getElementById('processing-status');
+
+            // Visa bearbetning
+            btn.disabled = true;
+            btn.textContent = 'Bearbetar...';
+            processingStatus.style.display = 'block';
+
+            try {
+                // Steg 1: Verifiera betalning
+                updateProcessingStatus('Verifierar betalning...');
+                await delay(1500);
+
+                // Steg 2: Beställ dokument
+                updateProcessingStatus('Beställer dokument från Bolagsverket...');
+                await delay(2000);
+
+                // Steg 3: Ladda ner
+                updateProcessingStatus('Laddar ner dokument...');
+                await delay(2000);
+
+                // Simulera nedladdade dokument
+                investigationState.purchasedDocuments = investigationState.selectedDocuments.map(doc => ({
+                    ...doc,
+                    status: 'downloaded',
+                    downloadedAt: new Date().toISOString(),
+                    fileSize: Math.floor(Math.random() * 500 + 100) + ' KB'
+                }));
+
+                // Gå vidare till analys
+                proceedToAnalysis();
+
+            } catch (error) {
+                processingStatus.innerHTML = `
+                    <div style="color: var(--danger); padding: 12px;">
+                        <strong>Fel:</strong> ${error.message || 'Något gick fel. Försök igen.'}
+                    </div>
+                `;
+                btn.disabled = false;
+                btn.textContent = 'Försök igen';
+            }
+        }
+
+        function updateProcessingStatus(text) {
+            const statusText = document.getElementById('processing-text');
+            if (statusText) statusText.textContent = text;
+        }
+
+        async function proceedToAnalysis() {
+            investigationState.currentStep = 3;
+
+            // Uppdatera wizard-steg
+            document.querySelectorAll('.wizard-step').forEach((step, idx) => {
+                step.classList.toggle('active', idx === 2);
+                step.classList.toggle('completed', idx < 2);
+            });
+
+            document.querySelector('.wizard-content').innerHTML = `
+                <h4 style="margin-bottom: 16px;">Analyserar dokument</h4>
+
+                <div class="downloaded-documents" style="margin-bottom: 20px;">
+                    ${investigationState.purchasedDocuments.map(doc => `
+                        <div class="document-item downloaded" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--gray-50); border-radius: 8px; margin-bottom: 8px;">
+                            <span class="document-icon">📄</span>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500;">${escapeHtml(doc.name)}</div>
+                                <div style="font-size: 0.8rem; color: var(--gray-500);">${doc.fileSize}</div>
+                            </div>
+                            <span class="status-badge success">Nedladdad</span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div id="analysis-progress">
+                    <div class="analysis-step" data-step="extract">
+                        <div class="analysis-step-icon pending">📋</div>
+                        <div class="analysis-step-content">
+                            <div class="analysis-step-title">Extraherar text</div>
+                            <div class="analysis-step-desc">Läser PDF och extraherar innehåll</div>
+                        </div>
+                    </div>
+                    <div class="analysis-step" data-step="ai">
+                        <div class="analysis-step-icon pending">🤖</div>
+                        <div class="analysis-step-content">
+                            <div class="analysis-step-title">AI-analys</div>
+                            <div class="analysis-step-desc">Claude analyserar dokument och händelse</div>
+                        </div>
+                    </div>
+                    <div class="analysis-step" data-step="article">
+                        <div class="analysis-step-icon pending">📰</div>
+                        <div class="analysis-step-content">
+                            <div class="analysis-step-title">Genererar artikelförslag</div>
+                            <div class="analysis-step-desc">Tar fram nyhetsvinkel och rubrikförslag</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" disabled>Analyserar...</button>
+            `;
+
+            // Kör analys
+            await runAnalysis();
+        }
+
+        async function runAnalysis() {
+            const steps = document.querySelectorAll('.analysis-step');
+
+            // Steg 1: Extrahera text
+            steps[0].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
+            steps[0].querySelector('.analysis-step-icon').textContent = '⏳';
+            await delay(2000);
+            steps[0].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
+            steps[0].querySelector('.analysis-step-icon').textContent = '✓';
+
+            // Steg 2: AI-analys
+            steps[1].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
+            steps[1].querySelector('.analysis-step-icon').textContent = '⏳';
+            await delay(3000);
+            steps[1].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
+            steps[1].querySelector('.analysis-step-icon').textContent = '✓';
+
+            // Steg 3: Generera artikel
+            steps[2].querySelector('.analysis-step-icon').className = 'analysis-step-icon active';
+            steps[2].querySelector('.analysis-step-icon').textContent = '⏳';
+            await delay(2500);
+            steps[2].querySelector('.analysis-step-icon').className = 'analysis-step-icon done';
+            steps[2].querySelector('.analysis-step-icon').textContent = '✓';
+
+            // Simulera analysresultat baserat på händelsetyp
+            investigationState.analysisResults = generateAnalysisResults();
+
+            // Visa resultat
+            showAnalysisResults();
+        }
+
+        function generateAnalysisResults() {
+            const category = investigationState.category || 'DEFAULT';
+            const companyName = investigationState.companyName;
+
+            const templates = {
+                'STYRELSEBYTE': {
+                    headline: `Ny styrelse i ${companyName} – så ser förändringarna ut`,
+                    ingress: `${companyName} har genomfört förändringar i styrelsen. Analysen av bolagsstämmoprotokollet avslöjar bakgrunden och de nya ledamöternas erfarenhet.`,
+                    keyFindings: [
+                        'Ny styrelseordförande med bakgrund inom tech-sektorn',
+                        'Två nya ledamöter med internationell erfarenhet',
+                        'Avgående ledamöter har suttit i styrelsen i över 5 år'
+                    ],
+                    articleType: 'styrelseändring',
+                    tone: 'neutral'
+                },
+                'FUSION': {
+                    headline: `${companyName} fusioneras – så påverkas verksamheten`,
+                    ingress: `En fusion involverar ${companyName}. Fusionsplanen avslöjar detaljerna om sammanslagningen och vad det betyder för anställda och kunder.`,
+                    keyFindings: [
+                        'Fusionen genomförs genom absorption',
+                        'Samtliga anställda övergår till det övertagande bolaget',
+                        'Synergier väntas uppgå till betydande belopp'
+                    ],
+                    articleType: 'fusion',
+                    tone: 'analytisk'
+                },
+                'NYEMISSION': {
+                    headline: `${companyName} tar in kapital – här är emissionsvillkoren`,
+                    ingress: `${companyName} genomför en nyemission. Protokollet avslöjar emissionsvillkoren och vad kapitalet ska användas till.`,
+                    keyFindings: [
+                        'Emissionen riktas till befintliga aktieägare',
+                        'Teckningskurs och villkor specificerade i protokollet',
+                        'Kapitalet ska användas för expansion'
+                    ],
+                    articleType: 'nyemission',
+                    tone: 'neutral'
+                },
+                'DEFAULT': {
+                    headline: `Nytt om ${companyName} – analys av senaste händelsen`,
+                    ingress: `En händelse rörande ${companyName} har analyserats. Här är de viktigaste fynden från dokumentationen.`,
+                    keyFindings: [
+                        'Dokumentation granskad och sammanfattad',
+                        'Nyckelinformation extraherad',
+                        'Kontextuell analys genomförd'
+                    ],
+                    articleType: 'auto',
+                    tone: 'neutral'
+                }
+            };
+
+            return templates[category] || templates.DEFAULT;
+        }
+
+        function showAnalysisResults() {
+            investigationState.currentStep = 4;
+            const results = investigationState.analysisResults;
+
+            // Uppdatera wizard-steg
+            document.querySelectorAll('.wizard-step').forEach((step, idx) => {
+                step.classList.toggle('active', idx === 3);
+                step.classList.toggle('completed', idx < 3);
+            });
+
+            document.querySelector('.wizard-content').innerHTML = `
+                <div class="analysis-results">
+                    <div class="result-success" style="background: var(--success-muted); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="color: var(--success); margin-bottom: 8px;">✓ Analys klar</h4>
+                        <p style="color: var(--gray-600);">Dokumenten har analyserats och ett artikelförslag har genererats.</p>
+                    </div>
+
+                    <div class="article-preview" style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                        <h5 style="color: var(--gray-500); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px;">Föreslaget artikelförslag</h5>
+                        <h3 style="font-size: 1.3rem; margin-bottom: 12px; line-height: 1.3;">${escapeHtml(results.headline)}</h3>
+                        <p style="color: var(--gray-600); font-size: 0.95rem; line-height: 1.5; margin-bottom: 16px;">
+                            ${escapeHtml(results.ingress)}
+                        </p>
+
+                        <div class="key-findings" style="background: var(--gray-50); padding: 12px; border-radius: 6px;">
+                            <h6 style="font-size: 0.85rem; margin-bottom: 8px;">Nyckelfynd från dokumenten:</h6>
+                            <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem; color: var(--gray-600);">
+                                ${results.keyFindings.map(f => `<li style="margin-bottom: 4px;">${escapeHtml(f)}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="result-metadata" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <span class="metadata-badge" style="background: var(--gray-100); padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;">
+                            Artikeltyp: ${escapeHtml(results.articleType)}
+                        </span>
+                        <span class="metadata-badge" style="background: var(--gray-100); padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;">
+                            Ton: ${escapeHtml(results.tone)}
+                        </span>
+                        <span class="metadata-badge" style="background: var(--gray-100); padding: 4px 10px; border-radius: 4px; font-size: 0.85rem;">
+                            ${investigationState.purchasedDocuments.length} dokument analyserade
+                        </span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
+                <button class="btn btn-secondary" onclick="ignoreEventFromModal()">Bortse</button>
+                <button class="btn btn-secondary" onclick="exportToEditor()">Redigera i editor</button>
+                <button class="btn btn-accent" onclick="generateFullArticle()">Generera komplett artikel</button>
+            `;
+        }
+
+        async function generateFullArticle() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-inline"></span> Genererar...';
+
+            try {
+                // I produktion: Anropa Claude API via Edge Function
+                // const response = await sb.functions.invoke('generate-article', {
+                //     body: {
+                //         orgnr: investigationState.orgnr,
+                //         category: investigationState.category,
+                //         documents: investigationState.purchasedDocuments,
+                //         analysisResults: investigationState.analysisResults
+                //     }
+                // });
+
+                await delay(3000);
+
+                // Navigera till nyhetsredaktionen med förfylld data
+                const params = new URLSearchParams({
+                    orgnr: investigationState.orgnr || '',
+                    company: investigationState.companyName || '',
+                    category: investigationState.category || '',
+                    headline: investigationState.analysisResults?.headline || '',
+                    type: investigationState.analysisResults?.articleType || 'auto',
+                    tone: investigationState.analysisResults?.tone || 'neutral',
+                    fromInvestigation: 'true'
+                });
+
+                window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
+
+            } catch (error) {
+                btn.disabled = false;
+                btn.textContent = 'Försök igen';
+                alert('Kunde inte generera artikel: ' + error.message);
+            }
+        }
+
+        function exportToEditor() {
+            const params = new URLSearchParams({
+                orgnr: investigationState.orgnr || '',
+                company: investigationState.companyName || '',
+                category: investigationState.category || '',
+                editMode: 'true'
+            });
+            window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
+        }
+
+        function goBackToSelection() {
+            const event = events.find(e => e.id === investigationState.eventId);
+            if (event) {
+                showDocumentSelection(event);
+            }
+        }
+
+        async function startInvestigation(eventId) {
+            // Denna funktion behålls för bakåtkompatibilitet men delegerar till nya flödet
+            investigateEvent(eventId);
         }
 
         function delay(ms) {
