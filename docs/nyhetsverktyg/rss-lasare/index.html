@@ -742,8 +742,8 @@
         let countdownTimer = null;
         let secondsUntilUpdate = 300; // 5 minuter
 
-        // RSS proxy URL - använder rss2json API med count parameter
-        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?count=' + CONFIG.ITEMS_PER_FEED + '&rss_url=';
+        // RSS proxy URL - använder rss2json API
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
         // =========================================================================
         // FETCH RSS
@@ -807,7 +807,8 @@
                 }
 
                 // Skapa unik ID baserat på länk för att kunna spåra lästa artiklar
-                const articleId = btoa(item.link || `${feed.id}-${index}`).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+                // Använd enkel hash istället för btoa() för att undvika Unicode-problem
+                const articleId = simpleHash(item.link || `${feed.id}-${index}`);
 
                 const pubDate = new Date(item.pubDate || Date.now());
                 const isNew = (Date.now() - pubDate.getTime()) < CONFIG.NEW_ARTICLE_THRESHOLD;
@@ -1498,6 +1499,17 @@
             const div = document.createElement('div');
             div.textContent = text || '';
             return div.innerHTML;
+        }
+
+        // Enkel hash-funktion för att skapa unika IDs
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return 'art' + Math.abs(hash).toString(36);
         }
 
         // =========================================================================
