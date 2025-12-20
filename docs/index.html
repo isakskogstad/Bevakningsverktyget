@@ -1506,20 +1506,24 @@
                 return;
             }
 
-            poitEvents = (data || []).map(e => ({
-                id: `poit-${e.id}`,
-                type: 'poit',
-                category: e.category || 'Okänd',
-                title: e.title || e.content,
-                content: e.content,
-                date: e.announcement_date,
-                timestamp: new Date(e.announcement_date).getTime(),
-                orgnr: e.orgnr,
-                companyName: e.matched_company_name || getCompanyName(e.orgnr) || 'Okänt företag',
-                logoUrl: getCompanyLogoUrl(e.orgnr),
-                source: 'Bolagsverket',
-                originalEvent: e
-            }));
+            // Filtrera till endast matchade företag (matched_orgnr finns)
+            poitEvents = (data || [])
+                .filter(e => e.matched_orgnr) // Endast händelser som matchats mot bevakade bolag
+                .map(e => ({
+                    id: `poit-${e.id}`,
+                    type: 'poit',
+                    category: e.category || 'Okänd',
+                    title: e.title || e.content,
+                    content: e.content,
+                    date: e.announcement_date,
+                    timestamp: new Date(e.announcement_date).getTime(),
+                    orgnr: e.matched_orgnr, // Använd matched_orgnr istället för orgnr
+                    companyName: e.matched_company_name || getCompanyName(e.matched_orgnr) || 'Okänt företag',
+                    logoUrl: getCompanyLogoUrl(e.matched_orgnr),
+                    source: 'Bolagsverket',
+                    sector: e.matched_sector,
+                    originalEvent: e
+                }));
         }
 
         async function loadNewsEvents() {
