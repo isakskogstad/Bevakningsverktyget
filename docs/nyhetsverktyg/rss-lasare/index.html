@@ -686,8 +686,8 @@
         // RSS READER - Klientkod (Förbättrad version)
         // =========================================================================
 
-        // Konfiguration
-        const CONFIG = {
+        // RSS-specifik konfiguration (separat från global CONFIG)
+        const RSS_CONFIG = {
             ITEMS_PER_FEED: 20,           // Fler artiklar per feed
             AUTO_UPDATE_INTERVAL: 5 * 60 * 1000, // 5 minuter
             INITIAL_DISPLAY_COUNT: 30,    // Visa 30 först
@@ -730,7 +730,7 @@
 
         // State
         let articles = [];
-        let displayedCount = CONFIG.INITIAL_DISPLAY_COUNT;
+        let displayedCount = RSS_CONFIG.INITIAL_DISPLAY_COUNT;
         let selectedArticle = null;
         let currentCategory = 'all';
         let currentFeed = null;
@@ -811,7 +811,7 @@
                 const articleId = simpleHash(item.link || `${feed.id}-${index}`);
 
                 const pubDate = new Date(item.pubDate || Date.now());
-                const isNew = (Date.now() - pubDate.getTime()) < CONFIG.NEW_ARTICLE_THRESHOLD;
+                const isNew = (Date.now() - pubDate.getTime()) < RSS_CONFIG.NEW_ARTICLE_THRESHOLD;
 
                 parsedArticles.push({
                     id: articleId,
@@ -954,7 +954,7 @@
 
         // Auto-update funktioner
         function startAutoUpdateCountdown() {
-            secondsUntilUpdate = CONFIG.AUTO_UPDATE_INTERVAL / 1000;
+            secondsUntilUpdate = RSS_CONFIG.AUTO_UPDATE_INTERVAL / 1000;
             updateCountdownDisplay();
 
             if (countdownTimer) clearInterval(countdownTimer);
@@ -971,7 +971,7 @@
 
             autoUpdateTimer = setTimeout(() => {
                 refreshAllFeeds(true); // Silent refresh
-            }, CONFIG.AUTO_UPDATE_INTERVAL);
+            }, RSS_CONFIG.AUTO_UPDATE_INTERVAL);
         }
 
         function updateCountdownDisplay() {
@@ -1142,7 +1142,7 @@
         }
 
         function loadMoreArticles() {
-            displayedCount += CONFIG.LOAD_MORE_COUNT;
+            displayedCount += RSS_CONFIG.LOAD_MORE_COUNT;
             renderArticles();
         }
 
@@ -1546,7 +1546,7 @@
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     searchQuery = e.target.value.trim();
-                    displayedCount = CONFIG.INITIAL_DISPLAY_COUNT; // Återställ paginering vid ny sökning
+                    displayedCount = RSS_CONFIG.INITIAL_DISPLAY_COUNT; // Återställ paginering vid ny sökning
                     renderArticles();
                 }, 300);
             });
