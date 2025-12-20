@@ -419,6 +419,179 @@
             color: var(--gray-500);
         }
         .empty-tab h4 { margin-bottom: 8px; color: var(--dark); }
+
+        /* Income Fetch Button */
+        .income-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--accent);
+            color: var(--dark);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-left: 8px;
+        }
+        .income-btn:hover { opacity: 0.85; }
+        .income-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .income-btn svg { width: 12px; height: 12px; }
+
+        /* Income Modal */
+        .income-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .income-modal-overlay.active { display: flex; }
+        .income-modal {
+            background: var(--white);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+        .income-modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        .income-modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .income-modal-subtitle {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+        }
+        .income-modal-body {
+            padding: 32px 24px;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            text-align: center;
+        }
+        .progress-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        .progress-step {
+            font-size: 0.95rem;
+            color: var(--gray-700);
+            margin-bottom: 16px;
+        }
+        .progress-bar-container {
+            background: var(--gray-100);
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #a8cc00);
+            border-radius: 8px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-percent {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+
+        /* Income Result */
+        .income-result {
+            display: none;
+        }
+        .income-result.active { display: block; }
+        .income-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .income-item {
+            text-align: center;
+            padding: 16px 12px;
+            background: var(--gray-100);
+            border-radius: 8px;
+        }
+        .income-label {
+            font-size: 0.7rem;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .income-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .income-value.positive { color: var(--success); }
+        .income-value.negative { color: var(--error); }
+        .income-details {
+            font-size: 0.85rem;
+            color: var(--gray-700);
+            border-top: 1px solid var(--gray-300);
+            padding-top: 16px;
+        }
+        .income-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+        .income-detail-row .label { color: var(--gray-500); }
+
+        /* Error state */
+        .income-error {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .income-error.active { display: block; }
+        .income-error-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+        .income-error-message {
+            color: var(--error);
+            margin-bottom: 16px;
+        }
+
+        .income-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--gray-300);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Cached income badge */
+        .cached-income-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -556,6 +729,58 @@
                         <!-- Populated by JS -->
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Fetch Modal -->
+    <div class="income-modal-overlay" id="income-modal" onclick="closeIncomeModal()">
+        <div class="income-modal" onclick="event.stopPropagation()">
+            <div class="income-modal-header">
+                <div class="income-modal-title" id="income-modal-title">Hämtar inkomstuppgifter</div>
+                <div class="income-modal-subtitle" id="income-modal-subtitle">Anna Andersson - VD</div>
+            </div>
+            <div class="income-modal-body">
+                <!-- Progress Section -->
+                <div class="progress-section" id="income-progress">
+                    <div class="progress-icon">&#128269;</div>
+                    <div class="progress-step" id="income-step">Startar...</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="income-bar"></div>
+                    </div>
+                    <div class="progress-percent" id="income-percent">0%</div>
+                </div>
+
+                <!-- Result Section -->
+                <div class="income-result" id="income-result">
+                    <div class="income-grid">
+                        <div class="income-item">
+                            <div class="income-label">Förvärvsinkomst</div>
+                            <div class="income-value" id="income-taxable">-</div>
+                        </div>
+                        <div class="income-item">
+                            <div class="income-label">Kapitalinkomst</div>
+                            <div class="income-value" id="income-capital">-</div>
+                        </div>
+                        <div class="income-item">
+                            <div class="income-label">Slutlig skatt</div>
+                            <div class="income-value" id="income-tax">-</div>
+                        </div>
+                    </div>
+                    <div class="income-details" id="income-details">
+                        <!-- Details populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div class="income-error" id="income-error">
+                    <div class="income-error-icon">&#9888;</div>
+                    <div class="income-error-message" id="income-error-message">Ett fel uppstod</div>
+                    <button class="btn btn-secondary" onclick="retryIncomeFetch()">Försök igen</button>
+                </div>
+            </div>
+            <div class="income-modal-footer">
+                <button class="btn btn-secondary" onclick="closeIncomeModal()">Stäng</button>
             </div>
         </div>
     </div>
@@ -868,8 +1093,8 @@
                 { label: 'Organisationsnummer', value: formatOrgnr(company.orgnr) },
                 { label: 'Sektor', value: company.sector || '-' },
                 { label: 'Stad', value: company.city || '-' },
-                { label: 'VD', value: company.ceo_name || '-' },
-                { label: 'Ordförande', value: company.chairman_name || '-' },
+                { label: 'VD', value: (company.ceo_name || '-') + renderIncomeButton(company.ceo_name, 'VD', company) },
+                { label: 'Ordförande', value: (company.chairman_name || '-') + renderIncomeButton(company.chairman_name, 'Ordförande', company) },
                 { label: 'Omsättning 2024', value: company.turnover_2024_sek ? formatCurrency(company.turnover_2024_sek) : '-' },
                 { label: 'Webbplats', value: company.website ? `<a href="${company.website}" target="_blank" rel="noopener">${company.website}</a>` : '-' },
                 { label: 'Status', value: '<span class="status-dot active"></span> Aktiv bevakning' },
@@ -953,14 +1178,17 @@
                             <div style="margin-top: 8px;">
                                 ${otherBoardMembers.map(member => `
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-300);">
-                                        <div>
+                                        <div style="flex: 1;">
                                             <div style="font-weight: 600; color: var(--dark);">${escapeHtml(member.name || 'Okänd')}</div>
                                             <div style="font-size: 0.8rem; color: var(--gray-500);">
                                                 ${escapeHtml(member.role_type || '')}
                                                 ${member.from_date ? ' • Sedan ' + formatDate(member.from_date) : ''}
                                             </div>
                                         </div>
-                                        ${member.city ? `<div style="color: var(--gray-500); font-size: 0.85rem;">${escapeHtml(member.city)}</div>` : ''}
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            ${member.city ? `<span style="color: var(--gray-500); font-size: 0.85rem;">${escapeHtml(member.city)}</span>` : ''}
+                                            ${renderIncomeButton(member.name, member.role_type || 'Styrelseledamot', company)}
+                                        </div>
                                     </div>
                                 `).join('')}
                             </div>
@@ -1259,6 +1487,324 @@
             const container = document.getElementById('alert-container');
             container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
             setTimeout(() => container.innerHTML = '', 4000);
+        }
+
+        // ===========================================
+        // INCOME FETCH FUNCTIONALITY (GitHub Actions)
+        // ===========================================
+
+        // GitHub Actions config
+        const GITHUB_OWNER = 'isakskogstad';
+        const GITHUB_REPO = 'Bevakningsverktyget';
+
+        let currentIncomeFetch = null;
+        let incomePollingInterval = null;
+
+        // Get GitHub token from localStorage
+        function getGitHubToken() {
+            return localStorage.getItem('github_token');
+        }
+
+        // Check if we already have income data
+        async function checkExistingIncome(personName, companyOrgnr) {
+            try {
+                let query = sb
+                    .from('person_income')
+                    .select('*')
+                    .ilike('person_name', personName)
+                    .order('income_year', { ascending: false });
+
+                if (companyOrgnr) {
+                    query = query.eq('company_orgnr', companyOrgnr);
+                }
+
+                const { data, error } = await query.limit(3);
+                return error ? null : data;
+            } catch {
+                return null;
+            }
+        }
+
+        // Start income fetch via GitHub Actions
+        async function fetchIncome(personName, roleType, companyOrgnr, companyName, birthYear = null) {
+            const githubToken = getGitHubToken();
+
+            // Check for existing data first
+            const existing = await checkExistingIncome(personName, companyOrgnr);
+            if (existing && existing.length > 0) {
+                // Show existing data
+                showIncomeModal(personName, roleType);
+                showIncomeResult({
+                    personName: existing[0].person_name,
+                    address: existing[0].address,
+                    taxableIncome: existing[0].taxable_income,
+                    capitalIncome: existing[0].capital_income,
+                    finalTax: existing[0].final_tax,
+                    incomeYear: existing[0].income_year,
+                    birthYear: existing[0].birth_year,
+                    salaryRanking: existing[0].salary_ranking,
+                    scrapedAt: existing[0].scraped_at
+                });
+                return;
+            }
+
+            // Check GitHub token
+            if (!githubToken) {
+                showIncomeError('GitHub-token saknas. Gå till Inställningar för att konfigurera.');
+                return;
+            }
+
+            // Store current fetch params for retry
+            currentIncomeFetch = { personName, roleType, companyOrgnr, companyName, birthYear };
+
+            // Show modal with progress
+            showIncomeModal(personName, roleType);
+
+            try {
+                // Create job in Supabase
+                const jobId = crypto.randomUUID();
+
+                const { error: insertError } = await sb
+                    .from('income_fetch_jobs')
+                    .insert({
+                        id: jobId,
+                        person_name: personName,
+                        birth_year: birthYear ? parseInt(birthYear) : null,
+                        company_orgnr: companyOrgnr || null,
+                        role_type: roleType || null,
+                        status: 'pending',
+                        progress: 5,
+                        current_step: 'Köar begäran...'
+                    });
+
+                if (insertError) {
+                    throw new Error('Kunde inte skapa jobb: ' + insertError.message);
+                }
+
+                updateIncomeProgress(5, 'Startar GitHub Action...');
+
+                // Trigger GitHub Action via repository_dispatch
+                const dispatchResponse = await fetch(
+                    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/dispatches`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Authorization': `token ${githubToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            event_type: 'fetch-income',
+                            client_payload: {
+                                job_id: jobId,
+                                person_name: personName,
+                                birth_year: birthYear || '',
+                                location: '',
+                                company_orgnr: companyOrgnr || '',
+                                company_name: companyName || '',
+                                role_type: roleType || ''
+                            }
+                        })
+                    }
+                );
+
+                if (!dispatchResponse.ok) {
+                    const errorText = await dispatchResponse.text();
+                    throw new Error('GitHub Action misslyckades: ' + errorText);
+                }
+
+                // Start polling Supabase for progress
+                startPolling(jobId);
+
+            } catch (error) {
+                showIncomeError(error.message);
+            }
+        }
+
+        function showIncomeModal(personName, roleType) {
+            document.getElementById('income-modal-title').textContent = 'Hämtar inkomstuppgifter';
+            document.getElementById('income-modal-subtitle').textContent = `${personName} - ${roleType}`;
+
+            // Reset state
+            document.getElementById('income-progress').style.display = 'block';
+            document.getElementById('income-result').classList.remove('active');
+            document.getElementById('income-error').classList.remove('active');
+            document.getElementById('income-bar').style.width = '0%';
+            document.getElementById('income-percent').textContent = '0%';
+            document.getElementById('income-step').textContent = 'Startar...';
+
+            document.getElementById('income-modal').classList.add('active');
+        }
+
+        function closeIncomeModal() {
+            document.getElementById('income-modal').classList.remove('active');
+            stopPolling();
+            currentIncomeFetch = null;
+        }
+
+        function startPolling(jobId) {
+            stopPolling();
+            const startTime = Date.now();
+            const maxPollTime = 300000; // 5 minuter timeout
+
+            incomePollingInterval = setInterval(async () => {
+                try {
+                    // Timeout check
+                    if (Date.now() - startTime > maxPollTime) {
+                        stopPolling();
+                        showIncomeError('Timeout - försök igen senare');
+                        return;
+                    }
+
+                    // Poll Supabase for job status
+                    const { data: job, error } = await sb
+                        .from('income_fetch_jobs')
+                        .select('*')
+                        .eq('id', jobId)
+                        .single();
+
+                    if (error) {
+                        throw new Error('Kunde inte hämta jobbstatus: ' + error.message);
+                    }
+
+                    // Update progress UI
+                    updateIncomeProgress(job.progress || 0, job.current_step || 'Arbetar...');
+
+                    // Check if completed
+                    if (job.status === 'completed') {
+                        stopPolling();
+
+                        // Fetch the actual income data
+                        const personName = currentIncomeFetch?.personName;
+                        const companyOrgnr = currentIncomeFetch?.companyOrgnr;
+
+                        const incomeData = await checkExistingIncome(personName, companyOrgnr);
+                        if (incomeData && incomeData.length > 0) {
+                            const latest = incomeData[0];
+                            showIncomeResult({
+                                taxableIncome: latest.taxable_income,
+                                capitalIncome: latest.capital_income,
+                                incomeYear: latest.income_year,
+                                address: latest.address,
+                                birthYear: latest.birth_year,
+                                salaryRanking: latest.salary_ranking,
+                                hasPaymentRemarks: latest.has_payment_remarks
+                            });
+                        } else {
+                            showIncomeResult({ taxableIncome: null, capitalIncome: null });
+                        }
+                    } else if (job.status === 'failed') {
+                        stopPolling();
+                        showIncomeError(job.error_message || 'Hämtningen misslyckades');
+                    }
+
+                } catch (error) {
+                    console.error('[Income] Poll error:', error);
+                    // Don't stop polling on transient errors, just log
+                    if (error.message.includes('Kunde inte hämta')) {
+                        stopPolling();
+                        showIncomeError(error.message);
+                    }
+                }
+            }, 2000); // Poll every 2 seconds (GitHub Actions is slower than local)
+        }
+
+        function stopPolling() {
+            if (incomePollingInterval) {
+                clearInterval(incomePollingInterval);
+                incomePollingInterval = null;
+            }
+        }
+
+        function updateIncomeProgress(progress, step) {
+            document.getElementById('income-bar').style.width = `${progress}%`;
+            document.getElementById('income-percent').textContent = `${progress}%`;
+            document.getElementById('income-step').textContent = step || 'Arbetar...';
+
+            // Update icon based on progress
+            const icon = document.querySelector('#income-progress .progress-icon');
+            if (progress < 30) {
+                icon.innerHTML = '&#128269;'; // Magnifying glass
+            } else if (progress < 60) {
+                icon.innerHTML = '&#9881;'; // Gear
+            } else if (progress < 90) {
+                icon.innerHTML = '&#128202;'; // Chart
+            } else {
+                icon.innerHTML = '&#10003;'; // Checkmark
+            }
+        }
+
+        function showIncomeResult(result) {
+            document.getElementById('income-modal-title').textContent = 'Inkomstuppgifter';
+
+            // Hide progress, show result
+            document.getElementById('income-progress').style.display = 'none';
+            document.getElementById('income-result').classList.add('active');
+
+            // Update values
+            const taxableEl = document.getElementById('income-taxable');
+            const capitalEl = document.getElementById('income-capital');
+            const taxEl = document.getElementById('income-tax');
+
+            taxableEl.textContent = formatIncomeCurrency(result.taxableIncome);
+            capitalEl.textContent = formatIncomeCurrency(result.capitalIncome);
+            capitalEl.className = 'income-value ' + ((result.capitalIncome || 0) >= 0 ? 'positive' : 'negative');
+            taxEl.textContent = formatIncomeCurrency(result.finalTax || result.totalTax);
+
+            // Build details
+            const detailsHtml = `
+                ${result.birthYear ? `<div class="income-detail-row"><span class="label">Födelseår</span><span>${result.birthYear}</span></div>` : ''}
+                ${result.address ? `<div class="income-detail-row"><span class="label">Adress</span><span>${escapeHtml(result.address)}</span></div>` : ''}
+                <div class="income-detail-row"><span class="label">Inkomstår</span><span>${result.incomeYear || new Date().getFullYear() - 1}</span></div>
+                <div class="income-detail-row"><span class="label">Hämtad</span><span>${new Date().toLocaleString('sv-SE')}</span></div>
+                ${result.profileUrl ? `<div class="income-detail-row"><span class="label">Källa</span><span><a href="${result.profileUrl}" target="_blank">Ratsit.se</a></span></div>` : ''}
+            `;
+            document.getElementById('income-details').innerHTML = detailsHtml;
+
+            showAlert('Inkomstuppgifter hämtade och sparade', 'success');
+        }
+
+        function showIncomeError(message) {
+            document.getElementById('income-progress').style.display = 'none';
+            document.getElementById('income-result').classList.remove('active');
+            document.getElementById('income-error').classList.add('active');
+            document.getElementById('income-error-message').textContent = message;
+        }
+
+        function retryIncomeFetch() {
+            if (currentIncomeFetch) {
+                const { personName, roleType, companyOrgnr, companyName, birthYear } = currentIncomeFetch;
+                fetchIncome(personName, roleType, companyOrgnr, companyName, birthYear);
+            }
+        }
+
+        function formatIncomeCurrency(amount) {
+            if (amount === null || amount === undefined) return '-';
+            return new Intl.NumberFormat('sv-SE', {
+                style: 'currency',
+                currency: 'SEK',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Render income button for a person
+        function renderIncomeButton(personName, roleType, company) {
+            if (!personName || personName === '-') return '';
+
+            const cleanOrgnr = (company.orgnr || '').replace(/-/g, '');
+            const escapedName = escapeHtml(personName).replace(/'/g, "\\'");
+            const escapedRole = escapeHtml(roleType).replace(/'/g, "\\'");
+            const escapedCompany = escapeHtml(company.company_name || '').replace(/'/g, "\\'");
+
+            return `
+                <button class="income-btn" onclick="event.stopPropagation(); fetchIncome('${escapedName}', '${escapedRole}', '${cleanOrgnr}', '${escapedCompany}')" title="Hämta inkomstuppgifter">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2v20M2 12h20"/>
+                    </svg>
+                    Inkomst
+                </button>
+            `;
         }
 
         document.addEventListener('DOMContentLoaded', init);

@@ -1,0 +1,69 @@
+name: Fetch Income Data
+
+on:
+  repository_dispatch:
+    types: [fetch-income]
+
+jobs:
+  fetch-income:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Update job status to running
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          curl -X PATCH \
+            "$SUPABASE_URL/rest/v1/income_fetch_jobs?id=eq.${{ github.event.client_payload.job_id }}" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"status": "running", "started_at": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'", "progress": 10, "current_step": "Startar browser..."}'
+
+      - name: Fetch income data
+        id: fetch
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          RATSIT_EMAIL: ${{ secrets.RATSIT_EMAIL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          HEADLESS: 'true'
+        run: |
+          node scripts/fetch-income-action.js \
+            --job-id="${{ github.event.client_payload.job_id }}" \
+            --person-name="${{ github.event.client_payload.person_name }}" \
+            --birth-year="${{ github.event.client_payload.birth_year }}" \
+            --location="${{ github.event.client_payload.location }}" \
+            --company-orgnr="${{ github.event.client_payload.company_orgnr }}" \
+            --company-name="${{ github.event.client_payload.company_name }}" \
+            --role-type="${{ github.event.client_payload.role_type }}"
+
+      - name: Handle failure
+        if: failure()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          curl -X PATCH \
+            "$SUPABASE_URL/rest/v1/income_fetch_jobs?id=eq.${{ github.event.client_payload.job_id }}" \
+            -H "apikey: $SUPABASE_SERVICE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"status": "failed", "completed_at": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'", "error_message": "GitHub Action failed - check workflow logs"}'

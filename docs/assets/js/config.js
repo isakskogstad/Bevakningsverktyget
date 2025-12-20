@@ -23,6 +23,14 @@ const CONFIG = {
         sendSms: '/functions/v1/send-sms'
     },
 
+    // GitHub Actions integration
+    github: {
+        owner: 'isakskogstad',
+        repo: 'Bevakningsverktyget',
+        // Token ska sättas i localStorage: localStorage.setItem('github_token', 'ghp_xxx')
+        getToken: () => localStorage.getItem('github_token')
+    },
+
     // Appinställningar
     app: {
         name: 'Bevakningsverktyget',
@@ -55,6 +63,7 @@ Object.freeze(CONFIG);
 Object.freeze(CONFIG.supabase);
 Object.freeze(CONFIG.api);
 Object.freeze(CONFIG.edgeFunctions);
+Object.freeze(CONFIG.github);
 Object.freeze(CONFIG.app);
 Object.freeze(CONFIG.poitCategories);
 

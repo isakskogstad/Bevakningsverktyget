@@ -1,0 +1,299 @@
+/**
+ * Income Widget Styles
+ * Diskret, kompakt styling för inkomstknappen
+ */
+
+/* Base widget container */
+.income-widget {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.875rem;
+    font-family: inherit;
+}
+
+/* Loading state */
+.income-loading {
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* Error state */
+.income-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #dc2626;
+    font-size: 0.8rem;
+}
+
+.income-error button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #dc2626;
+}
+
+.income-error button:hover {
+    background: #fee2e2;
+}
+
+/* Fetch button */
+.income-fetch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #166534;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.income-fetch-btn:hover {
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border-color: #4ade80;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+}
+
+.income-fetch-btn:active {
+    transform: translateY(0);
+}
+
+.income-fetch-btn .income-icon {
+    font-size: 1rem;
+}
+
+/* Progress bar */
+.income-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 150px;
+}
+
+.income-progress-bar {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.income-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.income-progress-text {
+    font-size: 0.7rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+/* Income data display */
+.income-data {
+    position: relative;
+}
+
+.income-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #93c5fd;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #1d4ed8;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.income-toggle:hover {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #60a5fa;
+}
+
+.income-toggle .income-icon {
+    font-size: 0.9rem;
+}
+
+.income-toggle .income-summary {
+    font-weight: 600;
+}
+
+.income-toggle .income-arrow {
+    font-size: 0.6rem;
+    margin-left: 0.25rem;
+    opacity: 0.7;
+}
+
+/* Expanded details */
+.income-details {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 100;
+    min-width: 240px;
+    padding: 0.75rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.income-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.375rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.income-row:last-of-type {
+    border-bottom: none;
+}
+
+.income-row.income-warning {
+    color: #dc2626;
+    font-weight: 500;
+}
+
+.income-label {
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.income-value {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.85rem;
+}
+
+.income-meta {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.7rem;
+    color: #9ca3af;
+    text-align: right;
+}
+
+/* Year tabs */
+.income-year-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.income-year-tab {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.income-year-tab:hover {
+    background: #e5e7eb;
+}
+
+.income-year-tab.active {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: white;
+}
+
+/* Loaded state marker */
+.income-widget.income-loaded {
+    /* Can add specific styles for loaded state */
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .income-fetch-btn {
+        background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+        border-color: #047857;
+        color: #a7f3d0;
+    }
+
+    .income-fetch-btn:hover {
+        background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+        border-color: #10b981;
+    }
+
+    .income-toggle {
+        background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+        border-color: #3b82f6;
+        color: #bfdbfe;
+    }
+
+    .income-toggle:hover {
+        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    }
+
+    .income-details {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .income-row {
+        border-color: #374151;
+    }
+
+    .income-label {
+        color: #9ca3af;
+    }
+
+    .income-value {
+        color: #f9fafb;
+    }
+
+    .income-year-tab {
+        background: #374151;
+        border-color: #4b5563;
+        color: #d1d5db;
+    }
+
+    .income-year-tab.active {
+        background: #2563eb;
+        border-color: #2563eb;
+    }
+}
+
+/* Compact mode for table cells */
+.income-widget.compact .income-toggle,
+.income-widget.compact .income-fetch-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.income-widget.compact .income-icon {
+    font-size: 0.8rem;
+}
+
+/* Inline mode for text flow */
+.income-widget.inline {
+    display: inline;
+}
+
+.income-widget.inline .income-toggle,
+.income-widget.inline .income-fetch-btn {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
