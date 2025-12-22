@@ -2,7 +2,7 @@
 "use strict";
 
 const { createClient } = require('@supabase/supabase-js');
-const { BonnierNewsScraper } = require('../src/scrapers/bonnier-news-scraper');
+const { BonnierNewsScraper } = require('../lib/scrapers/bonnier-news-scraper');
 const path = require('path');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
