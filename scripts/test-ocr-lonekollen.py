@@ -27,8 +27,10 @@ os.environ['TESSDATA_PREFIX'] = '/opt/homebrew/share/tessdata'
 
 # ---------------- KONFIG ----------------
 
-CACHE_DIR = Path("/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/.ocr_cache")
-CACHE_DIR.mkdir(exist_ok=True)
+# Använd relativ path
+PROJECT_ROOT = Path(__file__).parent.parent
+CACHE_DIR = PROJECT_ROOT / "data" / ".ocr_cache"
+CACHE_DIR.mkdir(exist_ok=True, parents=True)
 
 # ROI-koordinater (x, y, width, height) som andel av bildens storlek
 # Baserat på PDF-layout analys (bild 2480x3509 px)
@@ -329,7 +331,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Använd argument eller default till alla PDF:er i downloads
-    downloads_dir = Path("/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/downloads")
+    downloads_dir = PROJECT_ROOT / "data" / "downloads"
 
     if args.pdfs:
         pdfs = args.pdfs

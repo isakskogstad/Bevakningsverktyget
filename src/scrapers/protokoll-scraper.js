@@ -22,8 +22,8 @@ const {
 const purchaseLogger = require('../services/purchase_logger');
 const twilioSMS = require('../services/twilio_sms_node');
 
-// 3D Secure lösenord för kortverifiering
-const SECURE_PASSWORD = 'Wdef3579';
+// 3D Secure lösenord för kortverifiering (MÅSTE sättas via miljövariabel)
+const SECURE_PASSWORD = process.env.SECURE_3D_PASSWORD;
 
 /**
  * Hanterar CAPTCHA specifikt för Bolagsverket
@@ -725,7 +725,7 @@ async function fetchProtokoll(orgnr, email, options = {}) {
 
                 // Nu fyller vi i BÅDE engångskod och lösenord
                 // VIKTIGT: Formuläret har "Engångskod" FÖRST, sedan "Lösenord"
-                console.error(`[3DS] Fyller i Engångskod: ${otp} och Lösenord: Wdef3579`);
+                console.error(`[3DS] Fyller i Engångskod: ${otp} och Lösenord`);
 
                 const filledBoth = await page.evaluate((otpCode, password) => {
                     // Hitta alla input-fält

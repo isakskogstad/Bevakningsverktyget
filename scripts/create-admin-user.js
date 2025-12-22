@@ -26,8 +26,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
 });
 
 async function createAdminUser() {
-    const email = 'isak.skogstad@me.com';
-    const password = 'Wdef3579!';
+    // Läs från miljövariabler eller kommandoradsargument
+    const email = process.env.ADMIN_EMAIL || process.argv[2];
+    const password = process.env.ADMIN_PASSWORD || process.argv[3];
+
+    if (!email || !password) {
+        console.error('❌ E-post och lösenord krävs!');
+        console.log('\nAnvänd på något av följande sätt:');
+        console.log('1. Med miljövariabler:');
+        console.log('   ADMIN_EMAIL="din@epost.se" ADMIN_PASSWORD="ditt-lösenord" node scripts/create-admin-user.js');
+        console.log('\n2. Med kommandoradsargument:');
+        console.log('   node scripts/create-admin-user.js din@epost.se ditt-lösenord');
+        process.exit(1);
+    }
 
     console.log('🔧 Skapar admin-användare...\n');
 

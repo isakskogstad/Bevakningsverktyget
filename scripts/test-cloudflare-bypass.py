@@ -7,9 +7,12 @@ import asyncio
 import sys
 import time
 import os
+from pathlib import Path
 
 TARGET_URL = "https://www.ratsit.se/loggain"
-SCREENSHOT_DIR = "/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/screenshots"
+# Använd relativ path
+PROJECT_ROOT = Path(__file__).parent.parent
+SCREENSHOT_DIR = str(PROJECT_ROOT / "data" / "screenshots")
 
 def save_screenshot(page, name):
     """Spara screenshot"""
