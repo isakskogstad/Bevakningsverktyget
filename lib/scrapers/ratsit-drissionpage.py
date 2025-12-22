@@ -51,6 +51,9 @@ AUTOMATION_EMAIL = os.environ.get('AUTOMATION_EMAIL', 'bevakning@graneidela.rese
 # =============================================================================
 def resend_list_received_emails(limit=20):
     """Hämta lista över MOTTAGNA e-postmeddelanden från Resend (inbound)"""
+    if not RESEND_API_KEY:
+        raise ValueError("RESEND_API_KEY saknas! Sätt miljövariabeln RESEND_API_KEY.")
+    
     headers = {"Authorization": f"Bearer {RESEND_API_KEY}"}
     # VIKTIGT: Använd /emails/receiving för inkommande emails!
     resp = requests.get(f"{RESEND_BASE_URL}/emails/receiving", headers=headers, params={"limit": limit})
@@ -62,6 +65,9 @@ def resend_list_received_emails(limit=20):
 
 def resend_get_email(email_id):
     """Hämta specifikt e-postmeddelande"""
+    if not RESEND_API_KEY:
+        raise ValueError("RESEND_API_KEY saknas! Sätt miljövariabeln RESEND_API_KEY.")
+    
     headers = {"Authorization": f"Bearer {RESEND_API_KEY}"}
     resp = requests.get(f"{RESEND_BASE_URL}/emails/{email_id}", headers=headers)
     if resp.status_code != 200:

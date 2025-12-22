@@ -68,6 +68,15 @@ class DIArticleScraper {
             email: options.email || CONFIG.DEFAULT_EMAIL,
             password: options.password || CONFIG.DEFAULT_PASSWORD
         };
+        
+        // Validera att credentials finns
+        if (!this.credentials.email || !this.credentials.password) {
+            throw new Error(
+                'DI-credentials saknas! Sätt DI_EMAIL och DI_PASSWORD i miljövariabler eller ' +
+                'skicka { email, password } till konstruktorn.'
+            );
+        }
+        
         this.cookiePath = options.cookiePath || CONFIG.COOKIE_PATH;
         this.sessionInfoPath = options.sessionInfoPath || CONFIG.SESSION_INFO_PATH;
         this.headless = options.headless ?? true; // Default headless för serverless
