@@ -2,6 +2,16 @@
 
 Centraliserad biblioteksstruktur för alla moduler, scrapers och verktyg.
 
+## 🎯 Kodkonsolidering (December 2024)
+
+**Alla implementationer finns nu i `lib/`-mappen.** Tidigare duplicerad kod i `src/` har ersatts med re-exports för bakåtkompatibilitet.
+
+- ✅ **Utils**: `lib/utils/browser-factory.js`, `lib/utils/popup-blocker.js`
+- ✅ **Scrapers**: `lib/scrapers/allabolag-scraper.js`, `lib/scrapers/poit-scraper.js`, `lib/scrapers/bonnier-news-scraper.js`
+- 🔁 **Re-exports**: `src/utils/*` och `src/scrapers/index.js` pekar till `lib/` för bakåtkompatibilitet
+
+**Ny kod bör alltid importera från `lib/` direkt.**
+
 ## Mappstruktur
 
 ```

@@ -13,7 +13,7 @@ const {
     dismissAllPopups,
     humanType: humanTypeBase,
     sleep
-} = require('../src/utils/browser-factory');
+} = require('../lib/utils/browser-factory');
 
 // Randomiserad delay för mänskligt beteende
 const humanDelay = () => sleep(Math.random() * 2000 + 1000);
