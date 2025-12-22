@@ -2,8 +2,7 @@
 // Purpose: Fetch POIT announcement details via proxy
 // Note: POIT is a JavaScript SPA - we fetch the page and extract key data
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const POIT_BASE_URL = 'https://poit.bolagsverket.se/poit-app/kungorelse/';
 
@@ -27,7 +26,7 @@ interface POITResponse {
   };
 }
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // CORS handling
   if (req.method === 'OPTIONS') {
     return new Response(null, {

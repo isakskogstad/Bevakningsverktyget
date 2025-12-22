@@ -208,7 +208,7 @@ function createFactbox(allabolagData, articleData = {}) {
     const d = allabolagData.company;
     const latestAccounts = d.companyAccounts?.[0]?.accounts || [];
 
-    let factbox = {
+    const factbox = {
         companyName: d.name || 'Okänt',
         orgnr: d.orgnr || 'N/A',
         foundationYear: d.foundationYear || 'N/A',

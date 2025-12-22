@@ -559,8 +559,8 @@ async function fetchProtokoll(orgnr, email, options = {}) {
         // Steg 11: Hantera 3D Secure - fylla i lösenord och begära engångskod
         console.error('Steg 11: Hanterar 3D Secure verifiering');
 
-        let currentUrl = page.url();
-        let pageText = await page.evaluate(() => document.body.innerText);
+        const currentUrl = page.url();
+        const pageText = await page.evaluate(() => document.body.innerText);
 
         // Kolla om vi är på 3D Secure-sidan (Länsförsäkringar/MasterCard ID Check)
         const is3DSecure = pageText.includes('Signera') ||
