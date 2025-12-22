@@ -35,9 +35,9 @@ const PROJECT_ROOT = path.resolve(__dirname, '../..');
 
 // Konfiguration
 const CONFIG = {
-    // Inloggningsuppgifter (kan överskrivas via options eller ENV)
-    DEFAULT_EMAIL: process.env.DI_EMAIL || 'isak.skogstad@me.com',
-    DEFAULT_PASSWORD: process.env.DI_PASSWORD || 'Wdef3579!',
+    // Inloggningsuppgifter (MÅSTE sättas via options eller ENV)
+    DEFAULT_EMAIL: process.env.DI_EMAIL,
+    DEFAULT_PASSWORD: process.env.DI_PASSWORD,
 
     // Sökvägar
     COOKIE_PATH: path.join(PROJECT_ROOT, 'data/di-session/cookies.json'),

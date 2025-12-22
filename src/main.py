@@ -51,8 +51,10 @@ async def lifespan(app: FastAPI):
 
     if not companies_path.exists():
         logger.warning(f"Företagslista hittades inte: {companies_path}")
-        # Försök med absolut path
-        companies_path = Path("/Users/isak/Desktop/CLAUDE_CODE /projects/bevakningsverktyg/companies.json")
+        # Försök med environment variabel om den finns
+        if settings.companies_path_override:
+            companies_path = Path(settings.companies_path_override)
+            logger.info(f"Använder överskriven path från miljövariabel: {companies_path}")
 
     logger.info(f"Laddar företag från: {companies_path}")
 
@@ -103,7 +105,7 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # I produktion: specifika origins
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

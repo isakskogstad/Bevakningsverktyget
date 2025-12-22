@@ -38,7 +38,7 @@ SCREENSHOT_DIR = "/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/scre
 COOKIE_FILE = "/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/ratsit-cookies.json"
 
 # Resend konfiguration
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY', 're_4dQhBror_5pNbW2oVUZvK4Y55FJ4GbuG4')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
 RESEND_BASE_URL = "https://api.resend.com"
 AUTOMATION_EMAIL = os.environ.get('AUTOMATION_EMAIL', 'bevakning@graneidela.resend.app')
 
