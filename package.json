@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/*.test.js",
+    "lint": "eslint docs/assets/js scripts lib src --max-warnings 200",
+    "lint:fix": "eslint docs/assets/js scripts lib src --fix",
     "ratsit-server": "node scripts/ratsit-server.js",
     "ratsit-server:visible": "HEADLESS=false node scripts/ratsit-server.js"
   },
@@ -42,5 +44,10 @@
   "bugs": {
     "url": "https://github.com/isakskogstad/Bevakningsverktyget/issues"
   },
-  "homepage": "https://github.com/isakskogstad/Bevakningsverktyget#readme"
+  "homepage": "https://github.com/isakskogstad/Bevakningsverktyget#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0"
+  }
 }
