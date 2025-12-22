@@ -5,9 +5,12 @@ Test DrissionPage för Cloudflare bypass på Ratsit.se
 
 import time
 import sys
+from pathlib import Path
 
 TARGET_URL = "https://www.ratsit.se/loggain"
-SCREENSHOT_DIR = "/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/screenshots"
+# Använd relativ path
+PROJECT_ROOT = Path(__file__).parent.parent
+SCREENSHOT_DIR = str(PROJECT_ROOT / "data" / "screenshots")
 
 def main():
     print("="*60)

@@ -35,8 +35,10 @@ from src.supabase_client import get_db
 
 # Configuration
 API_BASE = "https://gw.api.bolagsverket.se/vardefulla-datamangder/v1"
-OUTPUT_DIR = Path("/Users/isak/Desktop/CLAUDE_CODE /projects/loop-auto/test_annual_reports/comprehensive")
-OUTPUT_DIR.mkdir(exist_ok=True)
+# Använd relativ path
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+OUTPUT_DIR = PROJECT_ROOT / "data" / "test_annual_reports" / "comprehensive"
+OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
 # Test companies (randomly selected from database)
 TEST_COMPANIES = [

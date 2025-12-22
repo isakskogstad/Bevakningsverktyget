@@ -34,8 +34,12 @@ from datetime import datetime
 # Konfiguration
 RATSIT_BASE_URL = "https://www.ratsit.se"
 RATSIT_LOGIN_URL = f"{RATSIT_BASE_URL}/loggain"
-SCREENSHOT_DIR = "/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/screenshots"
-COOKIE_FILE = "/Users/isak/Desktop/CLAUDE_CODE /Bevakningsverktyget/data/ratsit-cookies.json"
+
+# Använd relativa paths eller konfigurera via miljövariabel
+import pathlib
+PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
+SCREENSHOT_DIR = os.environ.get('SCREENSHOT_DIR', str(PROJECT_ROOT / "data" / "screenshots"))
+COOKIE_FILE = os.environ.get('COOKIE_FILE', str(PROJECT_ROOT / "data" / "ratsit-cookies.json"))
 
 # Resend konfiguration
 RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
