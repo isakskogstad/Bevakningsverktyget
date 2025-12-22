@@ -56,10 +56,26 @@ class Settings(BaseSettings):
     @field_validator('allowed_origins', mode='before')
     @classmethod
     def parse_allowed_origins(cls, v):
-        """Parsar kommaseparerad sträng till lista"""
+        """Parsar kommaseparerad sträng till lista och validerar origins"""
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(',') if origin.strip()]
-        return v
+            origins = [origin.strip() for origin in v.split(',') if origin.strip()]
+        else:
+            origins = v
+        
+        # Validera att inga wildcards används (säkerhetsrisk)
+        for origin in origins:
+            if origin == '*':
+                raise ValueError(
+                    'Wildcard (*) är inte tillåtet för ALLOWED_ORIGINS av säkerhetsskäl. '
+                    'Specificera exakta origins, t.ex. "http://localhost:3000,https://example.com"'
+                )
+            # Validera att det ser ut som en URL (enkel kontroll)
+            if not origin.startswith(('http://', 'https://')):
+                raise ValueError(
+                    f'Origin måste vara en fullständig URL som börjar med http:// eller https://: {origin}'
+                )
+        
+        return origins
 
     class Config:
         env_file = ".env"

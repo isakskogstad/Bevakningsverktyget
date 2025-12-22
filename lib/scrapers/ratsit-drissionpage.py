@@ -28,6 +28,7 @@ import sys
 import time
 import os
 import re
+import pathlib
 import requests
 from datetime import datetime
 
@@ -36,7 +37,6 @@ RATSIT_BASE_URL = "https://www.ratsit.se"
 RATSIT_LOGIN_URL = f"{RATSIT_BASE_URL}/loggain"
 
 # Använd relativa paths eller konfigurera via miljövariabel
-import pathlib
 PROJECT_ROOT = pathlib.Path(__file__).parent.parent.parent
 SCREENSHOT_DIR = os.environ.get('SCREENSHOT_DIR', str(PROJECT_ROOT / "data" / "screenshots"))
 COOKIE_FILE = os.environ.get('COOKIE_FILE', str(PROJECT_ROOT / "data" / "ratsit-cookies.json"))
