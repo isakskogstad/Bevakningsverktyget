@@ -203,8 +203,9 @@ if __name__ == "__main__":
 
     scraper = ProtokollScraper(headless=False)
 
-    # Testa hämtning
-    result = scraper.fetch_protokoll("5593220048", "isak.skogstad@me.com")
+    # Testa hämtning - använd egen e-post
+    test_email = os.environ.get('TEST_EMAIL', 'din@epost.se')
+    result = scraper.fetch_protokoll("5593220048", test_email)
 
     print(f"\nResultat för {result.orgnr}:")
     print(f"  Success: {result.success}")
