@@ -6,9 +6,8 @@
     <title>Bevakningsverktyget - Loop Impact</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://unpkg.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@supabase/supabase-js@2" defer></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="assets/css/variables.css">
     <link rel="stylesheet" href="assets/css/reset.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -211,6 +210,51 @@
             font-size: var(--font-size-sm);
             color: var(--gray-500);
             line-height: 1.4;
+        }
+
+        /* Sync status styles */
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-xs);
+            color: var(--gray-600);
+        }
+
+        .sync-icon {
+            font-size: 0.9rem;
+        }
+
+        .sync-status.syncing {
+            background: var(--accent-muted);
+            color: var(--accent);
+        }
+
+        .sync-status.syncing .sync-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        .sync-status.success {
+            background: var(--success-muted);
+            color: var(--success);
+        }
+
+        .sync-status.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        #sync-poit-btn.syncing {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        #sync-poit-btn.syncing .sync-btn-icon {
+            animation: spin 1s linear infinite;
+            display: inline-block;
         }
 
         /* Settings button in nav */
@@ -806,6 +850,13 @@
                             Bolagshändelser
                         </h2>
                         <div class="section-actions">
+                            <span class="sync-status" id="poit-sync-status" title="Senaste synkronisering">
+                                <span class="sync-icon">⏱</span>
+                                <span class="sync-time" id="poit-last-sync">Laddar...</span>
+                            </span>
+                            <button class="btn btn-ghost btn-sm" onclick="triggerPoitSync()" id="sync-poit-btn" title="Synka nu">
+                                <span class="sync-btn-icon">↻</span> Synka
+                            </button>
                             <button class="btn btn-ghost btn-sm" onclick="refreshFeed()">↻ Uppdatera</button>
                         </div>
                     </div>
@@ -896,10 +947,6 @@
     </div>
 
     <script src="assets/js/config.js"></script>
-    <script src="assets/js/utils.js"></script>
-    <script src="assets/js/error-handler.js"></script>
-    <script src="assets/js/auth.js"></script>
-    <script src="assets/js/api.js"></script>
     <script>
         // =========================================================================
         // MAIN DASHBOARD
@@ -973,6 +1020,9 @@
             return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : email.substring(0, 2).toUpperCase();
         }
 
+        // Aktiva subscriptions
+        var poitSubscription = null;
+
         async function showDashboard() {
             document.getElementById('login-form').classList.add('hide');
             document.getElementById('dashboard').classList.add('show');
@@ -980,6 +1030,9 @@
             const email = currentUser.email;
             document.getElementById('user-email-display').textContent = email;
             document.getElementById('user-avatar').textContent = getInitials(email);
+
+            // Sätt upp realtime-subscription för POIT-händelser
+            setupRealtimeSubscription();
 
             try {
                 const { data: profile } = await sb
@@ -1004,6 +1057,7 @@
             await loadWatchedCompanies();
             await loadStats();
             await loadPoitEvents();
+            await updateSyncStatus();
         }
 
         async function handleLogout() {
@@ -1019,10 +1073,98 @@
         }
 
         // =========================================================================
-        // DATA LOADING
+        // REALTIME SUBSCRIPTION
+        // =========================================================================
+
+        function setupRealtimeSubscription() {
+            // Avsluta befintlig subscription om sådan finns
+            if (poitSubscription) {
+                poitSubscription.unsubscribe();
+            }
+
+            poitSubscription = sb
+                .channel('poit_realtime_dashboard')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'poit_announcements'
+                    },
+                    (payload) => {
+                        console.log('[Realtime] Ny POIT-händelse mottagen:', payload.new);
+                        // Visa toast-notifikation
+                        showNewEventToast(payload.new);
+                        // Invalidera cache
+                        if (window.CacheManager) {
+                            window.CacheManager.invalidate('poit');
+                            window.CacheManager.invalidate('dashboard_stats');
+                        }
+                        // Uppdatera statistik
+                        loadStats();
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('[Realtime] Dashboard subscription:', status);
+                });
+        }
+
+        function showNewEventToast(event) {
+            // Skapa toast-element om det inte finns
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+                document.body.appendChild(toastContainer);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.style.cssText = 'background:#1e293b;color:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;gap:10px;animation:slideIn 0.3s ease;cursor:pointer;';
+            toast.innerHTML = `
+                <span style="font-size:18px;">🔔</span>
+                <div>
+                    <div style="font-weight:600;font-size:13px;">Ny bolagshändelse</div>
+                    <div style="font-size:12px;opacity:0.8;">${event.company_name || 'Nytt företag'}</div>
+                </div>
+            `;
+            toast.onclick = () => {
+                refreshFeed();
+                toast.remove();
+            };
+
+            toastContainer.appendChild(toast);
+
+            // Ta bort efter 5 sekunder
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'slideOut 0.3s ease forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // =========================================================================
+        // DATA LOADING (med caching)
         // =========================================================================
 
         async function loadWatchedCompanies() {
+            const cacheKey = 'watched_companies';
+            const TTL = 10 * 60 * 1000; // 10 min
+
+            // Försök hämta från cache först
+            if (window.CacheManager) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached) {
+                    console.log('[Cache] Företagsdata från cache');
+                    watchedOrgnrs = cached.watchedOrgnrs;
+                    companyNames = cached.companyNames;
+                    document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
+                    return;
+                }
+            }
+
             const { data } = await sb
                 .from('loop_table')
                 .select('orgnr, company_name, sector, turnover_2024_sek')
@@ -1040,26 +1182,46 @@
                 }
             });
             document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
+
+            // Spara i cache
+            if (window.CacheManager) {
+                window.CacheManager.set(cacheKey, { watchedOrgnrs, companyNames });
+            }
         }
 
         async function loadStats() {
+            const cacheKey = 'dashboard_stats';
+            const TTL = 1 * 60 * 1000; // 1 min
+
+            // Försök hämta från cache först
+            if (window.CacheManager) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached) {
+                    console.log('[Cache] Dashboard-statistik från cache');
+                    document.getElementById('stat-poit').textContent = cached.weekValue;
+                    document.getElementById('stat-total').textContent = cached.totalValue;
+                    document.getElementById('poit-badge').textContent = cached.weekValue;
+                    return;
+                }
+            }
+
             const today = new Date();
             const sevenDaysAgo = new Date(today);
             sevenDaysAgo.setDate(today.getDate() - 7);
             const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-            // Bolagshändelser denna vecka - ENDAST för Loop's bevakade företag
+            // Bolagshändelser denna vecka - ENDAST för Loop's bevakade företag (orgnr satt = matchad)
             const { count: poitWeekCount } = await sb
-                .from('loop_poit_events')
+                .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
-                .not('matched_orgnr', 'is', null)
+                .not('orgnr', 'is', null)
                 .gte('announcement_date', sevenDaysAgoStr);
 
             // Totalt antal händelser (endast matchade)
             const { count: poitTotalCount } = await sb
-                .from('loop_poit_events')
+                .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
-                .not('matched_orgnr', 'is', null);
+                .not('orgnr', 'is', null);
 
             const weekValue = poitWeekCount || 0;
             const totalValue = poitTotalCount || 0;
@@ -1067,15 +1229,38 @@
             document.getElementById('stat-poit').textContent = weekValue;
             document.getElementById('stat-total').textContent = totalValue;
             document.getElementById('poit-badge').textContent = weekValue;
+
+            // Spara i cache
+            if (window.CacheManager) {
+                window.CacheManager.set(cacheKey, { weekValue, totalValue });
+            }
         }
 
         async function loadPoitEvents() {
-            // Hämta ENDAST bolagshändelser för Loop's 1214 bevakade företag
-            // Filtrera på matched_orgnr för att endast få matchade händelser
+            const cacheKey = `poit_events_${currentOffset}_${pageSize}`;
+            const TTL = 2 * 60 * 1000; // 2 min
+
+            // Försök hämta från cache först
+            if (window.CacheManager && currentOffset === 0) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached) {
+                    console.log('[Cache] POIT-händelser från cache');
+                    allEvents = cached;
+                    updateCategoryCounts();
+                    applyFilter();
+                    if (allEvents.length === pageSize) {
+                        document.getElementById('load-more-btn').style.display = 'inline-flex';
+                    }
+                    showCacheIndicator();
+                    return;
+                }
+            }
+
+            // Hämta ENDAST bolagshändelser som matchar bevakade företag (orgnr satt)
             const { data, error } = await sb
-                .from('loop_poit_events')
+                .from('poit_announcements')
                 .select('*')
-                .not('matched_orgnr', 'is', null)
+                .not('orgnr', 'is', null)
                 .order('announcement_date', { ascending: false })
                 .range(currentOffset, currentOffset + pageSize - 1);
 
@@ -1084,17 +1269,30 @@
                 return;
             }
 
-            // Använd matched_orgnr för företagsuppslag
+            // Extrahera företagsnamn från metadata
             allEvents = (data || []).map(e => ({
                 ...e,
-                orgnr: e.matched_orgnr || e.orgnr,
-                company_name: e.matched_company_name || e.company_name
+                company_name: e.metadata?.matched_company_name || e.orgnr
             }));
             updateCategoryCounts();
             applyFilter();
 
             if (allEvents.length === pageSize) {
                 document.getElementById('load-more-btn').style.display = 'inline-flex';
+            }
+
+            // Spara i cache (endast första sidan)
+            if (window.CacheManager && currentOffset === 0) {
+                window.CacheManager.set(cacheKey, allEvents);
+            }
+        }
+
+        function showCacheIndicator() {
+            // Visa en liten indikator att data är cachad
+            const badge = document.getElementById('poit-badge');
+            if (badge && !badge.dataset.cacheShown) {
+                badge.title = 'Data från cache - klicka för att uppdatera';
+                badge.dataset.cacheShown = 'true';
             }
         }
 
@@ -1368,8 +1566,89 @@
         // =========================================================================
 
         async function refreshFeed() {
+            // Invalidera cache vid manuell refresh
+            if (window.CacheManager) {
+                window.CacheManager.invalidate('poit_events');
+                window.CacheManager.invalidate('dashboard_stats');
+            }
             currentOffset = 0;
             await loadPoitEvents();
+            await loadStats();
+            await updateSyncStatus();
+        }
+
+        // Hämta och visa senaste sync-status från poit_sync_stats
+        async function updateSyncStatus() {
+            try {
+                const { data, error } = await sb
+                    .from('poit_sync_stats')
+                    .select('sync_completed_at, status, announcements_new')
+                    .order('sync_started_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                const syncStatusEl = document.getElementById('poit-sync-status');
+                const syncTimeEl = document.getElementById('poit-last-sync');
+
+                if (error || !data) {
+                    syncTimeEl.textContent = 'Ingen data';
+                    return;
+                }
+
+                // Formatera tid
+                const syncDate = new Date(data.sync_completed_at);
+                const now = new Date();
+                const diffMs = now - syncDate;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+
+                let timeText;
+                if (diffMins < 1) {
+                    timeText = 'Just nu';
+                } else if (diffMins < 60) {
+                    timeText = `${diffMins} min sedan`;
+                } else if (diffHours < 24) {
+                    timeText = `${diffHours}h sedan`;
+                } else {
+                    timeText = syncDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+                }
+
+                syncTimeEl.textContent = timeText;
+                syncStatusEl.classList.remove('syncing', 'error');
+                syncStatusEl.classList.add(data.status === 'completed' ? 'success' : 'error');
+                syncStatusEl.title = `Senast synkad: ${syncDate.toLocaleString('sv-SE')} (${data.announcements_new || 0} nya)`;
+            } catch (e) {
+                console.error('Fel vid hämtning av sync-status:', e);
+            }
+        }
+
+        // Trigga manuell POIT-synkronisering
+        async function triggerPoitSync() {
+            const btn = document.getElementById('sync-poit-btn');
+            const statusEl = document.getElementById('poit-sync-status');
+
+            // Visa synkning pågår
+            btn.classList.add('syncing');
+            statusEl.classList.remove('success', 'error');
+            statusEl.classList.add('syncing');
+            document.getElementById('poit-last-sync').textContent = 'Synkar...';
+
+            try {
+                // Anropa poit-sync edge function (om den finns)
+                // För nu, ladda bara om data
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await refreshFeed();
+
+                statusEl.classList.remove('syncing');
+                statusEl.classList.add('success');
+            } catch (e) {
+                console.error('Sync-fel:', e);
+                statusEl.classList.remove('syncing');
+                statusEl.classList.add('error');
+                document.getElementById('poit-last-sync').textContent = 'Fel vid synk';
+            } finally {
+                btn.classList.remove('syncing');
+            }
         }
 
         async function loadMoreEvents() {

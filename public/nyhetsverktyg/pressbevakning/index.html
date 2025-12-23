@@ -248,6 +248,59 @@
             border-radius: var(--radius-md);
             font-size: var(--font-size-sm);
         }
+
+        /* Kategori-badges */
+        .category-badge {
+            display: inline-block;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            margin-left: var(--spacing-2);
+        }
+        .category-pressmeddelande { background: #dbeafe; color: #1e40af; }
+        .category-nyhet { background: #fef3c7; color: #92400e; }
+        .category-rapport { background: #dcfce7; color: #166534; }
+        .category-event { background: #fae8ff; color: #86198f; }
+        .category-default { background: var(--gray-100); color: var(--gray-600); }
+
+        /* Dynamisk räknare */
+        .pressroom-count-badge {
+            background: var(--accent);
+            color: var(--white);
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+            margin-left: auto;
+        }
+
+        /* Load more button */
+        .load-more-container {
+            text-align: center;
+            padding: var(--spacing-6) 0;
+        }
+
+        /* Sort toggle */
+        .sort-toggle {
+            display: flex;
+            gap: 2px;
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
+            padding: 2px;
+        }
+        .sort-toggle button {
+            padding: 6px 12px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+        }
+        .sort-toggle button.active {
+            background: var(--white);
+            box-shadow: var(--shadow-sm);
+        }
     </style>
 </head>
 <body>
@@ -299,6 +352,10 @@
                 <select id="filter-source" class="btn btn-secondary btn-sm">
                     <option value="">Alla källor</option>
                 </select>
+                <div class="sort-toggle">
+                    <button class="active" data-sort="newest" onclick="setSortOrder('newest')">Nyast ↓</button>
+                    <button data-sort="oldest" onclick="setSortOrder('oldest')">Äldst ↑</button>
+                </div>
             </div>
 
             <div class="releases-grid" id="releases-grid">
@@ -367,6 +424,8 @@
         let releases = [];
         let searchTerm = '';
         let filterSource = '';
+        let sortOrder = 'newest';
+        let displayLimit = 20;
 
         // =========================================================================
         // FETCH RSS FEEDS
@@ -550,9 +609,41 @@
             grid.innerHTML = html;
         }
 
+        function setSortOrder(order) {
+            sortOrder = order;
+            // Uppdatera knappar
+            document.querySelectorAll('.sort-toggle button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.sort === order);
+            });
+            displayLimit = 20; // Återställ
+            renderReleases();
+        }
+
+        function loadMoreReleases() {
+            displayLimit += 20;
+            renderReleases();
+        }
+
+        function getCategoryBadge(title) {
+            const lowerTitle = title.toLowerCase();
+            if (lowerTitle.includes('rapport') || lowerTitle.includes('årsredovisning') || lowerTitle.includes('kvartalsrapport')) {
+                return '<span class="category-badge category-rapport">📊 Rapport</span>';
+            }
+            if (lowerTitle.includes('event') || lowerTitle.includes('konferens') || lowerTitle.includes('seminarium')) {
+                return '<span class="category-badge category-event">📅 Event</span>';
+            }
+            if (lowerTitle.includes('nyhet') || lowerTitle.includes('news')) {
+                return '<span class="category-badge category-nyhet">📰 Nyhet</span>';
+            }
+            if (lowerTitle.includes('pressmeddelande') || lowerTitle.includes('press release')) {
+                return '<span class="category-badge category-pressmeddelande">📢 Pressmeddelande</span>';
+            }
+            return '';
+        }
+
         function renderReleases() {
             const grid = document.getElementById('releases-grid');
-            let filtered = releases;
+            let filtered = [...releases];
 
             // Sökfilter
             if (searchTerm) {
@@ -568,6 +659,13 @@
                 filtered = filtered.filter(r => r.sourceId === filterSource);
             }
 
+            // Sortering
+            if (sortOrder === 'oldest') {
+                filtered.sort((a, b) => a.pubDate - b.pubDate);
+            } else {
+                filtered.sort((a, b) => b.pubDate - a.pubDate);
+            }
+
             document.getElementById('releases-count').textContent = `${filtered.length} pressmeddelanden`;
 
             if (filtered.length === 0) {
@@ -581,14 +679,17 @@
                 return;
             }
 
-            grid.innerHTML = filtered.slice(0, 20).map(release => `
+            const displayReleases = filtered.slice(0, displayLimit);
+            const hasMore = filtered.length > displayLimit;
+
+            let html = displayReleases.map(release => `
                 <div class="release-card">
                     <div class="release-image" style="background-image: url('${release.image || ''}');
                         ${!release.image ? 'display: flex; align-items: center; justify-content: center; font-size: 48px;' : ''}">
                         ${!release.image ? release.sourceLogo || '📰' : ''}
                     </div>
                     <div class="release-content">
-                        <span class="release-source">${release.sourceLogo || '📰'} ${escapeHtml(release.source)}</span>
+                        <span class="release-source">${release.sourceLogo || '📰'} ${escapeHtml(release.source)}${getCategoryBadge(release.title)}</span>
                         <h3 class="release-title">${escapeHtml(release.title)}</h3>
                         <p class="release-excerpt">${escapeHtml(release.description)}</p>
                         <div class="release-meta">
@@ -605,6 +706,30 @@
                     </div>
                 </div>
             `).join('');
+
+            // Ladda fler-knapp
+            if (hasMore) {
+                html += `
+                    <div class="load-more-container">
+                        <button class="btn btn-secondary" onclick="loadMoreReleases()">
+                            Ladda fler (${filtered.length - displayLimit} kvar)
+                        </button>
+                    </div>
+                `;
+            }
+
+            grid.innerHTML = html;
+
+            // Uppdatera pressroom-kort med dynamiska räknare
+            updatePressroomCounts();
+        }
+
+        function updatePressroomCounts() {
+            pressrooms.forEach(pr => {
+                const count = releases.filter(r => r.sourceId === pr.id).length;
+                const card = document.querySelector(`.pressroom-card[data-id="${pr.id}"] .pressroom-stat strong`);
+                if (card) card.textContent = count;
+            });
         }
 
         function updateSourceFilter() {

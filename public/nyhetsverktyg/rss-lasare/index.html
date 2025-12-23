@@ -27,6 +27,23 @@
         @media (max-width: 900px) {
             .rss-grid { grid-template-columns: 1fr; }
             .feeds-sidebar { display: none; }
+            .articles-header { flex-direction: column; align-items: stretch; }
+            .articles-header h2 { font-size: var(--font-size-base); }
+            .filter-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; }
+            .filter-tab { flex-shrink: 0; font-size: 0.8rem; padding: 6px 10px; }
+        }
+
+        @media (max-width: 600px) {
+            .articles-container { padding: var(--spacing-2); }
+            .article-card { min-height: auto; }
+            .article-card-content { padding: var(--spacing-3); }
+            .article-title { font-size: var(--font-size-base); -webkit-line-clamp: 2; }
+            .article-excerpt { font-size: var(--font-size-sm); -webkit-line-clamp: 2; }
+            .article-source { flex-wrap: wrap; gap: 4px; }
+            .lightbox-container { max-height: 100vh; border-radius: 0; }
+            .lightbox-title { font-size: var(--font-size-lg); }
+            .lightbox-content { padding: var(--spacing-4); }
+            #article-search { width: 100% !important; }
         }
 
         /* Feeds sidebar */
@@ -422,6 +439,22 @@
 
         .filter-tab:hover { border-color: var(--dark); }
         .filter-tab.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
+        .bookmark-count {
+            background: var(--accent);
+            color: var(--white);
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: var(--radius-full);
+            margin-left: 4px;
+        }
+        .filter-tab.active .bookmark-count {
+            background: var(--white);
+            color: var(--dark);
+        }
+        .article-action-btn.bookmarked {
+            color: #fbbf24;
+            opacity: 1;
+        }
 
         /* Load more button */
         .load-more-container {
@@ -669,6 +702,7 @@
 
             <div class="filter-tabs" id="category-tabs">
                 <button class="filter-tab active" data-category="all">Alla</button>
+                <button class="filter-tab" data-category="bookmarks">⭐ Sparade <span id="bookmarks-count" class="bookmark-count">0</span></button>
                 <button class="filter-tab" data-category="relevant">🎯 Relevanta</button>
                 <button class="filter-tab" data-category="companies">🏢 Bevakade företag</button>
                 <button class="filter-tab" data-category="omni">🔍 Omni-sök</button>
@@ -969,6 +1003,7 @@
         let searchQuery = '';
         let keywords = Utils.getStorage('rss-keywords', ['startup', 'greentech', 'cleantech', 'klimat', 'AI', 'konkurs']);
         let readArticles = Utils.getStorage('rss-read', []);
+        let bookmarkedArticles = Utils.getStorage('rss-bookmarks', []); // Sparade artiklar
         let seenArticleIds = new Set(); // För att spåra nya artiklar
         let autoUpdateTimer = null;
         let countdownTimer = null;
@@ -1461,6 +1496,84 @@
             }
         }
 
+        // Avancerad söksyntax
+        // source:breakit - filtrera på källa
+        // company:klarna - filtrera på företagsnamn
+        // from:2d - visa senaste 2 dagarna
+        // is:bookmarked - visa endast bokmärken
+        // is:unread - visa endast olästa
+        function applyAdvancedSearch(articles, query) {
+            let filtered = articles;
+            let remainingQuery = query.toLowerCase();
+
+            // source: filter
+            const sourceMatch = remainingQuery.match(/source:(\S+)/);
+            if (sourceMatch) {
+                const sourceQuery = sourceMatch[1];
+                filtered = filtered.filter(a =>
+                    a.source.toLowerCase().includes(sourceQuery) ||
+                    a.sourceId.toLowerCase().includes(sourceQuery)
+                );
+                remainingQuery = remainingQuery.replace(/source:\S+/, '').trim();
+            }
+
+            // company: filter
+            const companyMatch = remainingQuery.match(/company:(\S+)/);
+            if (companyMatch) {
+                const companyQuery = companyMatch[1];
+                filtered = filtered.filter(a =>
+                    (a.companyMatches && a.companyMatches.some(c => c.toLowerCase().includes(companyQuery))) ||
+                    a.title.toLowerCase().includes(companyQuery) ||
+                    a.description.toLowerCase().includes(companyQuery)
+                );
+                remainingQuery = remainingQuery.replace(/company:\S+/, '').trim();
+            }
+
+            // from: filter (from:1d, from:2d, from:1w)
+            const fromMatch = remainingQuery.match(/from:(\d+)([dwh])/);
+            if (fromMatch) {
+                const amount = parseInt(fromMatch[1]);
+                const unit = fromMatch[2];
+                let msAgo = 0;
+                if (unit === 'h') msAgo = amount * 60 * 60 * 1000;
+                else if (unit === 'd') msAgo = amount * 24 * 60 * 60 * 1000;
+                else if (unit === 'w') msAgo = amount * 7 * 24 * 60 * 60 * 1000;
+
+                const cutoffDate = new Date(Date.now() - msAgo);
+                filtered = filtered.filter(a => new Date(a.pubDate) >= cutoffDate);
+                remainingQuery = remainingQuery.replace(/from:\d+[dwh]/, '').trim();
+            }
+
+            // is:bookmarked filter
+            if (remainingQuery.includes('is:bookmarked')) {
+                filtered = filtered.filter(a => isArticleBookmarked(a.link));
+                remainingQuery = remainingQuery.replace('is:bookmarked', '').trim();
+            }
+
+            // is:unread filter
+            if (remainingQuery.includes('is:unread')) {
+                filtered = filtered.filter(a => !a.read);
+                remainingQuery = remainingQuery.replace('is:unread', '').trim();
+            }
+
+            // is:new filter
+            if (remainingQuery.includes('is:new')) {
+                filtered = filtered.filter(a => a.isNew);
+                remainingQuery = remainingQuery.replace('is:new', '').trim();
+            }
+
+            // Standard textsökning på kvarvarande query
+            if (remainingQuery.trim()) {
+                const words = remainingQuery.trim().split(/\s+/);
+                filtered = filtered.filter(a => {
+                    const searchText = (a.title + ' ' + a.description + ' ' + a.source).toLowerCase();
+                    return words.every(word => searchText.includes(word));
+                });
+            }
+
+            return filtered;
+        }
+
         function highlightKeywords() {
             articles.forEach(article => {
                 const text = (article.title + ' ' + article.description).toLowerCase();
@@ -1528,7 +1641,16 @@
             let filtered = articles;
 
             // Smart filtrering baserat på kategori
-            if (currentCategory === 'relevant') {
+            if (currentCategory === 'bookmarks') {
+                // Visa sparade artiklar
+                filtered = bookmarkedArticles.map(b => {
+                    // Kolla om artikeln finns i huvudlistan
+                    const liveArticle = articles.find(a => a.link === b.link);
+                    return liveArticle || b;
+                });
+                // Sortera efter sparad tidpunkt (nyast först)
+                filtered.sort((a, b) => new Date(b.savedAt || 0) - new Date(a.savedAt || 0));
+            } else if (currentCategory === 'relevant') {
                 // Visa bara artiklar med hög relevanspoäng
                 filtered = filtered.filter(a => (a.relevanceScore || 0) >= RSS_CONFIG.RELEVANCE_THRESHOLD);
                 // Sortera efter relevans
@@ -1547,15 +1669,9 @@
                 filtered = filtered.filter(a => a.sourceId === currentFeed);
             }
 
-            // Sökfilter - sök även i företagsnamn
+            // Avancerad söksyntax: source:, company:, from:
             if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                filtered = filtered.filter(a =>
-                    a.title.toLowerCase().includes(query) ||
-                    a.description.toLowerCase().includes(query) ||
-                    a.source.toLowerCase().includes(query) ||
-                    (a.companyMatches && a.companyMatches.some(c => c.toLowerCase().includes(query)))
-                );
+                filtered = applyAdvancedSearch(filtered, searchQuery);
             }
 
             // Beräkna statistik
@@ -1565,7 +1681,9 @@
             // Uppdatera statistik
             const statsEl = document.querySelector('.articles-stats');
             if (statsEl) {
-                if (currentCategory === 'relevant') {
+                if (currentCategory === 'bookmarks') {
+                    statsEl.textContent = `${filtered.length} sparade artiklar`;
+                } else if (currentCategory === 'relevant') {
                     statsEl.textContent = `${filtered.length} relevanta artiklar (av ${articles.length} totalt)`;
                 } else if (currentCategory === 'companies') {
                     statsEl.textContent = `${filtered.length} artiklar nämner bevakade företag`;
@@ -1577,9 +1695,11 @@
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <h3>Inga artiklar</h3>
-                        <p>${currentCategory === 'relevant'
+                        <div class="empty-state-icon">${currentCategory === 'bookmarks' ? '⭐' : '📭'}</div>
+                        <h3>${currentCategory === 'bookmarks' ? 'Inga sparade artiklar' : 'Inga artiklar'}</h3>
+                        <p>${currentCategory === 'bookmarks'
+                            ? 'Klicka på ⭐-knappen på en artikel för att spara den här.'
+                            : currentCategory === 'relevant'
                             ? 'Inga artiklar matchade dina relevansfilter. Prova att justera nyckelorden i inställningarna.'
                             : currentCategory === 'companies'
                             ? 'Inga nyheter omnämner just nu något av de bevakade företagen.'
@@ -1646,7 +1766,7 @@
                             <div class="article-meta">
                                 ${article.author ? `<span>✍️ ${escapeHtml(article.author)}</span>` : ''}
                                 <div class="article-actions">
-                                    <button class="article-action-btn" onclick="event.stopPropagation(); quickBookmark('${article.id}')" title="Spara">⭐</button>
+                                    <button class="article-action-btn ${isArticleBookmarked(article.link) ? 'bookmarked' : ''}" onclick="event.stopPropagation(); quickBookmark('${article.id}')" title="${isArticleBookmarked(article.link) ? 'Ta bort bokmärke' : 'Spara'}">⭐</button>
                                     <button class="article-action-btn" onclick="event.stopPropagation(); quickShare('${article.id}')" title="Dela">📤</button>
                                     <button class="article-action-btn" onclick="event.stopPropagation(); window.open('${escapeHtml(article.link)}', '_blank')" title="Öppna">↗️</button>
                                 </div>
@@ -1914,9 +2034,45 @@
         // Snabbåtgärder för artikelkort
         function quickBookmark(id) {
             const article = articles.find(a => a.id === id);
-            if (article) {
+            if (!article) return;
+
+            const isBookmarked = bookmarkedArticles.some(b => b.link === article.link);
+
+            if (isBookmarked) {
+                // Ta bort bokmärke
+                bookmarkedArticles = bookmarkedArticles.filter(b => b.link !== article.link);
+                Components.showToast(`Bokmärke borttaget`, 'info');
+            } else {
+                // Lägg till bokmärke
+                bookmarkedArticles.push({
+                    id: article.id,
+                    title: article.title,
+                    link: article.link,
+                    description: article.description,
+                    pubDate: article.pubDate,
+                    source: article.source,
+                    sourceId: article.sourceId,
+                    image: article.image,
+                    savedAt: new Date().toISOString()
+                });
                 Components.showToast(`"${article.title.substring(0, 30)}..." sparad ⭐`, 'success');
             }
+
+            Utils.setStorage('rss-bookmarks', bookmarkedArticles);
+            updateBookmarkCount();
+            renderArticles();
+        }
+
+        function updateBookmarkCount() {
+            const countEl = document.getElementById('bookmarks-count');
+            if (countEl) {
+                countEl.textContent = bookmarkedArticles.length;
+                countEl.style.display = bookmarkedArticles.length > 0 ? 'inline' : 'none';
+            }
+        }
+
+        function isArticleBookmarked(link) {
+            return bookmarkedArticles.some(b => b.link === link);
         }
 
         function quickShare(id) {
@@ -2058,6 +2214,9 @@
             // Ladda bevakade företag för smart filtrering
             console.log('🔄 Laddar bevakade företag...');
             await fetchMonitoredCompanies();
+
+            // Uppdatera bokmärkesräknaren
+            updateBookmarkCount();
 
             // Event listeners - kategori-filter
             document.querySelectorAll('.filter-tab').forEach(tab => {

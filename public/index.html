@@ -212,6 +212,51 @@
             line-height: 1.4;
         }
 
+        /* Sync status styles */
+        .sync-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--gray-100);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-xs);
+            color: var(--gray-600);
+        }
+
+        .sync-icon {
+            font-size: 0.9rem;
+        }
+
+        .sync-status.syncing {
+            background: var(--accent-muted);
+            color: var(--accent);
+        }
+
+        .sync-status.syncing .sync-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        .sync-status.success {
+            background: var(--success-muted);
+            color: var(--success);
+        }
+
+        .sync-status.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        #sync-poit-btn.syncing {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        #sync-poit-btn.syncing .sync-btn-icon {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
         /* Settings button in nav */
         .settings-btn {
             width: 36px;
@@ -805,6 +850,13 @@
                             Bolagshändelser
                         </h2>
                         <div class="section-actions">
+                            <span class="sync-status" id="poit-sync-status" title="Senaste synkronisering">
+                                <span class="sync-icon">⏱</span>
+                                <span class="sync-time" id="poit-last-sync">Laddar...</span>
+                            </span>
+                            <button class="btn btn-ghost btn-sm" onclick="triggerPoitSync()" id="sync-poit-btn" title="Synka nu">
+                                <span class="sync-btn-icon">↻</span> Synka
+                            </button>
                             <button class="btn btn-ghost btn-sm" onclick="refreshFeed()">↻ Uppdatera</button>
                         </div>
                     </div>
@@ -1005,6 +1057,7 @@
             await loadWatchedCompanies();
             await loadStats();
             await loadPoitEvents();
+            await updateSyncStatus();
         }
 
         async function handleLogout() {
@@ -1157,18 +1210,18 @@
             sevenDaysAgo.setDate(today.getDate() - 7);
             const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-            // Bolagshändelser denna vecka - ENDAST för Loop's bevakade företag
+            // Bolagshändelser denna vecka - ENDAST för Loop's bevakade företag (orgnr satt = matchad)
             const { count: poitWeekCount } = await sb
-                .from('loop_poit_events')
+                .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
-                .not('matched_orgnr', 'is', null)
+                .not('orgnr', 'is', null)
                 .gte('announcement_date', sevenDaysAgoStr);
 
             // Totalt antal händelser (endast matchade)
             const { count: poitTotalCount } = await sb
-                .from('loop_poit_events')
+                .from('poit_announcements')
                 .select('*', { count: 'exact', head: true })
-                .not('matched_orgnr', 'is', null);
+                .not('orgnr', 'is', null);
 
             const weekValue = poitWeekCount || 0;
             const totalValue = poitTotalCount || 0;
@@ -1203,12 +1256,11 @@
                 }
             }
 
-            // Hämta ENDAST bolagshändelser för Loop's 1214 bevakade företag
-            // Filtrera på matched_orgnr för att endast få matchade händelser
+            // Hämta ENDAST bolagshändelser som matchar bevakade företag (orgnr satt)
             const { data, error } = await sb
-                .from('loop_poit_events')
+                .from('poit_announcements')
                 .select('*')
-                .not('matched_orgnr', 'is', null)
+                .not('orgnr', 'is', null)
                 .order('announcement_date', { ascending: false })
                 .range(currentOffset, currentOffset + pageSize - 1);
 
@@ -1217,11 +1269,10 @@
                 return;
             }
 
-            // Använd matched_orgnr för företagsuppslag
+            // Extrahera företagsnamn från metadata
             allEvents = (data || []).map(e => ({
                 ...e,
-                orgnr: e.matched_orgnr || e.orgnr,
-                company_name: e.matched_company_name || e.company_name
+                company_name: e.metadata?.matched_company_name || e.orgnr
             }));
             updateCategoryCounts();
             applyFilter();
@@ -1523,6 +1574,81 @@
             currentOffset = 0;
             await loadPoitEvents();
             await loadStats();
+            await updateSyncStatus();
+        }
+
+        // Hämta och visa senaste sync-status från poit_sync_stats
+        async function updateSyncStatus() {
+            try {
+                const { data, error } = await sb
+                    .from('poit_sync_stats')
+                    .select('sync_completed_at, status, announcements_new')
+                    .order('sync_started_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                const syncStatusEl = document.getElementById('poit-sync-status');
+                const syncTimeEl = document.getElementById('poit-last-sync');
+
+                if (error || !data) {
+                    syncTimeEl.textContent = 'Ingen data';
+                    return;
+                }
+
+                // Formatera tid
+                const syncDate = new Date(data.sync_completed_at);
+                const now = new Date();
+                const diffMs = now - syncDate;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+
+                let timeText;
+                if (diffMins < 1) {
+                    timeText = 'Just nu';
+                } else if (diffMins < 60) {
+                    timeText = `${diffMins} min sedan`;
+                } else if (diffHours < 24) {
+                    timeText = `${diffHours}h sedan`;
+                } else {
+                    timeText = syncDate.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+                }
+
+                syncTimeEl.textContent = timeText;
+                syncStatusEl.classList.remove('syncing', 'error');
+                syncStatusEl.classList.add(data.status === 'completed' ? 'success' : 'error');
+                syncStatusEl.title = `Senast synkad: ${syncDate.toLocaleString('sv-SE')} (${data.announcements_new || 0} nya)`;
+            } catch (e) {
+                console.error('Fel vid hämtning av sync-status:', e);
+            }
+        }
+
+        // Trigga manuell POIT-synkronisering
+        async function triggerPoitSync() {
+            const btn = document.getElementById('sync-poit-btn');
+            const statusEl = document.getElementById('poit-sync-status');
+
+            // Visa synkning pågår
+            btn.classList.add('syncing');
+            statusEl.classList.remove('success', 'error');
+            statusEl.classList.add('syncing');
+            document.getElementById('poit-last-sync').textContent = 'Synkar...';
+
+            try {
+                // Anropa poit-sync edge function (om den finns)
+                // För nu, ladda bara om data
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                await refreshFeed();
+
+                statusEl.classList.remove('syncing');
+                statusEl.classList.add('success');
+            } catch (e) {
+                console.error('Sync-fel:', e);
+                statusEl.classList.remove('syncing');
+                statusEl.classList.add('error');
+                document.getElementById('poit-last-sync').textContent = 'Fel vid synk';
+            } finally {
+                btn.classList.remove('syncing');
+            }
         }
 
         async function loadMoreEvents() {

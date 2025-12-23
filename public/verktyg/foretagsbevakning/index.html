@@ -175,6 +175,36 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             background: var(--gray-100);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s, color 0.15s;
+            position: relative;
+        }
+        .company-table th:hover {
+            background: var(--gray-300);
+            color: var(--dark);
+        }
+        .company-table th.sortable::after {
+            content: '↕';
+            margin-left: 6px;
+            opacity: 0.4;
+            font-size: 0.7rem;
+        }
+        .company-table th.sort-asc::after {
+            content: '↑';
+            opacity: 1;
+            color: var(--dark);
+        }
+        .company-table th.sort-desc::after {
+            content: '↓';
+            opacity: 1;
+            color: var(--dark);
+        }
+        .company-table th:last-child {
+            cursor: default;
+        }
+        .company-table th:last-child:hover {
+            background: var(--gray-100);
         }
         .company-table tbody tr:hover {
             background: var(--gray-100);
@@ -187,6 +217,31 @@
             font-size: 0.85rem;
             color: var(--gray-500);
             font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            padding: 2px 4px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            border-radius: 4px;
+        }
+        .copy-btn:hover {
+            background: var(--gray-100);
+            color: var(--dark);
+        }
+        .company-table tbody tr:hover .copy-btn {
+            opacity: 1;
+        }
+        .copy-btn.copied {
+            opacity: 1;
+            color: var(--success);
         }
         .sector-badge {
             display: inline-block;
@@ -662,14 +717,14 @@
                     <table class="company-table">
                         <thead>
                             <tr>
-                                <th>Företag</th>
-                                <th>Orgnr</th>
-                                <th>Sektor</th>
-                                <th>Stad</th>
-                                <th>VD</th>
-                                <th>Anställda</th>
-                                <th>Omsättning 2024</th>
-                                <th>Värdering</th>
+                                <th class="sortable" data-sort="company_name" onclick="sortTable('company_name')">Företag</th>
+                                <th class="sortable" data-sort="orgnr" onclick="sortTable('orgnr')">Orgnr</th>
+                                <th class="sortable" data-sort="sector" onclick="sortTable('sector')">Sektor</th>
+                                <th class="sortable" data-sort="city" onclick="sortTable('city')">Stad</th>
+                                <th class="sortable" data-sort="ceo_name" onclick="sortTable('ceo_name')">VD</th>
+                                <th class="sortable" data-sort="num_employees" onclick="sortTable('num_employees')">Anställda</th>
+                                <th class="sortable" data-sort="turnover_2024_sek" onclick="sortTable('turnover_2024_sek')">Omsättning 2024</th>
+                                <th class="sortable" data-sort="latest_valuation_sek" onclick="sortTable('latest_valuation_sek')">Värdering</th>
                                 <th>Hemsida</th>
                                 <th></th>
                             </tr>
@@ -684,11 +739,10 @@
                     </table>
                 </div>
             </div>
-            <div class="pagination">
+            <div class="pagination" id="pagination-container">
                 <span class="pagination-info" id="pagination-info">Visar 0 av 0 företag</span>
                 <div class="pagination-buttons">
-                    <button class="btn btn-secondary btn-sm" id="prev-btn" onclick="prevPage()" disabled>Föregående</button>
-                    <button class="btn btn-secondary btn-sm" id="next-btn" onclick="nextPage()" disabled>Nästa</button>
+                    <button class="btn btn-accent btn-sm" id="load-more-btn" onclick="loadMore()" style="display: none;">Ladda fler</button>
                 </div>
             </div>
         </div>
@@ -830,8 +884,8 @@
         var companies = [];
         var filteredCompanies = [];
         var sectors = [];
-        var currentPage = 0;
         var pageSize = 50;
+        var sortState = { column: null, direction: 'asc' };
 
         async function init() {
             sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -843,10 +897,35 @@
                 return;
             }
 
+            // Restore saved sort state
+            const savedSort = localStorage.getItem('foretagsbevakning_sort');
+            if (savedSort) {
+                try {
+                    sortState = JSON.parse(savedSort);
+                } catch (e) { /* ignore */ }
+            }
+
+            // Restore saved filters
+            const savedFilters = localStorage.getItem('foretagsbevakning_filters');
+            if (savedFilters) {
+                try {
+                    const filters = JSON.parse(savedFilters);
+                    if (filters.search) document.getElementById('search-input').value = filters.search;
+                    if (filters.sector) document.getElementById('sector-filter').value = filters.sector;
+                    if (filters.status) document.getElementById('status-filter').value = filters.status;
+                } catch (e) { /* ignore */ }
+            }
+
             await loadCompanies();
             await loadSectors();
             await loadStats();
             setupSearch();
+
+            // Update sort headers after load
+            updateSortHeaders();
+
+            // Setup infinite scroll
+            setupInfiniteScroll();
         }
 
         async function loadCompanies() {
@@ -946,11 +1025,20 @@
             const sector = document.getElementById('sector-filter').value;
             const status = document.getElementById('status-filter').value;
 
+            // Save filters to localStorage
+            localStorage.setItem('foretagsbevakning_filters', JSON.stringify({
+                search: document.getElementById('search-input').value,
+                sector,
+                status
+            }));
+
             filteredCompanies = companies.filter(c => {
                 const matchSearch = !search ||
                     (c.company_name && c.company_name.toLowerCase().includes(search)) ||
                     (c.orgnr && c.orgnr.includes(search)) ||
-                    (c.sector && c.sector.toLowerCase().includes(search));
+                    (c.sector && c.sector.toLowerCase().includes(search)) ||
+                    (c.ceo_name && c.ceo_name.toLowerCase().includes(search)) ||
+                    (c.city && c.city.toLowerCase().includes(search));
 
                 const matchSector = !sector || (c.sector && c.sector.includes(sector));
                 const matchStatus = !status; // Implement status filtering if needed
@@ -958,17 +1046,86 @@
                 return matchSearch && matchSector && matchStatus;
             });
 
-            currentPage = 0;
+            applySorting();
             renderCompanies();
         }
 
-        function renderCompanies() {
+        function sortTable(column) {
+            // Toggle direction if same column, otherwise start with asc
+            if (sortState.column === column) {
+                sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortState.column = column;
+                sortState.direction = 'asc';
+            }
+
+            // Update header classes
+            updateSortHeaders();
+
+            // Apply sorting and re-render
+            applySorting();
+            renderCompanies();
+
+            // Save sort state to localStorage
+            localStorage.setItem('foretagsbevakning_sort', JSON.stringify(sortState));
+        }
+
+        function applySorting() {
+            if (!sortState.column) return;
+
+            const col = sortState.column;
+            const dir = sortState.direction === 'asc' ? 1 : -1;
+
+            filteredCompanies.sort((a, b) => {
+                let valA = a[col];
+                let valB = b[col];
+
+                // Handle null/undefined
+                if (valA == null && valB == null) return 0;
+                if (valA == null) return 1;
+                if (valB == null) return -1;
+
+                // Numeric columns
+                if (col === 'num_employees' || col === 'turnover_2024_sek' || col === 'latest_valuation_sek') {
+                    return (Number(valA) - Number(valB)) * dir;
+                }
+
+                // String columns
+                return String(valA).localeCompare(String(valB), 'sv') * dir;
+            });
+        }
+
+        function updateSortHeaders() {
+            // Remove all sort classes
+            document.querySelectorAll('.company-table th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+
+            // Add class to current sorted column
+            if (sortState.column) {
+                const th = document.querySelector(`.company-table th[data-sort="${sortState.column}"]`);
+                if (th) {
+                    th.classList.add(sortState.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            }
+        }
+
+        var displayedCount = 0; // Track how many companies are currently displayed
+
+        function renderCompanies(append = false) {
             const tbody = document.getElementById('companies-tbody');
-            const start = currentPage * pageSize;
-            const end = start + pageSize;
+            const total = filteredCompanies.length;
+
+            if (!append) {
+                displayedCount = 0;
+                tbody.innerHTML = '';
+            }
+
+            const start = displayedCount;
+            const end = Math.min(displayedCount + pageSize, total);
             const pageData = filteredCompanies.slice(start, end);
 
-            if (pageData.length === 0) {
+            if (total === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="10" class="empty-state">
@@ -977,38 +1134,82 @@
                         </td>
                     </tr>
                 `;
-            } else {
-                tbody.innerHTML = pageData.map(c => `
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                ${getCompanyLogo(c)}
-                                <div class="company-name">${c.company_name || 'Okänt'}</div>
-                            </div>
-                        </td>
-                        <td class="company-orgnr">${c.orgnr || '-'}</td>
-                        <td>${c.sector ? `<span class="sector-badge">${c.sector.split(',')[0]}</span>` : '-'}</td>
-                        <td>${c.city || '-'}</td>
-                        <td>${c.ceo_name || '-'}</td>
-                        <td>${c.num_employees || '-'}</td>
-                        <td>${c.turnover_2024_sek ? formatCurrency(c.turnover_2024_sek) : '-'}</td>
-                        <td>${c.latest_valuation_sek ? formatCurrency(c.latest_valuation_sek) : '-'}</td>
-                        <td>${c.website ? `<a href="${c.website.startsWith('http') ? c.website : 'https://' + c.website}" target="_blank" rel="noopener" style="color: var(--gray-700); text-decoration: none;">🔗</a>` : '-'}</td>
-                        <td>
-                            <button class="btn btn-secondary btn-sm" onclick="viewCompany('${c.orgnr}')">Visa</button>
-                        </td>
-                    </tr>
-                `).join('');
+                document.getElementById('pagination-info').textContent = 'Visar 0 av 0 företag';
+                document.getElementById('load-more-btn').style.display = 'none';
+                return;
             }
 
-            // Update pagination
-            const total = filteredCompanies.length;
-            const showing = Math.min(end, total);
-            document.getElementById('pagination-info').textContent =
-                `Visar ${start + 1}-${showing} av ${total} företag`;
+            const rowsHtml = pageData.map(c => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            ${getCompanyLogo(c)}
+                            <div class="company-name">${c.company_name || 'Okänt'}</div>
+                        </div>
+                    </td>
+                    <td class="company-orgnr">
+                        <span>${c.orgnr || '-'}</span>
+                        ${c.orgnr ? `<button class="copy-btn" onclick="copyOrgnr('${c.orgnr}', this)" title="Kopiera orgnr">📋</button>` : ''}
+                    </td>
+                    <td>${c.sector ? `<span class="sector-badge">${c.sector.split(',')[0]}</span>` : '-'}</td>
+                    <td>${c.city || '-'}</td>
+                    <td>${c.ceo_name || '-'}</td>
+                    <td>${c.num_employees || '-'}</td>
+                    <td>${c.turnover_2024_sek ? formatCurrency(c.turnover_2024_sek) : '-'}</td>
+                    <td>${c.latest_valuation_sek ? formatCurrency(c.latest_valuation_sek) : '-'}</td>
+                    <td>${c.website ? `<a href="${c.website.startsWith('http') ? c.website : 'https://' + c.website}" target="_blank" rel="noopener" style="color: var(--gray-700); text-decoration: none;">🔗</a>` : '-'}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" onclick="viewCompany('${c.orgnr}')">Visa</button>
+                    </td>
+                </tr>
+            `).join('');
 
-            document.getElementById('prev-btn').disabled = currentPage === 0;
-            document.getElementById('next-btn').disabled = end >= total;
+            if (append) {
+                tbody.insertAdjacentHTML('beforeend', rowsHtml);
+            } else {
+                tbody.innerHTML = rowsHtml;
+            }
+
+            displayedCount = end;
+
+            // Update pagination info
+            document.getElementById('pagination-info').textContent =
+                `Visar ${displayedCount} av ${total} företag`;
+
+            // Show/hide load more button
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (displayedCount < total) {
+                loadMoreBtn.style.display = 'inline-flex';
+                loadMoreBtn.textContent = `Ladda fler (${total - displayedCount} kvar)`;
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
+
+        function loadMore() {
+            renderCompanies(true);
+        }
+
+        // Infinite scroll observer
+        function setupInfiniteScroll() {
+            const options = {
+                root: null,
+                rootMargin: '200px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && displayedCount < filteredCompanies.length) {
+                        renderCompanies(true);
+                    }
+                });
+            }, options);
+
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                observer.observe(loadMoreBtn);
+            }
         }
 
         function getCompanyLogo(company) {
@@ -1053,20 +1254,6 @@
             return value + ' kr';
         }
 
-        function prevPage() {
-            if (currentPage > 0) {
-                currentPage--;
-                renderCompanies();
-            }
-        }
-
-        function nextPage() {
-            const maxPage = Math.ceil(filteredCompanies.length / pageSize) - 1;
-            if (currentPage < maxPage) {
-                currentPage++;
-                renderCompanies();
-            }
-        }
 
         // ===========================================
         // COMPANY DETAIL MODAL
@@ -1575,6 +1762,20 @@
             const container = document.getElementById('alert-container');
             container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
             setTimeout(() => container.innerHTML = '', 4000);
+        }
+
+        async function copyOrgnr(orgnr, btn) {
+            try {
+                await navigator.clipboard.writeText(orgnr);
+                btn.classList.add('copied');
+                btn.textContent = '✓';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.textContent = '📋';
+                }, 1500);
+            } catch (err) {
+                showAlert('Kunde inte kopiera: ' + err.message, 'error');
+            }
         }
 
         // ===========================================

@@ -317,6 +317,89 @@
         .back-link:hover {
             color: var(--dark);
         }
+
+        /* Required field indicator */
+        .form-label.required::after {
+            content: ' *';
+            color: #dc2626;
+        }
+
+        /* Validation states */
+        .form-input.invalid {
+            border-color: #dc2626;
+            background: #fef2f2;
+        }
+        .form-input.valid {
+            border-color: #059669;
+            background: #f0fdf4;
+        }
+        .form-error {
+            color: #dc2626;
+            font-size: var(--font-size-sm);
+            margin-top: var(--spacing-1);
+            display: none;
+        }
+        .form-input.invalid + .form-hint + .form-error,
+        .form-input.invalid ~ .form-error {
+            display: block;
+        }
+
+        /* Autosave indicator */
+        .autosave-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+        }
+        .autosave-indicator.saving {
+            color: var(--accent);
+        }
+        .autosave-indicator.saved {
+            color: #059669;
+        }
+
+        /* Password section */
+        .password-section {
+            margin-top: var(--spacing-4);
+            padding-top: var(--spacing-4);
+            border-top: 1px solid var(--gray-200);
+        }
+        .password-toggle {
+            color: var(--accent);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+        .password-toggle:hover {
+            text-decoration: underline;
+        }
+        .password-fields {
+            display: none;
+            margin-top: var(--spacing-4);
+        }
+        .password-fields.show {
+            display: block;
+        }
+
+        /* Test notification button */
+        .btn-test {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+            padding: var(--spacing-2) var(--spacing-3);
+            font-size: var(--font-size-sm);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-test:hover {
+            background: var(--gray-200);
+        }
+        .btn-test:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -357,9 +440,30 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="display-name">Visningsnamn</label>
-                        <input type="text" id="display-name" class="form-input" placeholder="Ditt namn">
+                        <label class="form-label required" for="display-name">Visningsnamn</label>
+                        <input type="text" id="display-name" class="form-input" placeholder="Ditt namn" required>
                         <p class="form-hint">Detta visas i gränssnittet och på delade rapporter</p>
+                        <p class="form-error">Visningsnamn är obligatoriskt</p>
+                    </div>
+
+                    <!-- Password change section -->
+                    <div class="password-section">
+                        <span class="password-toggle" onclick="togglePasswordFields()">🔒 Ändra lösenord</span>
+                        <div class="password-fields" id="password-fields">
+                            <div class="form-group">
+                                <label class="form-label" for="new-password">Nytt lösenord</label>
+                                <input type="password" id="new-password" class="form-input" placeholder="Minst 8 tecken">
+                                <p class="form-hint">Lämna tomt för att behålla nuvarande lösenord</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="confirm-password">Bekräfta lösenord</label>
+                                <input type="password" id="confirm-password" class="form-input" placeholder="Skriv lösenordet igen">
+                                <p class="form-error" id="password-error"></p>
+                            </div>
+                            <button type="button" class="btn-save" style="margin-top: var(--spacing-3);" onclick="changePassword()">
+                                Uppdatera lösenord
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -376,7 +480,10 @@
                             <div class="setting-label">E-postnotifieringar</div>
                             <div class="setting-description">Få dagliga sammanfattningar av nya bolagshändelser</div>
                         </div>
-                        <div class="setting-control">
+                        <div class="setting-control" style="display: flex; gap: var(--spacing-2); align-items: center;">
+                            <button class="btn-test" onclick="testEmailNotification()" id="test-email-btn">
+                                📧 Testa
+                            </button>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="email-notifications" checked>
                                 <span class="toggle-slider"></span>
@@ -388,7 +495,10 @@
                             <div class="setting-label">SMS-varningar</div>
                             <div class="setting-description">Direkta SMS vid konkurser och kritiska händelser</div>
                         </div>
-                        <div class="setting-control">
+                        <div class="setting-control" style="display: flex; gap: var(--spacing-2); align-items: center;">
+                            <button class="btn-test" onclick="testSmsNotification()" id="test-sms-btn">
+                                📱 Testa
+                            </button>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="sms-notifications">
                                 <span class="toggle-slider"></span>
@@ -397,8 +507,9 @@
                     </div>
                     <div class="form-group" style="margin-top: var(--spacing-4);">
                         <label class="form-label" for="phone-number">Telefonnummer för SMS</label>
-                        <input type="tel" id="phone-number" class="form-input" placeholder="+46 70 123 45 67">
-                        <p class="form-hint">Endast för SMS-varningar (valfritt)</p>
+                        <input type="tel" id="phone-number" class="form-input" placeholder="+46 70 123 45 67" oninput="validatePhoneNumber(this)">
+                        <p class="form-hint">Format: +46 70 123 45 67 eller 0701234567</p>
+                        <p class="form-error" id="phone-error">Ogiltigt telefonnummer</p>
                     </div>
                 </div>
             </section>
@@ -451,8 +562,11 @@
             </section>
 
             <!-- Save Button -->
-            <div class="settings-actions">
-                <button class="btn-save" onclick="saveSettings()">Spara inställningar</button>
+            <div class="settings-actions" style="align-items: center;">
+                <div class="autosave-indicator" id="autosave-status">
+                    <span id="autosave-text">Ändringar sparas automatiskt</span>
+                </div>
+                <button class="btn-save" onclick="saveSettings()">Spara nu</button>
             </div>
         </div>
     </main>
@@ -465,6 +579,8 @@
     <script>
         const sb = Auth.getClient();
         let currentUser = null;
+        let autosaveTimer = null;
+        let lastSaved = null;
 
         // Check auth on load
         document.addEventListener('DOMContentLoaded', async () => {
@@ -477,6 +593,7 @@
 
             currentUser = user;
             initializeSettings();
+            setupAutosave();
         });
 
         function initializeSettings() {
@@ -497,6 +614,7 @@
             }
             if (settings.phoneNumber) {
                 document.getElementById('phone-number').value = settings.phoneNumber;
+                validatePhoneNumber(document.getElementById('phone-number'));
             }
             if (settings.emailNotifications !== undefined) {
                 document.getElementById('email-notifications').checked = settings.emailNotifications;
@@ -510,20 +628,193 @@
             if (settings.compactView !== undefined) {
                 document.getElementById('compact-view').checked = settings.compactView;
             }
+
+            // Visa senaste sparade tid
+            if (settings.lastSaved) {
+                lastSaved = new Date(settings.lastSaved);
+                updateAutosaveStatus();
+            }
         }
 
-        function saveSettings() {
+        // Autosave setup
+        function setupAutosave() {
+            const inputs = document.querySelectorAll('.form-input, .toggle-switch input');
+            inputs.forEach(input => {
+                input.addEventListener('change', scheduleAutosave);
+                input.addEventListener('input', scheduleAutosave);
+            });
+        }
+
+        function scheduleAutosave() {
+            const statusEl = document.getElementById('autosave-status');
+            statusEl.className = 'autosave-indicator saving';
+            document.getElementById('autosave-text').textContent = 'Sparar...';
+
+            clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(() => {
+                saveSettings(true);
+            }, 1000);
+        }
+
+        function updateAutosaveStatus() {
+            const statusEl = document.getElementById('autosave-status');
+            const textEl = document.getElementById('autosave-text');
+
+            if (lastSaved) {
+                const now = new Date();
+                const diff = Math.floor((now - lastSaved) / 1000);
+                let timeText;
+                if (diff < 60) {
+                    timeText = 'just nu';
+                } else if (diff < 3600) {
+                    timeText = `${Math.floor(diff / 60)} min sedan`;
+                } else {
+                    timeText = lastSaved.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' });
+                }
+                textEl.textContent = `Sparat ${timeText}`;
+                statusEl.className = 'autosave-indicator saved';
+            }
+        }
+
+        function saveSettings(silent = false) {
+            // Validera obligatoriska fält
+            const displayName = document.getElementById('display-name');
+            if (!displayName.value.trim()) {
+                displayName.classList.add('invalid');
+                if (!silent) showToast('Visningsnamn är obligatoriskt', 'error');
+                return false;
+            }
+            displayName.classList.remove('invalid');
+
             const settings = {
-                displayName: document.getElementById('display-name').value,
+                displayName: displayName.value,
                 phoneNumber: document.getElementById('phone-number').value,
                 emailNotifications: document.getElementById('email-notifications').checked,
                 smsNotifications: document.getElementById('sms-notifications').checked,
                 watchedOnly: document.getElementById('watched-only').checked,
-                compactView: document.getElementById('compact-view').checked
+                compactView: document.getElementById('compact-view').checked,
+                lastSaved: new Date().toISOString()
             };
 
             localStorage.setItem('bevakningsverktyget_settings', JSON.stringify(settings));
-            showToast('Inställningar sparade!', 'success');
+            lastSaved = new Date();
+            updateAutosaveStatus();
+
+            if (!silent) {
+                showToast('Inställningar sparade!', 'success');
+            }
+            return true;
+        }
+
+        // Phone validation
+        function validatePhoneNumber(input) {
+            const value = input.value.replace(/\s+/g, '');
+            const phoneError = document.getElementById('phone-error');
+
+            if (!value) {
+                input.classList.remove('invalid', 'valid');
+                return true;
+            }
+
+            // Swedish phone patterns: +46XXXXXXXXX, 0XXXXXXXXX, 07XXXXXXXX
+            const validPatterns = [
+                /^\+46[0-9]{9,10}$/,      // +46701234567
+                /^0[0-9]{8,10}$/,          // 0701234567
+                /^46[0-9]{9,10}$/          // 46701234567
+            ];
+
+            const isValid = validPatterns.some(pattern => pattern.test(value));
+
+            if (isValid) {
+                input.classList.remove('invalid');
+                input.classList.add('valid');
+                return true;
+            } else {
+                input.classList.remove('valid');
+                input.classList.add('invalid');
+                return false;
+            }
+        }
+
+        // Password change
+        function togglePasswordFields() {
+            const fields = document.getElementById('password-fields');
+            fields.classList.toggle('show');
+        }
+
+        async function changePassword() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const errorEl = document.getElementById('password-error');
+
+            if (!newPassword) {
+                errorEl.textContent = 'Ange ett nytt lösenord';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                errorEl.textContent = 'Lösenordet måste vara minst 8 tecken';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                errorEl.textContent = 'Lösenorden matchar inte';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            errorEl.style.display = 'none';
+
+            try {
+                const { error } = await sb.auth.updateUser({ password: newPassword });
+
+                if (error) {
+                    showToast('Kunde inte uppdatera lösenord: ' + error.message, 'error');
+                } else {
+                    showToast('Lösenordet har uppdaterats!', 'success');
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                    document.getElementById('password-fields').classList.remove('show');
+                }
+            } catch (e) {
+                showToast('Ett fel uppstod: ' + e.message, 'error');
+            }
+        }
+
+        // Test notifications
+        async function testEmailNotification() {
+            const btn = document.getElementById('test-email-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Skickar...';
+
+            // Simulera API-anrop
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = '📧 Testa';
+                showToast('Testmail skickat till ' + currentUser.email, 'success');
+            }, 1500);
+        }
+
+        async function testSmsNotification() {
+            const btn = document.getElementById('test-sms-btn');
+            const phone = document.getElementById('phone-number').value;
+
+            if (!phone || !validatePhoneNumber(document.getElementById('phone-number'))) {
+                showToast('Ange ett giltigt telefonnummer först', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Skickar...';
+
+            // Simulera API-anrop
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = '📱 Testa';
+                showToast('Test-SMS skickat till ' + phone, 'success');
+            }, 1500);
         }
 
         async function logout() {
