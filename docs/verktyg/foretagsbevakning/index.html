@@ -851,7 +851,7 @@
         async function loadCompanies() {
             const { data, error } = await sb
                 .from('loop_companies_with_management')
-                .select('orgnr, company_name, sector, city, turnover_2024_sek, investment_status, ceo_name, chairman_name, website, board_count')
+                .select('orgnr, company_name, sector, city, postal_city, company_status, turnover_2024_sek, investment_status, ceo_name, chairman_name, website, board_count, num_employees, vdm_synced_at')
                 .order('company_name');
 
             if (error) {
@@ -956,26 +956,33 @@
                     </tr>
                 `;
             } else {
-                tbody.innerHTML = pageData.map(c => `
+                tbody.innerHTML = pageData.map(c => {
+                    const ort = c.postal_city || c.city || '-';
+                    const statusClass = c.company_status === 'ACTIVE' ? 'active' :
+                                       c.company_status === 'INACTIVE' ? 'inactive' : 'pending';
+                    const statusText = c.company_status === 'ACTIVE' ? 'Aktiv' :
+                                      c.company_status === 'INACTIVE' ? 'Inaktiv' : 'Bevakas';
+                    return `
                     <tr>
                         <td>
                             <div class="company-name">${c.company_name || 'Okänt'}</div>
                         </td>
                         <td class="company-orgnr">${c.orgnr || '-'}</td>
                         <td>${c.sector ? `<span class="sector-badge">${c.sector.split(',')[0]}</span>` : '-'}</td>
-                        <td>${c.city || '-'}</td>
+                        <td>${ort}</td>
                         <td>${c.ceo_name || '-'}</td>
                         <td>${c.chairman_name || '-'}</td>
                         <td>${c.turnover_2024_sek ? formatCurrency(c.turnover_2024_sek) : '-'}</td>
                         <td>
-                            <span class="status-dot active"></span>
-                            Bevakas
+                            <span class="status-dot ${statusClass}"></span>
+                            ${statusText}
                         </td>
                         <td>
                             <button class="btn btn-secondary btn-sm" onclick="viewCompany('${c.orgnr}')">Visa</button>
                         </td>
                     </tr>
-                `).join('');
+                `;
+                }).join('');
             }
 
             // Update pagination
@@ -1122,18 +1129,32 @@
         function populateOverview(company, details = {}) {
             const grid = document.getElementById('company-info-grid');
 
+            // Format status with color
+            const statusClass = company.company_status === 'ACTIVE' ? 'active' :
+                               company.company_status === 'INACTIVE' ? 'inactive' : 'pending';
+            const statusText = company.company_status === 'ACTIVE' ? 'Aktiv' :
+                              company.company_status === 'INACTIVE' ? 'Inaktiv' : 'Okänd';
+
+            // Format synced date
+            const syncedDate = company.vdm_synced_at ?
+                new Date(company.vdm_synced_at).toLocaleDateString('sv-SE') : '-';
+
+            // Use postal_city from VDM if available, fallback to city
+            const ort = company.postal_city || company.city || '-';
+
             // Basic company info
             const fields = [
                 { label: 'Företagsnamn', value: company.company_name || '-' },
                 { label: 'Organisationsnummer', value: formatOrgnr(company.orgnr) },
                 { label: 'Sektor', value: company.sector || '-' },
-                { label: 'Stad', value: company.city || '-' },
+                { label: 'Ort', value: ort },
                 { label: 'VD', value: (company.ceo_name || '-') + renderIncomeButton(company.ceo_name, 'VD', company) },
                 { label: 'Ordförande', value: (company.chairman_name || '-') + renderIncomeButton(company.chairman_name, 'Ordförande', company) },
+                { label: 'Antal anställda', value: company.num_employees || '-' },
                 { label: 'Omsättning 2024', value: company.turnover_2024_sek ? formatCurrency(company.turnover_2024_sek) : '-' },
                 { label: 'Webbplats', value: company.website ? `<a href="${company.website}" target="_blank" rel="noopener">${company.website}</a>` : '-' },
-                { label: 'Status', value: '<span class="status-dot active"></span> Aktiv bevakning' },
-                { label: 'Senaste uppdatering', value: new Date().toLocaleDateString('sv-SE') }
+                { label: 'Bolagsstatus', value: `<span class="status-dot ${statusClass}"></span> ${statusText}` },
+                { label: 'Data från Bolagsverket', value: syncedDate }
             ];
 
             let html = fields.map(f => `
