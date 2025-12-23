@@ -8,14 +8,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/auth.js"></script>
     <link rel="stylesheet" href="../../assets/css/variables.css">
     <link rel="stylesheet" href="../../assets/css/reset.css">
     <link rel="stylesheet" href="../../assets/css/components.css">
     <link rel="stylesheet" href="../../assets/css/layout.css">
     <link rel="stylesheet" href="../../assets/css/utilities.css">
-    <script>
-        window.location.replace('../../index.html');
-    </script>
+    <!-- Redirect borttagen 2025-12-23 - sidan aktiverad -->
     <style>
         /* Page-specific styles */
         .tool-container {
@@ -1262,13 +1262,22 @@
             e.target.value = value;
         });
 
-        // Check URL for orgnr parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlOrgnr = urlParams.get('orgnr');
-        if (urlOrgnr) {
-            orgnrInput.value = urlOrgnr.replace(/[^0-9]/g, '').slice(0, 10);
-            handleSearch(new Event('submit'));
-        }
+        // Auth-kontroll och init
+        (async () => {
+            const user = await Auth.getUser();
+            if (!user) {
+                window.location.href = '../../';
+                return;
+            }
+
+            // Check URL for orgnr parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlOrgnr = urlParams.get('orgnr');
+            if (urlOrgnr) {
+                orgnrInput.value = urlOrgnr.replace(/[^0-9]/g, '').slice(0, 10);
+                handleSearch(new Event('submit'));
+            }
+        })();
     </script>
 </body>
 </html>

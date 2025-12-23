@@ -577,8 +577,8 @@
         function renderPressrooms() {
             const grid = document.getElementById('pressrooms-grid');
 
-            let html = pressrooms.map(pr => `
-                <div class="pressroom-card" data-id="${pr.id}">
+            let html = pressrooms.map((pr, index) => `
+                <div class="pressroom-card" data-id="${escapeHtml(pr.id)}">
                     <div class="pressroom-header">
                         <div class="pressroom-logo">${pr.logo || '📰'}</div>
                         <div class="pressroom-info">
@@ -592,8 +592,8 @@
                         </span>
                     </div>
                     <div class="pressroom-actions">
-                        <a href="${pr.url}" target="_blank" class="btn btn-secondary btn-sm">Besök</a>
-                        <button class="btn btn-ghost btn-sm" onclick="removePressroom('${pr.id}')">🗑️</button>
+                        <a href="${escapeHtml(pr.url)}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">Besök</a>
+                        <button class="btn btn-ghost btn-sm remove-pressroom-btn" data-index="${index}">🗑️</button>
                     </div>
                 </div>
             `).join('');
@@ -607,6 +607,16 @@
             `;
 
             grid.innerHTML = html;
+
+            // Event delegation för säker hantering
+            grid.querySelectorAll('.remove-pressroom-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const index = parseInt(btn.dataset.index);
+                    if (pressrooms[index]) {
+                        removePressroom(pressrooms[index].id);
+                    }
+                };
+            });
         }
 
         function setSortOrder(order) {
@@ -682,11 +692,15 @@
             const displayReleases = filtered.slice(0, displayLimit);
             const hasMore = filtered.length > displayLimit;
 
-            let html = displayReleases.map(release => `
+            let html = displayReleases.map((release, index) => {
+                // Säker bild-URL hantering
+                const safeImageUrl = release.image ? escapeHtml(release.image) : '';
+                const safeLink = escapeHtml(release.link || '#');
+
+                return `
                 <div class="release-card">
-                    <div class="release-image" style="background-image: url('${release.image || ''}');
-                        ${!release.image ? 'display: flex; align-items: center; justify-content: center; font-size: 48px;' : ''}">
-                        ${!release.image ? release.sourceLogo || '📰' : ''}
+                    <div class="release-image" style="${safeImageUrl ? `background-image: url('${safeImageUrl}');` : 'display: flex; align-items: center; justify-content: center; font-size: 48px;'}">
+                        ${!release.image ? (release.sourceLogo || '📰') : ''}
                     </div>
                     <div class="release-content">
                         <span class="release-source">${release.sourceLogo || '📰'} ${escapeHtml(release.source)}${getCategoryBadge(release.title)}</span>
@@ -696,16 +710,16 @@
                             <span>📅 ${Utils.formatDate(release.pubDate, { relative: true })}</span>
                         </div>
                         <div class="release-actions">
-                            <a href="${release.link}" target="_blank" class="btn btn-accent btn-sm">
+                            <a href="${safeLink}" target="_blank" rel="noopener" class="btn btn-accent btn-sm">
                                 Läs pressmeddelande →
                             </a>
-                            <button class="btn btn-secondary btn-sm" onclick="investigateRelease('${escapeHtml(release.source)}')">
+                            <button class="btn btn-secondary btn-sm investigate-btn" data-source="${escapeHtml(release.source)}">
                                 🔍 Undersök företag
                             </button>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
 
             // Ladda fler-knapp
             if (hasMore) {
@@ -719,6 +733,11 @@
             }
 
             grid.innerHTML = html;
+
+            // Event delegation för investigate-knappar
+            grid.querySelectorAll('.investigate-btn').forEach(btn => {
+                btn.onclick = () => investigateRelease(btn.dataset.source);
+            });
 
             // Uppdatera pressroom-kort med dynamiska räknare
             updatePressroomCounts();

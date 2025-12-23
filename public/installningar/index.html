@@ -451,16 +451,21 @@
                         <span class="password-toggle" onclick="togglePasswordFields()">🔒 Ändra lösenord</span>
                         <div class="password-fields" id="password-fields">
                             <div class="form-group">
-                                <label class="form-label" for="new-password">Nytt lösenord</label>
-                                <input type="password" id="new-password" class="form-input" placeholder="Minst 8 tecken">
-                                <p class="form-hint">Lämna tomt för att behålla nuvarande lösenord</p>
+                                <label class="form-label required" for="current-password">Nuvarande lösenord</label>
+                                <input type="password" id="current-password" class="form-input" placeholder="Ange ditt nuvarande lösenord" required>
+                                <p class="form-hint">Krävs för att verifiera din identitet</p>
                             </div>
                             <div class="form-group">
-                                <label class="form-label" for="confirm-password">Bekräfta lösenord</label>
-                                <input type="password" id="confirm-password" class="form-input" placeholder="Skriv lösenordet igen">
+                                <label class="form-label required" for="new-password">Nytt lösenord</label>
+                                <input type="password" id="new-password" class="form-input" placeholder="Minst 8 tecken" required>
+                                <p class="form-hint">Välj ett starkt lösenord med minst 8 tecken</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required" for="confirm-password">Bekräfta nytt lösenord</label>
+                                <input type="password" id="confirm-password" class="form-input" placeholder="Skriv lösenordet igen" required>
                                 <p class="form-error" id="password-error"></p>
                             </div>
-                            <button type="button" class="btn-save" style="margin-top: var(--spacing-3);" onclick="changePassword()">
+                            <button type="button" class="btn-save" id="change-password-btn" style="margin-top: var(--spacing-3);" onclick="changePassword()">
                                 Uppdatera lösenord
                             </button>
                         </div>
@@ -696,14 +701,22 @@
                 lastSaved: new Date().toISOString()
             };
 
-            localStorage.setItem('bevakningsverktyget_settings', JSON.stringify(settings));
-            lastSaved = new Date();
-            updateAutosaveStatus();
+            try {
+                localStorage.setItem('bevakningsverktyget_settings', JSON.stringify(settings));
+                lastSaved = new Date();
+                updateAutosaveStatus();
 
-            if (!silent) {
-                showToast('Inställningar sparade!', 'success');
+                if (!silent) {
+                    showToast('Inställningar sparade!', 'success');
+                }
+                return true;
+            } catch (e) {
+                console.error('Kunde inte spara inställningar:', e);
+                if (!silent) {
+                    showToast('Kunde inte spara: ' + (e.name === 'QuotaExceededError' ? 'Lagringsutrymme fullt' : e.message), 'error');
+                }
+                return false;
             }
-            return true;
         }
 
         // Phone validation
@@ -743,9 +756,18 @@
         }
 
         async function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
             const errorEl = document.getElementById('password-error');
+            const btn = document.getElementById('change-password-btn');
+
+            // Validering
+            if (!currentPassword) {
+                errorEl.textContent = 'Ange ditt nuvarande lösenord';
+                errorEl.style.display = 'block';
+                return;
+            }
 
             if (!newPassword) {
                 errorEl.textContent = 'Ange ett nytt lösenord';
@@ -765,21 +787,51 @@
                 return;
             }
 
+            if (currentPassword === newPassword) {
+                errorEl.textContent = 'Det nya lösenordet måste skilja sig från det nuvarande';
+                errorEl.style.display = 'block';
+                return;
+            }
+
             errorEl.style.display = 'none';
 
-            try {
-                const { error } = await sb.auth.updateUser({ password: newPassword });
+            // Visa loading state
+            btn.disabled = true;
+            btn.textContent = 'Verifierar...';
 
-                if (error) {
-                    showToast('Kunde inte uppdatera lösenord: ' + error.message, 'error');
+            try {
+                // STEG 1: Verifiera nuvarande lösenord genom att logga in igen
+                const { error: signInError } = await sb.auth.signInWithPassword({
+                    email: currentUser.email,
+                    password: currentPassword
+                });
+
+                if (signInError) {
+                    errorEl.textContent = 'Fel nuvarande lösenord';
+                    errorEl.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Uppdatera lösenord';
+                    return;
+                }
+
+                // STEG 2: Uppdatera till nytt lösenord
+                btn.textContent = 'Uppdaterar...';
+                const { error: updateError } = await sb.auth.updateUser({ password: newPassword });
+
+                if (updateError) {
+                    showToast('Kunde inte uppdatera lösenord: ' + updateError.message, 'error');
                 } else {
                     showToast('Lösenordet har uppdaterats!', 'success');
+                    document.getElementById('current-password').value = '';
                     document.getElementById('new-password').value = '';
                     document.getElementById('confirm-password').value = '';
                     document.getElementById('password-fields').classList.remove('show');
                 }
             } catch (e) {
                 showToast('Ett fel uppstod: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Uppdatera lösenord';
             }
         }
 
@@ -818,8 +870,15 @@
         }
 
         async function logout() {
-            await sb.auth.signOut();
-            window.location.href = '../';
+            if (!confirm('Är du säker på att du vill logga ut?')) {
+                return;
+            }
+            try {
+                await sb.auth.signOut();
+                window.location.href = '../';
+            } catch (e) {
+                showToast('Kunde inte logga ut: ' + e.message, 'error');
+            }
         }
 
         function showToast(message, type = 'success') {

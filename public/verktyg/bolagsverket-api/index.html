@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bolagsverket VDM API - Bevakningsverktyget</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/auth.js"></script>
     <link rel="stylesheet" href="../../assets/css/variables.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
-    <script>
-        window.location.replace('../../index.html');
-    </script>
+    <!-- Redirect borttagen 2025-12-23 - sidan aktiverad -->
     <style>
         /* Page-specific styles */
         .search-container {
@@ -862,8 +863,15 @@
             URL.revokeObjectURL(url);
         }
 
-        // Initialize
-        checkAPIStatus();
+        // Initialize with auth check
+        (async () => {
+            const user = await Auth.getUser();
+            if (!user) {
+                window.location.href = '../../';
+                return;
+            }
+            checkAPIStatus();
+        })();
     </script>
 </body>
 </html>

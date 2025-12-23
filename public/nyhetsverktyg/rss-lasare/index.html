@@ -2151,12 +2151,17 @@
                 return;
             }
 
-            container.innerHTML = keywords.map(kw => `
+            container.innerHTML = keywords.map((kw, index) => `
                 <span class="badge badge-member mr-2 mb-2" style="display: inline-flex; align-items: center; gap: 4px;">
                     ${escapeHtml(kw)}
-                    <button onclick="removeKeyword('${escapeHtml(kw)}')" style="background:none;border:none;cursor:pointer;padding:0;margin-left:4px;">×</button>
+                    <button data-index="${index}" class="remove-keyword-btn" style="background:none;border:none;cursor:pointer;padding:0;margin-left:4px;">×</button>
                 </span>
             `).join('');
+
+            // Event delegation för säker hantering
+            container.querySelectorAll('.remove-keyword-btn').forEach(btn => {
+                btn.onclick = () => removeKeyword(keywords[parseInt(btn.dataset.index)]);
+            });
         }
 
         function addKeyword() {

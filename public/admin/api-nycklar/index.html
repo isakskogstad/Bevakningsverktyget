@@ -418,19 +418,19 @@
             container.innerHTML = keys.map(key => `
                 <div class="key-item">
                     <div class="key-info">
-                        <h4>${key.name || 'Namnlös nyckel'}</h4>
-                        <span class="key-email">${key.email}</span>
-                        <div class="key-value">${key.api_key ? key.api_key.substring(0, 16) + '...' : '---'}</div>
+                        <h4>${escapeHtml(key.name) || 'Namnlös nyckel'}</h4>
+                        <span class="key-email">${escapeHtml(key.email)}</span>
+                        <div class="key-value">${key.api_key ? escapeHtml(key.api_key.substring(0, 16)) + '...' : '---'}</div>
                         <div class="key-meta">
-                            <span class="status-badge status-${key.status || 'active'}">${translateStatus(key.status)}</span>
-                            <span>Anrop idag: ${key.daily_requests || 0}</span>
-                            <span>Totalt: ${key.total_requests || 0}</span>
+                            <span class="status-badge status-${escapeHtml(key.status) || 'active'}">${escapeHtml(translateStatus(key.status))}</span>
+                            <span>Anrop idag: ${parseInt(key.daily_requests) || 0}</span>
+                            <span>Totalt: ${parseInt(key.total_requests) || 0}</span>
                         </div>
                     </div>
                     <div class="key-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="copyKey('${key.api_key}')">Kopiera</button>
-                        <button class="btn btn-secondary btn-sm" onclick="editKey('${key.id}')">Redigera</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteKey('${key.id}')">Ta bort</button>
+                        <button class="btn btn-secondary btn-sm" data-key="${escapeHtml(key.api_key)}" onclick="copyKeyFromButton(this)">Kopiera</button>
+                        <button class="btn btn-secondary btn-sm" data-id="${escapeHtml(key.id)}" onclick="editKeyFromButton(this)">Redigera</button>
+                        <button class="btn btn-danger btn-sm" data-id="${escapeHtml(key.id)}" onclick="deleteKeyFromButton(this)">Ta bort</button>
                     </div>
                 </div>
             `).join('');
@@ -445,13 +445,18 @@
             return translations[status] || 'Aktiv';
         }
 
+        // Kryptografiskt säker API-nyckelgenerering
         function generateApiKey() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-            for (let i = 0; i < 32; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        // HTML escaping för XSS-skydd
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'};
+            return String(text).replace(/[&<>"']/g, m => map[m]);
         }
 
         function openModal(keyId = null) {
@@ -516,6 +521,22 @@
             loadKeys();
         }
 
+        // Wrapper-funktioner för säker data-attribute hantering
+        function copyKeyFromButton(btn) {
+            const apiKey = btn.dataset.key;
+            copyKey(apiKey);
+        }
+
+        function editKeyFromButton(btn) {
+            const id = btn.dataset.id;
+            editKey(id);
+        }
+
+        function deleteKeyFromButton(btn) {
+            const id = btn.dataset.id;
+            deleteKey(id);
+        }
+
         function editKey(id) {
             openModal(id);
         }
@@ -535,15 +556,33 @@
         }
 
         async function copyKey(apiKey) {
-            if (apiKey) {
+            if (!apiKey) return;
+
+            try {
                 await navigator.clipboard.writeText(apiKey);
                 showAlert('API-nyckel kopierad till urklipp!', 'success');
+            } catch (error) {
+                // Fallback för äldre browsers eller HTTPS-problem
+                const textArea = document.createElement('textarea');
+                textArea.value = apiKey;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showAlert('API-nyckel kopierad till urklipp!', 'success');
+                } catch (e) {
+                    showAlert('Kunde inte kopiera. Kopiera manuellt: ' + apiKey.substring(0, 16) + '...', 'error');
+                }
+                document.body.removeChild(textArea);
             }
         }
 
         function showAlert(message, type) {
             const container = document.getElementById('alert-container');
-            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+            container.innerHTML = `<div class="alert alert-${safeType}">${escapeHtml(message)}</div>`;
             setTimeout(() => container.innerHTML = '', 4000);
         }
 

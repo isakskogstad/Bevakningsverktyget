@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF-parser | Bevakningsverktyget</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/auth.js"></script>
     <link rel="stylesheet" href="../../assets/css/variables.css">
     <link rel="stylesheet" href="../../assets/css/main.css">
     <style>
@@ -1066,6 +1069,12 @@
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2000);
         }
+
+        // Auth check
+        (async () => {
+            const user = await Auth.getUser();
+            if (!user) window.location.href = '../../';
+        })();
     </script>
 </body>
 </html>

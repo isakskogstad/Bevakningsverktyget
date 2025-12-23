@@ -888,44 +888,55 @@
         var sortState = { column: null, direction: 'asc' };
 
         async function init() {
-            sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            try {
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            // Check auth
-            const { data: { session } } = await sb.auth.getSession();
-            if (!session) {
-                window.location.href = '../../';
-                return;
+                // Check auth
+                const { data: { session }, error: authError } = await sb.auth.getSession();
+                if (authError) {
+                    console.error('[Init] Auth error:', authError);
+                    showAlert('Autentisering misslyckades. Försök logga in igen.', 'error');
+                    setTimeout(() => window.location.href = '../../', 2000);
+                    return;
+                }
+                if (!session) {
+                    window.location.href = '../../';
+                    return;
+                }
+
+                // Restore saved sort state
+                const savedSort = localStorage.getItem('foretagsbevakning_sort');
+                if (savedSort) {
+                    try {
+                        sortState = JSON.parse(savedSort);
+                    } catch (e) { /* ignore */ }
+                }
+
+                // Restore saved filters
+                const savedFilters = localStorage.getItem('foretagsbevakning_filters');
+                if (savedFilters) {
+                    try {
+                        const filters = JSON.parse(savedFilters);
+                        if (filters.search) document.getElementById('search-input').value = filters.search;
+                        if (filters.sector) document.getElementById('sector-filter').value = filters.sector;
+                        if (filters.status) document.getElementById('status-filter').value = filters.status;
+                    } catch (e) { /* ignore */ }
+                }
+
+                await loadCompanies();
+                await loadSectors();
+                await loadStats();
+                setupSearch();
+
+                // Update sort headers after load
+                updateSortHeaders();
+
+                // Setup infinite scroll
+                setupInfiniteScroll();
+            } catch (error) {
+                console.error('[Init] Fatal error:', error);
+                showAlert('Kunde inte starta sidan: ' + error.message, 'error');
             }
-
-            // Restore saved sort state
-            const savedSort = localStorage.getItem('foretagsbevakning_sort');
-            if (savedSort) {
-                try {
-                    sortState = JSON.parse(savedSort);
-                } catch (e) { /* ignore */ }
-            }
-
-            // Restore saved filters
-            const savedFilters = localStorage.getItem('foretagsbevakning_filters');
-            if (savedFilters) {
-                try {
-                    const filters = JSON.parse(savedFilters);
-                    if (filters.search) document.getElementById('search-input').value = filters.search;
-                    if (filters.sector) document.getElementById('sector-filter').value = filters.sector;
-                    if (filters.status) document.getElementById('status-filter').value = filters.status;
-                } catch (e) { /* ignore */ }
-            }
-
-            await loadCompanies();
-            await loadSectors();
-            await loadStats();
-            setupSearch();
-
-            // Update sort headers after load
-            updateSortHeaders();
-
-            // Setup infinite scroll
-            setupInfiniteScroll();
         }
 
         async function loadCompanies() {
@@ -1015,7 +1026,12 @@
             const sectorFilter = document.getElementById('sector-filter');
             const statusFilter = document.getElementById('status-filter');
 
-            searchInput.addEventListener('input', filterCompanies);
+            // Debounce search för bättre prestanda med 1200+ företag
+            let searchDebounce;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(filterCompanies, 300);
+            });
             sectorFilter.addEventListener('change', filterCompanies);
             statusFilter.addEventListener('change', filterCompanies);
         }
@@ -1213,15 +1229,27 @@
         }
 
         function getCompanyLogo(company) {
+            const safeName = escapeHtml(company.company_name || 'Okänt');
             // Om det finns en logo_url, använd den
             if (company.logo_url) {
-                return `<img src="${company.logo_url}"
-                    alt="${company.company_name}"
+                // Använd data-attribute istället för inline onerror för säkerhet
+                return `<img src="${escapeHtml(company.logo_url)}"
+                    alt="${safeName}"
+                    data-company-name="${safeName}"
                     style="width: 32px; height: 32px; border-radius: 6px; object-fit: contain; background: #f5f5f5;"
-                    onerror="this.outerHTML='${generateInitialsLogo(company.company_name).replace(/'/g, "\\'")}'">`;
+                    onerror="handleLogoError(this)">`;
             }
             // Annars generera initialer
             return generateInitialsLogo(company.company_name);
+        }
+
+        // Säker fallback för logotyper
+        function handleLogoError(img) {
+            const companyName = img.dataset.companyName || 'OK';
+            const fallback = generateInitialsLogo(companyName);
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = fallback;
+            img.replaceWith(wrapper.firstChild);
         }
 
         function generateInitialsLogo(name) {
@@ -1738,29 +1766,45 @@
         });
 
         function exportCSV() {
+            // Escape CSV-värden för att förhindra CSV injection
+            function escapeCSV(value) {
+                if (value === null || value === undefined) return '';
+                const str = String(value);
+                // Om värdet börjar med =, +, -, @ eller innehåller komma/citattecken
+                if (/^[=+\-@\t\r]/.test(str) || /[,"\n]/.test(str)) {
+                    // Escape citattecken och omslut med citattecken
+                    return '"' + str.replace(/"/g, '""') + '"';
+                }
+                return str;
+            }
+
             const headers = ['Företagsnamn', 'Orgnr', 'Sektor', 'Stad', 'VD', 'Ordförande', 'Omsättning 2024'];
             const rows = filteredCompanies.map(c => [
-                c.company_name || '',
-                c.orgnr || '',
-                c.sector || '',
-                c.city || '',
-                c.ceo_name || '',
-                c.chairman_name || '',
-                c.turnover_2024_sek || ''
+                escapeCSV(c.company_name),
+                escapeCSV(c.orgnr),
+                escapeCSV(c.sector),
+                escapeCSV(c.city),
+                escapeCSV(c.ceo_name),
+                escapeCSV(c.chairman_name),
+                escapeCSV(c.turnover_2024_sek)
             ]);
 
-            const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const csv = [headers.map(escapeCSV), ...rows].map(row => row.join(',')).join('\n');
+            // BOM för korrekt UTF-8 i Excel
+            const bom = '\uFEFF';
+            const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'loop-impact-foretag.csv';
             a.click();
+            URL.revokeObjectURL(url); // Rensa minne
         }
 
         function showAlert(message, type) {
             const container = document.getElementById('alert-container');
-            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            const safeType = type === 'success' ? 'success' : 'error';
+            container.innerHTML = `<div class="alert alert-${safeType}">${escapeHtml(message)}</div>`;
             setTimeout(() => container.innerHTML = '', 4000);
         }
 

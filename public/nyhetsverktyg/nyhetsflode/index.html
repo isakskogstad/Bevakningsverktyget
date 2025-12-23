@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nyhetsflöde | Bevakningsverktyg</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        window.location.replace('../../index.html');
-    </script>
+    <!-- Redirect borttagen 2025-12-23 - sidan aktiverad -->
     <style>
         :root {
             /* Ljust tema - matchande med dashboard */
@@ -754,13 +752,16 @@
         </section>
     </main>
 
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/auth.js"></script>
     <script>
         // =============================================================================
         // KONFIGURATION
         // =============================================================================
 
-        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+        const SUPABASE_URL = CONFIG?.supabase?.url || 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = CONFIG?.supabase?.key || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
         const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
         // Hårdkodade RSS-feeds (från RSS-läsare och Pressbevakning)
@@ -1282,6 +1283,13 @@
         // =============================================================================
 
         async function init() {
+            // Kolla auth först
+            const user = await Auth.getUser();
+            if (!user) {
+                window.location.href = '../../';
+                return;
+            }
+
             // Ladda data parallellt
             await Promise.all([
                 loadPressrooms(),
@@ -1295,7 +1303,12 @@
             await loadAllFeeds();
         }
 
-        init();
+        // Vänta på att DOM är laddad
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>

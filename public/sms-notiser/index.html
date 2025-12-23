@@ -339,7 +339,7 @@
                 return;
             }
 
-            container.innerHTML = rules.map(rule => `
+            container.innerHTML = rules.map((rule, index) => `
                 <div class="rule-card">
                     <div class="rule-header">
                         <div class="rule-title">${escapeHtml(rule.name)}</div>
@@ -355,14 +355,28 @@
                         ${rule.conditions.map(c => `<span class="condition-tag">${escapeHtml(c)}</span>`).join('')}
                     </div>
                     <div class="rule-actions">
-                        <button class="btn btn-sm ${rule.active ? 'btn-secondary' : 'btn-accent'}"
-                                onclick="toggleRule('${rule.id}')">
+                        <button class="btn btn-sm ${rule.active ? 'btn-secondary' : 'btn-accent'} toggle-rule-btn"
+                                data-index="${index}">
                             ${rule.active ? 'Pausa' : 'Aktivera'}
                         </button>
-                        <button class="btn btn-sm btn-ghost" onclick="deleteRule('${rule.id}')">🗑️</button>
+                        <button class="btn btn-sm btn-ghost delete-rule-btn" data-index="${index}">🗑️</button>
                     </div>
                 </div>
             `).join('');
+
+            // Event delegation för säker hantering
+            container.querySelectorAll('.toggle-rule-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const index = parseInt(btn.dataset.index);
+                    if (rules[index]) toggleRule(rules[index].id);
+                };
+            });
+            container.querySelectorAll('.delete-rule-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const index = parseInt(btn.dataset.index);
+                    if (rules[index]) deleteRule(rules[index].id);
+                };
+            });
         }
 
         function renderHistory() {
