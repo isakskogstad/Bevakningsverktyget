@@ -664,6 +664,83 @@
             max-height: 70vh;
             overflow-y: auto;
         }
+
+        /* Company logo image */
+        .company-logo-img {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            object-fit: contain;
+            background: var(--gray-100);
+        }
+
+        /* Toast notifications */
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            background: var(--gray-900);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background: var(--success);
+        }
+
+        .toast-error {
+            background: var(--error);
+        }
+
+        .toast-icon {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .toast-message {
+            font-size: var(--font-size-sm);
+        }
+
+        /* Spinner for loading states */
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--gray-200);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Loading and error states */
+        .loading-state, .error-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-8);
+        }
+
+        .loading-state p, .error-state p {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -1411,10 +1488,13 @@
                                 `).join('')}
                             </div>
                             <div class="feed-group-actions">
-                                <button class="btn btn-accent btn-sm" onclick="investigateCompany('${group.orgnr}', '${escapeHtml(group.companyName)}')">
+                                <button class="btn btn-accent btn-sm"
+                                        data-orgnr="${group.orgnr || ''}"
+                                        data-company="${escapeHtml(group.companyName)}"
+                                        onclick="investigateCompanyFromButton(this)">
                                     Undersök företaget
                                 </button>
-                                <button class="btn btn-secondary btn-sm" onclick="ignoreGroup('${group.key}')">
+                                <button class="btn btn-secondary btn-sm" onclick="ignoreGroup('${escapeHtml(group.key)}')">
                                     Bortse
                                 </button>
                             </div>
@@ -2813,37 +2893,68 @@
             document.getElementById('modal-footer').innerHTML = `
                 <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
                 <button class="btn btn-secondary" onclick="ignoreEventFromModal()">Bortse</button>
-                <button class="btn btn-accent" onclick="investigateEvent('${eventId}')">Undersök vidare</button>
+                <button class="btn btn-accent" data-event-id="${eventId}" onclick="investigateEventFromButton(this)">Undersök vidare</button>
             `;
 
             document.getElementById('investigate-modal').classList.add('show');
         }
 
+        // Wrapper för investigateEvent från knapp
+        function investigateEventFromButton(btn) {
+            const eventId = btn.dataset.eventId;
+            if (eventId) investigateEvent(eventId);
+        }
+
         // Undersök ett företag (alla händelser) - förbättrad modal med tabs
         async function investigateCompany(orgnr, companyName) {
-            // Hitta alla händelser för detta företag
-            const companyEvents = events.filter(e =>
-                e.orgnr === orgnr || e.matched_company_name === companyName
-            );
+            // Visa loading state omedelbart
+            document.getElementById('event-details').innerHTML = `
+                <div class="loading-state" style="padding: var(--spacing-8); text-align: center;">
+                    <div class="spinner" style="margin: 0 auto var(--spacing-4);"></div>
+                    <p>Laddar företagsinformation...</p>
+                </div>
+            `;
+            document.getElementById('investigation-steps').innerHTML = '';
+            document.getElementById('modal-footer').innerHTML = `
+                <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
+            `;
+            document.getElementById('investigate-modal').classList.add('show');
 
-            // Hämta företagsdata från loop_table om tillgängligt
-            let companyData = null;
-            if (orgnr) {
-                const { data } = await sb
-                    .from('loop_table')
-                    .select('*')
-                    .eq('orgnr', orgnr.replace(/-/g, ''))
-                    .single();
-                companyData = data;
-            }
+            try {
+                // Hitta alla händelser för detta företag
+                const companyEvents = events.filter(e =>
+                    e.orgnr === orgnr || e.matched_company_name === companyName
+                );
 
-            // Skapa initial för logotyp
-            const initial = companyName ? companyName.charAt(0).toUpperCase() : '?';
+                // Hämta företagsdata från loop_table om tillgängligt
+                let companyData = null;
+                if (orgnr) {
+                    const cleanOrgnr = orgnr.replace(/[^0-9]/g, '');
+                    const { data, error } = await sb
+                        .from('loop_table')
+                        .select('*')
+                        .eq('orgnr', cleanOrgnr)
+                        .single();
+
+                    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+                        console.error('Fel vid hämtning av företagsdata:', error);
+                    } else {
+                        companyData = data;
+                    }
+                }
+
+                // Skapa initial för logotyp
+                const initial = companyName ? companyName.charAt(0).toUpperCase() : '?';
+                const logoUrl = companyData?.logo_url;
 
             document.getElementById('event-details').innerHTML = `
                 <!-- Företagsheader -->
                 <div class="company-header">
-                    <div class="company-logo">${initial}</div>
+                    ${logoUrl
+                        ? `<img class="company-logo-img" src="${logoUrl}" alt="${escapeHtml(companyName)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                           <div class="company-logo" style="display: none;">${initial}</div>`
+                        : `<div class="company-logo">${initial}</div>`
+                    }
                     <div class="company-info">
                         <div class="company-name">${escapeHtml(companyName)}</div>
                         ${orgnr ? `<div class="company-orgnr">${orgnr}</div>` : ''}
@@ -3022,10 +3133,30 @@
 
             document.getElementById('modal-footer').innerHTML = `
                 <button class="btn btn-secondary" onclick="closeModal()">Stäng</button>
-                <button class="btn btn-accent" onclick="createArticleForCompany('${orgnr}', '${escapeHtml(companyName)}')">Ta fram artikel</button>
+                <button class="btn btn-accent"
+                        data-orgnr="${orgnr || ''}"
+                        data-company="${escapeHtml(companyName)}"
+                        onclick="createArticleFromButton(this)">
+                    Ta fram artikel
+                </button>
             `;
 
-            document.getElementById('investigate-modal').classList.add('show');
+            } catch (error) {
+                console.error('Fel i investigateCompany:', error);
+                document.getElementById('event-details').innerHTML = `
+                    <div class="error-state" style="padding: var(--spacing-8); text-align: center;">
+                        <p style="color: var(--error); margin-bottom: var(--spacing-4);">
+                            Kunde inte ladda företagsinformation
+                        </p>
+                        <p style="font-size: var(--font-size-sm); color: var(--gray-500);">
+                            ${escapeHtml(error.message || 'Ett oväntat fel uppstod')}
+                        </p>
+                        <button class="btn btn-secondary" onclick="closeModal()" style="margin-top: var(--spacing-4);">
+                            Stäng
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         // Visa specifik tab i bolagsmodalen
@@ -3043,10 +3174,118 @@
             button.classList.add('active');
         }
 
-        // Hämta årsredovisning via VDM API (placeholder)
+        // Wrapper-funktion för att hantera onclick från knappar med data-attribut
+        function investigateCompanyFromButton(btn) {
+            const orgnr = btn.dataset.orgnr || '';
+            const company = btn.dataset.company || '';
+            investigateCompany(orgnr, company);
+        }
+
+        // Wrapper för createArticle från knapp
+        function createArticleFromButton(btn) {
+            const orgnr = btn.dataset.orgnr || '';
+            const company = btn.dataset.company || '';
+            createArticleForCompany(orgnr, company);
+        }
+
+        // Hämta årsredovisning via VDM API
         async function fetchAnnualReport(orgnr) {
-            alert(`Hämtar årsredovisning för ${orgnr}...\n\nDetta skulle anropa Bolagsverkets VDM-API för att ladda ner dokumentet.`);
-            // TODO: Implementera anrop till Edge Function för VDM API
+            // Validera orgnr format
+            const cleanOrgnr = orgnr?.replace(/[^0-9]/g, '');
+            if (!cleanOrgnr || cleanOrgnr.length !== 10) {
+                showToast('Ogiltigt organisationsnummer', 'error');
+                return;
+            }
+
+            // Visa loading state
+            const docItem = event?.target?.closest('.document-item');
+            const originalContent = docItem?.innerHTML;
+            if (docItem) {
+                docItem.innerHTML = `
+                    <div class="document-icon pdf">⏳</div>
+                    <div class="document-info">
+                        <div class="document-name">Hämtar årsredovisning...</div>
+                        <div class="document-meta">Vänligen vänta</div>
+                    </div>
+                `;
+                docItem.style.pointerEvents = 'none';
+            }
+
+            try {
+                // Anropa VDM Edge Function
+                const { data, error } = await sb.functions.invoke('vdm-proxy', {
+                    body: {
+                        action: 'getAnnualReport',
+                        orgnr: cleanOrgnr
+                    }
+                });
+
+                if (error) throw error;
+
+                if (data?.url) {
+                    // Öppna PDF i ny flik
+                    window.open(data.url, '_blank');
+                    showToast('Årsredovisning öppnad i ny flik', 'success');
+
+                    // Återställ knappen
+                    if (docItem && originalContent) {
+                        docItem.innerHTML = `
+                            <div class="document-icon pdf">📄</div>
+                            <div class="document-info">
+                                <div class="document-name">Senaste årsredovisning</div>
+                                <div class="document-meta" style="color: var(--success);">✓ Hämtad - klicka för att öppna igen</div>
+                            </div>
+                            <div class="document-action">→</div>
+                        `;
+                        docItem.style.pointerEvents = 'auto';
+                    }
+                } else if (data?.error) {
+                    throw new Error(data.error);
+                } else {
+                    throw new Error('Ingen årsredovisning hittades');
+                }
+
+            } catch (error) {
+                console.error('Fel vid hämtning av årsredovisning:', error);
+                showToast(`Kunde inte hämta årsredovisning: ${error.message}`, 'error');
+
+                // Återställ knappen vid fel
+                if (docItem) {
+                    docItem.innerHTML = `
+                        <div class="document-icon pdf">📄</div>
+                        <div class="document-info">
+                            <div class="document-name">Senaste årsredovisning</div>
+                            <div class="document-meta" style="color: var(--error);">Kunde inte hämtas - klicka för att försöka igen</div>
+                        </div>
+                        <div class="document-action">→</div>
+                    `;
+                    docItem.style.pointerEvents = 'auto';
+                }
+            }
+        }
+
+        // Toast-notifikationer
+        function showToast(message, type = 'info') {
+            // Ta bort eventuell befintlig toast
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `
+                <span class="toast-icon">${type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ'}</span>
+                <span class="toast-message">${escapeHtml(message)}</span>
+            `;
+            document.body.appendChild(toast);
+
+            // Visa toasten
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Ta bort efter 4 sekunder
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
         }
 
         // Formatera nummer med tusentalsavgränsare
@@ -3056,11 +3295,22 @@
         }
 
         function createArticleForCompany(orgnr, companyName) {
+            // Validera inputs
+            if (!orgnr && !companyName) {
+                showToast('Ingen företagsinformation tillgänglig', 'error');
+                return;
+            }
+
+            // Sanitera orgnr
+            const cleanOrgnr = orgnr ? orgnr.replace(/[^0-9-]/g, '') : '';
+
             const params = new URLSearchParams({
-                orgnr: orgnr || '',
+                orgnr: cleanOrgnr,
                 company: companyName || ''
             });
-            window.location.href = `verktyg/nyhetsredaktion/?${params.toString()}`;
+
+            // Öppna i ny flik istället för redirect
+            window.open(`verktyg/nyhetsredaktion/?${params.toString()}`, '_blank');
         }
 
         // =========================================================================
