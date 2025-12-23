@@ -1,0 +1,115 @@
+# ================================================
+# Bevakningsverktyget - Render Blueprint
+# Infrastructure as Code for Render.com
+# ================================================
+# Docs: https://render.com/docs/blueprint-spec
+# ================================================
+
+services:
+  # ============================================
+  # Main Web Service
+  # Node.js + Chrome for Puppeteer scraping
+  # ============================================
+  - type: web
+    name: bevakningsverktyget
+    runtime: docker
+    region: frankfurt
+    plan: standard
+
+    # Docker configuration
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+
+    # Health check
+    healthCheckPath: /health
+
+    # Build filter - only rebuild on relevant changes
+    buildFilter:
+      paths:
+        - server/**
+        - public/**
+        - scrapers/**
+        - Dockerfile
+        - package.json
+        - package-lock.json
+
+    # Environment variables
+    envVars:
+      # Node.js
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+
+      # Supabase (set manually in Dashboard - sync: false)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+
+      # API Configuration
+      - key: API_BASE_URL
+        sync: false
+
+      # Puppeteer/Chrome
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: /usr/bin/google-chrome-stable
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: "true"
+      - key: HEADLESS
+        value: "true"
+
+      # Twilio SMS (optional - set in Dashboard)
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+
+      # Anthropic Claude AI (optional - set in Dashboard)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+      # Resend Email (optional - set in Dashboard)
+      - key: RESEND_API_KEY
+        sync: false
+
+    # Auto-deploy from GitHub
+    autoDeploy: true
+
+# ============================================
+# Environment Groups (for shared secrets)
+# ============================================
+# Uncomment if you want to use environment groups
+# envVarGroups:
+#   - name: supabase-credentials
+#     envVars:
+#       - key: SUPABASE_URL
+#         sync: false
+#       - key: SUPABASE_ANON_KEY
+#         sync: false
+#       - key: SUPABASE_SERVICE_KEY
+#         sync: false
+
+# ============================================
+# Notes:
+# ============================================
+# 1. Environment variables marked with 'sync: false' must be set
+#    manually in the Render Dashboard
+#
+# 2. To deploy:
+#    - Push this file to your GitHub repo
+#    - In Render: New > Blueprint > Connect repo
+#    - Render will auto-detect render.yaml
+#
+# 3. Required secrets to set in Dashboard:
+#    - SUPABASE_URL
+#    - SUPABASE_ANON_KEY
+#    - SUPABASE_SERVICE_KEY
+#    - API_BASE_URL (if using external API)
+#
+# 4. For local development, use .env file instead
+# ============================================

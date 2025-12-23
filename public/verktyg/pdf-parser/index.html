@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF-parser | Bevakningsverktyget</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/main.css">
+    <style>
+        .tool-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tool-header {
+            margin-bottom: 2rem;
+        }
+
+        .tool-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-header p {
+            color: var(--text-secondary);
+        }
+
+        .upload-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-secondary);
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--accent-color);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .drop-zone-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .drop-zone-text {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone-hint {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-preview {
+            display: none;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .file-preview.visible {
+            display: flex;
+        }
+
+        .file-icon {
+            font-size: 2rem;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .file-size {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .file-remove {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 0.5rem;
+        }
+
+        .file-remove:hover {
+            color: #ef4444;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .option-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .option-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-color);
+        }
+
+        .checkbox-group label {
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .submit-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .submit-btn .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .submit-btn.loading .spinner {
+            display: block;
+        }
+
+        .submit-btn.loading .btn-text {
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-secondary);
+        }
+
+        .result-body {
+            padding: 1.5rem;
+        }
+
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metadata-item {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .metadata-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .metadata-value {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .summary-box {
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid var(--accent-color);
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-box p {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .sections-list {
+            margin-top: 1rem;
+        }
+
+        .section-item {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header:hover {
+            background: var(--border-color);
+        }
+
+        .section-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .section-toggle {
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+        }
+
+        .section-item.expanded .section-toggle {
+            transform: rotate(180deg);
+        }
+
+        .section-content {
+            display: none;
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            white-space: pre-wrap;
+            font-family: inherit;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .section-item.expanded .section-content {
+            display: block;
+        }
+
+        .key-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .key-data-card {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .key-data-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .key-data-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .key-data-list li {
+            padding: 0.25rem 0;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .key-data-list li::before {
+            content: "•";
+            color: var(--accent-color);
+            margin-right: 0.5rem;
+        }
+
+        .text-content {
+            white-space: pre-wrap;
+            font-family: inherit;
+            color: var(--text-primary);
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .article-preview {
+            background: white;
+            color: #1a1a1a;
+            padding: 2rem;
+            border-radius: 8px;
+        }
+
+        .article-preview h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+        }
+
+        .article-preview .ingress {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .article-preview .section {
+            margin-bottom: 1.5rem;
+        }
+
+        .article-preview h3 {
+            font-size: 1.125rem;
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+
+        .article-preview p {
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .faktaruta {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+        }
+
+        .faktaruta h4 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .faktaruta ul {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+
+        .faktaruta li {
+            color: #333;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+
+        .processing-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: right;
+            margin-top: 0.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-secondary);
+        }
+
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .json-view {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.75rem;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            max-height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="../../" class="sidebar-logo">
+                    <span class="logo-icon">📊</span>
+                    <span class="logo-text">Bevakningsverktyget</span>
+                </a>
+            </div>
+            <div class="sidebar-nav">
+                <a href="../../" class="sidebar-link">
+                    <span class="icon">🏠</span> Dashboard
+                </a>
+                <a href="../foretagsbevakning/" class="sidebar-link">
+                    <span class="icon">🔔</span> Företagsbevakning
+                </a>
+                <a href="../allabolag/" class="sidebar-link">
+                    <span class="icon">🏢</span> Allabolag
+                </a>
+                <a href="../bolagsverket-api/" class="sidebar-link">
+                    <span class="icon">📋</span> Bolagsverket API
+                </a>
+                <a href="../xbrl-parser/" class="sidebar-link">
+                    <span class="icon">📊</span> XBRL-parser
+                </a>
+                <a href="../artikelgenerator/" class="sidebar-link">
+                    <span class="icon">✍️</span> Artikelgenerator
+                </a>
+                <a href="./" class="sidebar-link active">
+                    <span class="icon">📄</span> PDF-parser
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="main-content">
+            <div class="tool-container">
+                <div class="tool-header">
+                    <h1>📄 PDF-parser med AI</h1>
+                    <p>Analysera PDF-dokument med Claude Opus 4.5. Extrahera text, analysera protokoll och generera nyhetsartiklar.</p>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="upload-section">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-zone-icon">📄</div>
+                        <div class="drop-zone-text">Dra och släpp en PDF här</div>
+                        <div class="drop-zone-hint">eller klicka för att välja fil (max 10 MB)</div>
+                    </div>
+                    <input type="file" class="file-input" id="fileInput" accept=".pdf,application/pdf">
+
+                    <div class="file-preview" id="filePreview">
+                        <div class="file-icon">📄</div>
+                        <div class="file-info">
+                            <div class="file-name" id="fileName"></div>
+                            <div class="file-size" id="fileSize"></div>
+                        </div>
+                        <button class="file-remove" id="fileRemove" title="Ta bort fil">&times;</button>
+                    </div>
+
+                    <div class="options-grid">
+                        <div class="option-group">
+                            <label for="modeSelect">Analysläge</label>
+                            <select id="modeSelect">
+                                <option value="analyze">Allmän dokumentanalys</option>
+                                <option value="protokoll">Bolagsstämmoprotokoll</option>
+                                <option value="extract">Enkel textextraktion</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="generateArticle">
+                        <label for="generateArticle">Generera nyhetsartikel från innehållet</label>
+                    </div>
+
+                    <button class="submit-btn" id="submitBtn" disabled>
+                        <span class="spinner"></span>
+                        <span class="btn-text">Analysera PDF</span>
+                    </button>
+                </div>
+
+                <!-- Results Section -->
+                <div class="results-section" id="resultsSection">
+                    <div id="errorContainer"></div>
+                    <div id="resultsContainer"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Supabase config
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+
+        // DOM elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileRemove = document.getElementById('fileRemove');
+        const modeSelect = document.getElementById('modeSelect');
+        const generateArticle = document.getElementById('generateArticle');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const errorContainer = document.getElementById('errorContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        let selectedFile = null;
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Handle file selection
+        function handleFile(file) {
+            if (!file) return;
+
+            if (!file.type.includes('pdf')) {
+                showError('Vänligen välj en PDF-fil.');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showError('Filen är för stor. Max 10 MB.');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            filePreview.classList.add('visible');
+            submitBtn.disabled = false;
+            hideError();
+        }
+
+        // Remove selected file
+        function removeFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            filePreview.classList.remove('visible');
+            submitBtn.disabled = true;
+        }
+
+        // Show error message
+        function showError(message) {
+            errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        // Hide error message
+        function hideError() {
+            errorContainer.innerHTML = '';
+        }
+
+        // Drop zone events
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        fileRemove.addEventListener('click', removeFile);
+
+        // Submit form
+        submitBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+            hideError();
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                formData.append('mode', modeSelect.value);
+                formData.append('generateArticle', generateArticle.checked.toString());
+
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/parse-pdf`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || 'Något gick fel');
+                }
+
+                displayResults(data);
+
+            } catch (error) {
+                showError(`Fel: ${error.message}`);
+            } finally {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Display results
+        function displayResults(data) {
+            resultsSection.classList.add('visible');
+
+            const mode = data._metadata?.mode || data.mode || modeSelect.value;
+            let html = '';
+
+            if (mode === 'extract') {
+                // Simple text extraction
+                html = `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <span class="result-title">Extraherad text</span>
+                            <div class="result-actions">
+                                <button class="action-btn" onclick="copyText()">📋 Kopiera</button>
+                                <button class="action-btn" onclick="downloadText()">💾 Ladda ner</button>
+                            </div>
+                        </div>
+                        <div class="result-body">
+                            <div class="text-content" id="extractedText">${escapeHtml(data.text || '')}</div>
+                            ${data.processingTimeMs ? `<div class="processing-time">Bearbetningstid: ${(data.processingTimeMs / 1000).toFixed(1)}s</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            } else if (mode === 'protokoll') {
+                // Board meeting minutes
+                html = renderProtokollResults(data);
+            } else {
+                // General analysis
+                html = renderAnalysisResults(data);
+            }
+
+            // Add article if generated
+            if (data.generatedArticle) {
+                html += renderArticle(data.generatedArticle);
+            }
+
+            // Add JSON view
+            html += `
+                <div class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">Rådata (JSON)</span>
+                        <div class="result-actions">
+                            <button class="action-btn" onclick="copyJson()">📋 Kopiera JSON</button>
+                        </div>
+                    </div>
+                    <div class="result-body">
+                        <pre class="json-view" id="jsonView">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+                    </div>
+                </div>
+            `;
+
+            resultsContainer.innerHTML = html;
+
+            // Add section toggle functionality
+            document.querySelectorAll('.section-item').forEach(item => {
+                const header = item.querySelector('.section-header');
+                header.addEventListener('click', () => {
+                    item.classList.toggle('expanded');
+                });
+            });
+
+            // Store data for copy/download functions
+            window.resultData = data;
+        }
+
+        function renderAnalysisResults(data) {
+            const meta = data.metadata || {};
+            const sections = data.sektioner || [];
+            const keyData = data.nyckeluppgifter || {};
+
+            return `
+                <div class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">Dokumentanalys</span>
+                        <div class="result-actions">
+                            <button class="action-btn" onclick="copyFullText()">📋 Kopiera text</button>
+                        </div>
+                    </div>
+                    <div class="result-body">
+                        <div class="metadata-grid">
+                            ${meta.dokumenttyp ? `<div class="metadata-item"><div class="metadata-label">Dokumenttyp</div><div class="metadata-value">${escapeHtml(meta.dokumenttyp)}</div></div>` : ''}
+                            ${meta.organisation ? `<div class="metadata-item"><div class="metadata-label">Organisation</div><div class="metadata-value">${escapeHtml(meta.organisation)}</div></div>` : ''}
+                            ${meta.organisationsnummer ? `<div class="metadata-item"><div class="metadata-label">Org.nr</div><div class="metadata-value">${escapeHtml(meta.organisationsnummer)}</div></div>` : ''}
+                            ${meta.datum ? `<div class="metadata-item"><div class="metadata-label">Datum</div><div class="metadata-value">${escapeHtml(meta.datum)}</div></div>` : ''}
+                            ${meta.antal_sidor ? `<div class="metadata-item"><div class="metadata-label">Sidor</div><div class="metadata-value">${meta.antal_sidor}</div></div>` : ''}
+                        </div>
+
+                        ${data.sammanfattning ? `
+                            <div class="summary-box">
+                                <p>${escapeHtml(data.sammanfattning)}</p>
+                            </div>
+                        ` : ''}
+
+                        ${sections.length > 0 ? `
+                            <h3 style="margin-bottom: 0.75rem; color: var(--text-primary);">Sektioner</h3>
+                            <div class="sections-list">
+                                ${sections.map((s, i) => `
+                                    <div class="section-item ${i === 0 ? 'expanded' : ''}">
+                                        <div class="section-header">
+                                            <span class="section-title">${escapeHtml(s.rubrik || `Sektion ${i + 1}`)}</span>
+                                            <span class="section-toggle">▼</span>
+                                        </div>
+                                        <div class="section-content">${escapeHtml(s.innehall || '')}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <div class="key-data">
+                            ${(keyData.personer?.length > 0) ? `
+                                <div class="key-data-card">
+                                    <div class="key-data-title">👤 Personer</div>
+                                    <ul class="key-data-list">${keyData.personer.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+                                </div>
+                            ` : ''}
+                            ${(keyData.datum?.length > 0) ? `
+                                <div class="key-data-card">
+                                    <div class="key-data-title">📅 Datum</div>
+                                    <ul class="key-data-list">${keyData.datum.map(d => `<li>${escapeHtml(d)}</li>`).join('')}</ul>
+                                </div>
+                            ` : ''}
+                            ${(keyData.belopp?.length > 0) ? `
+                                <div class="key-data-card">
+                                    <div class="key-data-title">💰 Belopp</div>
+                                    <ul class="key-data-list">${keyData.belopp.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
+                                </div>
+                            ` : ''}
+                            ${(keyData.beslut?.length > 0) ? `
+                                <div class="key-data-card">
+                                    <div class="key-data-title">📝 Beslut</div>
+                                    <ul class="key-data-list">${keyData.beslut.map(b => `<li>${escapeHtml(b)}</li>`).join('')}</ul>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        ${data._metadata?.processingTimeMs ? `<div class="processing-time">Bearbetningstid: ${(data._metadata.processingTimeMs / 1000).toFixed(1)}s</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProtokollResults(data) {
+            const grund = data.grunduppgifter || {};
+            const narv = data.narvarande || {};
+            const dag = data.dagordning || [];
+            const styr = data.styrelse || {};
+            const ekon = data.ekonomi || {};
+
+            return `
+                <div class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">Bolagsstämmoprotokoll</span>
+                        <div class="result-actions">
+                            <button class="action-btn" onclick="copyFullText()">📋 Kopiera</button>
+                        </div>
+                    </div>
+                    <div class="result-body">
+                        <div class="metadata-grid">
+                            ${grund.foretagsnamn ? `<div class="metadata-item"><div class="metadata-label">Företag</div><div class="metadata-value">${escapeHtml(grund.foretagsnamn)}</div></div>` : ''}
+                            ${grund.organisationsnummer ? `<div class="metadata-item"><div class="metadata-label">Org.nr</div><div class="metadata-value">${escapeHtml(grund.organisationsnummer)}</div></div>` : ''}
+                            ${grund.stammodatum ? `<div class="metadata-item"><div class="metadata-label">Datum</div><div class="metadata-value">${escapeHtml(grund.stammodatum)}</div></div>` : ''}
+                            ${grund.stammatyp ? `<div class="metadata-item"><div class="metadata-label">Stämma</div><div class="metadata-value">${escapeHtml(grund.stammatyp)}</div></div>` : ''}
+                            ${grund.plats ? `<div class="metadata-item"><div class="metadata-label">Plats</div><div class="metadata-value">${escapeHtml(grund.plats)}</div></div>` : ''}
+                        </div>
+
+                        ${dag.length > 0 ? `
+                            <h3 style="margin: 1.5rem 0 0.75rem; color: var(--text-primary);">Dagordning & Beslut</h3>
+                            <div class="sections-list">
+                                ${dag.map((punkt, i) => `
+                                    <div class="section-item ${i === 0 ? 'expanded' : ''}">
+                                        <div class="section-header">
+                                            <span class="section-title">${punkt.punkt || i + 1}. ${escapeHtml(punkt.rubrik || '')}</span>
+                                            <span class="section-toggle">▼</span>
+                                        </div>
+                                        <div class="section-content">${escapeHtml(punkt.beslut || 'Inget beslut angivet')}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+
+                        <div class="key-data">
+                            ${styr.ledamoter?.length > 0 ? `
+                                <div class="key-data-card">
+                                    <div class="key-data-title">👥 Styrelse</div>
+                                    <ul class="key-data-list">
+                                        ${styr.ordforande ? `<li><strong>Ordförande:</strong> ${escapeHtml(styr.ordforande)}</li>` : ''}
+                                        ${styr.ledamoter.map(l => `<li>${escapeHtml(l)}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            ${narv.aktieagare?.length > 0 ? `
+                                <div class="key-data-card">
+                                    <div class="key-data-title">📊 Aktieägare</div>
+                                    <ul class="key-data-list">${narv.aktieagare.map(a => `<li>${escapeHtml(a.namn)}${a.aktier ? ` (${a.aktier} aktier)` : ''}</li>`).join('')}</ul>
+                                </div>
+                            ` : ''}
+                            <div class="key-data-card">
+                                <div class="key-data-title">💰 Ekonomi</div>
+                                <ul class="key-data-list">
+                                    <li>Resultaträkning fastställd: ${ekon.resultatrakning_faststalld ? '✅' : '❌'}</li>
+                                    <li>Balansräkning fastställd: ${ekon.balansrakning_faststalld ? '✅' : '❌'}</li>
+                                    ${ekon.vinstdisposition ? `<li>Vinstdisposition: ${escapeHtml(ekon.vinstdisposition)}</li>` : ''}
+                                    ${ekon.utdelning_per_aktie ? `<li>Utdelning: ${escapeHtml(ekon.utdelning_per_aktie)}/aktie</li>` : ''}
+                                </ul>
+                            </div>
+                        </div>
+
+                        ${data._metadata?.processingTimeMs ? `<div class="processing-time">Bearbetningstid: ${(data._metadata.processingTimeMs / 1000).toFixed(1)}s</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderArticle(article) {
+            return `
+                <div class="result-card">
+                    <div class="result-header">
+                        <span class="result-title">Genererad artikel</span>
+                        <div class="result-actions">
+                            <button class="action-btn" onclick="copyArticleHtml()">📋 HTML</button>
+                            <button class="action-btn" onclick="copyArticleText()">📝 Text</button>
+                        </div>
+                    </div>
+                    <div class="result-body">
+                        <div class="article-preview" id="articlePreview">
+                            <h2>${escapeHtml(article.titel || '')}</h2>
+                            <p class="ingress">${escapeHtml(article.ingress || '')}</p>
+                            ${(article.sektioner || []).map(s => `
+                                <div class="section">
+                                    ${s.underrubrik ? `<h3>${escapeHtml(s.underrubrik)}</h3>` : ''}
+                                    <div>${s.brodtext || ''}</div>
+                                </div>
+                            `).join('')}
+                            ${article.faktaruta ? `
+                                <div class="faktaruta">
+                                    <h4>${escapeHtml(article.faktaruta.rubrik || 'FAKTA')}</h4>
+                                    <ul>${(article.faktaruta.punkter || []).map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utility functions
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function copyText() {
+            const text = document.getElementById('extractedText')?.textContent || '';
+            navigator.clipboard.writeText(text);
+            showToast('Text kopierad!');
+        }
+
+        function downloadText() {
+            const text = document.getElementById('extractedText')?.textContent || '';
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'extraherad-text.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function copyFullText() {
+            const data = window.resultData;
+            let text = '';
+
+            if (data.innehall) {
+                text = data.innehall;
+            } else if (data.fulltext) {
+                text = data.fulltext;
+            } else if (data.sektioner) {
+                text = data.sektioner.map(s => `${s.rubrik}\n${s.innehall}`).join('\n\n');
+            }
+
+            navigator.clipboard.writeText(text);
+            showToast('Text kopierad!');
+        }
+
+        function copyJson() {
+            navigator.clipboard.writeText(JSON.stringify(window.resultData, null, 2));
+            showToast('JSON kopierad!');
+        }
+
+        function copyArticleHtml() {
+            const html = document.getElementById('articlePreview')?.innerHTML || '';
+            navigator.clipboard.writeText(html);
+            showToast('HTML kopierad!');
+        }
+
+        function copyArticleText() {
+            const text = document.getElementById('articlePreview')?.textContent || '';
+            navigator.clipboard.writeText(text);
+            showToast('Text kopierad!');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position:fixed;bottom:2rem;right:2rem;background:#22c55e;color:white;padding:0.75rem 1.5rem;border-radius:8px;z-index:1000;';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+    </script>
+</body>
+</html>

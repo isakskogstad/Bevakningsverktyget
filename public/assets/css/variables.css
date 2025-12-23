@@ -1,0 +1,118 @@
+/* ==========================================================================
+   CSS VARIABLER - Bevakningsverktyget Design System
+   ========================================================================== */
+
+:root {
+    /* Primär färgpalett */
+    --accent: #D4FF00;
+    --accent-hover: #c4ef00;
+    --accent-muted: rgba(212, 255, 0, 0.2);
+
+    /* Neutrala färger */
+    --black: #000000;
+    --dark: #111111;
+    --gray-900: #1a1a1a;
+    --gray-700: #404040;
+    --gray-500: #6b6b6b;
+    --gray-300: #d1d1d1;
+    --gray-200: #e5e5e5;
+    --gray-100: #f5f5f5;
+    --white: #ffffff;
+
+    /* Semantiska färger */
+    --error: #ef4444;
+    --error-bg: #fef2f2;
+    --error-border: #fecaca;
+
+    --success: #22c55e;
+    --success-bg: #f0fdf4;
+    --success-border: #bbf7d0;
+
+    --warning: #f59e0b;
+    --warning-bg: #fef3c7;
+    --warning-border: #fde68a;
+
+    --blue: #3b82f6;
+    --blue-bg: #dbeafe;
+    --blue-border: #bfdbfe;
+
+    /* Typografi */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.8rem;     /* 12.8px */
+    --font-size-base: 0.9rem;   /* 14.4px */
+    --font-size-md: 0.95rem;    /* 15.2px */
+    --font-size-lg: 1rem;       /* 16px */
+    --font-size-xl: 1.1rem;     /* 17.6px */
+    --font-size-2xl: 1.25rem;   /* 20px */
+    --font-size-3xl: 1.5rem;    /* 24px */
+    --font-size-4xl: 1.75rem;   /* 28px */
+    --font-size-5xl: 2rem;      /* 32px */
+    --font-size-6xl: 3.5rem;    /* 56px */
+
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    --line-height-tight: 1.1;
+    --line-height-snug: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+
+    /* Avstånd */
+    --spacing-1: 4px;
+    --spacing-2: 8px;
+    --spacing-3: 12px;
+    --spacing-4: 16px;
+    --spacing-5: 20px;
+    --spacing-6: 24px;
+    --spacing-8: 32px;
+    --spacing-10: 40px;
+    --spacing-12: 48px;
+    --spacing-16: 64px;
+
+    /* Radie */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    /* Skuggor */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 25px 50px rgba(0, 0, 0, 0.15);
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.2s ease;
+    --transition-slow: 0.3s ease;
+
+    /* Z-index skala */
+    --z-dropdown: 50;
+    --z-sticky: 100;
+    --z-modal: 200;
+    --z-tooltip: 300;
+    --z-toast: 400;
+
+    /* Layout */
+    --max-width-content: 1600px;
+    --nav-height: 64px;
+    --sidebar-width: 380px;
+}
+
+/* Dark mode (för framtida användning) */
+@media (prefers-color-scheme: dark) {
+    :root.dark-mode {
+        --dark: #f5f5f5;
+        --white: #111111;
+        --gray-100: #1a1a1a;
+        --gray-300: #404040;
+        --gray-500: #6b6b6b;
+        --gray-700: #d1d1d1;
+        --gray-900: #f5f5f5;
+    }
+}

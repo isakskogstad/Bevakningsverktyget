@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artikelgenerator - AI-genererade nyheter | Bevakningsverktyget</title>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/main.css">
+    <style>
+        .generator-form {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+        .form-group label {
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .generate-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .generate-btn .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid transparent;
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+        }
+        .result-section.visible {
+            display: block;
+        }
+
+        .article-preview {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        .article-preview-header {
+            background: #D4FF00;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .article-preview-header .logo {
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+        .article-preview-header .label {
+            background: #000;
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .article-content {
+            padding: 2rem;
+        }
+        .article-category {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 0.75rem;
+        }
+        .article-title {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+        }
+        .article-ingress {
+            font-size: 1.125rem;
+            font-weight: 500;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .article-body {
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #1a1a1a;
+        }
+        .article-body p {
+            margin-bottom: 1rem;
+        }
+        .article-body h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .article-body strong {
+            font-weight: 600;
+        }
+
+        .article-factbox {
+            background: #f5f5f5;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        .article-factbox .separator {
+            color: #999;
+            margin: 0 0.25rem;
+        }
+
+        .article-actions {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 2rem 2rem;
+            flex-wrap: wrap;
+        }
+        .article-actions button {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .copy-btn.copied {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .stat-label {
+            color: var(--text-muted);
+        }
+        .stat-value {
+            font-weight: 600;
+        }
+
+        .error-message {
+            background: var(--danger-bg);
+            color: var(--danger);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .error-message.visible {
+            display: block;
+        }
+
+        .company-search {
+            position: relative;
+        }
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        .search-results.visible {
+            display: block;
+        }
+        .search-result-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        .search-result-item:hover {
+            background: var(--bg-hover);
+        }
+        .search-result-name {
+            font-weight: 500;
+        }
+        .search-result-orgnr {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            .article-title {
+                font-size: 1.5rem;
+            }
+            .article-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="../../" class="sidebar-logo">
+                <div class="sidebar-logo-icon">📰</div>
+                <div class="sidebar-logo-text">Bevakningsverktyg</div>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="../../" class="sidebar-link">
+                <div class="sidebar-link-icon">🏠</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Dashboard</div>
+                </div>
+            </a>
+            <a href="../foretagsbevakning/" class="sidebar-link">
+                <div class="sidebar-link-icon">🔔</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Företagsbevakning</div>
+                </div>
+            </a>
+            <a href="../allabolag/" class="sidebar-link">
+                <div class="sidebar-link-icon">🏢</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Allabolag Sökning</div>
+                </div>
+            </a>
+            <a href="../xbrl-parser/" class="sidebar-link">
+                <div class="sidebar-link-icon">📊</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">XBRL Parser</div>
+                </div>
+            </a>
+            <a href="./" class="sidebar-link active">
+                <div class="sidebar-link-icon">✍️</div>
+                <div class="sidebar-link-text">
+                    <div class="sidebar-link-title">Artikelgenerator</div>
+                </div>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+        <header class="page-header">
+            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            <h1 class="page-title">Artikelgenerator</h1>
+            <p class="page-subtitle">Generera nyhetsartiklar med AI baserat på företagsdata</p>
+        </header>
+
+        <div class="content-wrapper">
+            <!-- Error message -->
+            <div class="error-message" id="errorMessage"></div>
+
+            <!-- Generator Form -->
+            <div class="generator-form">
+                <div class="form-row">
+                    <div class="form-group company-search">
+                        <label for="companySearch">Företag</label>
+                        <input type="text" id="companySearch" placeholder="Sök företagsnamn eller orgnr...">
+                        <div class="search-results" id="searchResults"></div>
+                        <div class="form-hint">Välj ett företag från sökresultaten</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="orgnrInput">Organisationsnummer</label>
+                        <input type="text" id="orgnrInput" placeholder="5560125790" readonly>
+                        <div class="form-hint">Fylls i automatiskt vid val av företag</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="articleType">Artikeltyp</label>
+                        <select id="articleType">
+                            <option value="general">Allmän nyhet</option>
+                            <option value="nyemission">Nyemission</option>
+                            <option value="vd_byte">VD-byte</option>
+                            <option value="arsredovisning">Årsredovisning</option>
+                            <option value="forvärv">Förvärv</option>
+                            <option value="konkurs">Konkurs/Rekonstruktion</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="articleTone">Tonläge</label>
+                        <select id="articleTone">
+                            <option value="neutral">Neutral</option>
+                            <option value="avslojar">Avslöjande</option>
+                            <option value="positiv">Positiv</option>
+                            <option value="analytisk">Analytisk</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group full-width">
+                        <label for="customPrompt">Extra instruktioner (valfritt)</label>
+                        <textarea id="customPrompt" placeholder="T.ex. 'Fokusera på miljöpåverkan' eller 'Nämn konkurrenter X och Y'"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="includeFactbox" checked>
+                            Inkludera faktaruta
+                        </label>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary generate-btn" id="generateBtn" disabled>
+                    <span class="btn-text">✨ Generera artikel</span>
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <section class="result-section" id="resultSection">
+                <div class="stats-bar" id="statsBar">
+                    <div class="stat-item">
+                        <span class="stat-label">Genereringstid:</span>
+                        <span class="stat-value" id="statTime">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Artikeltyp:</span>
+                        <span class="stat-value" id="statType">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Återstående idag:</span>
+                        <span class="stat-value" id="statRemaining">-</span>
+                    </div>
+                </div>
+
+                <div class="article-preview" id="articlePreview">
+                    <div class="article-preview-header">
+                        <span class="logo">IMPACT LOOP</span>
+                        <span class="label">PREVIEW</span>
+                    </div>
+                    <div class="article-content">
+                        <div class="article-category" id="articleCategory">NYHET</div>
+                        <h1 class="article-title" id="articleTitle"></h1>
+                        <p class="article-ingress" id="articleIngress"></p>
+                        <div class="article-body" id="articleBody"></div>
+                        <div class="article-factbox" id="articleFactbox"></div>
+                    </div>
+                    <div class="article-actions">
+                        <button class="btn btn-secondary copy-btn" id="copyHtmlBtn">
+                            📋 Kopiera HTML
+                        </button>
+                        <button class="btn btn-secondary copy-btn" id="copyTextBtn">
+                            📝 Kopiera text
+                        </button>
+                        <button class="btn btn-secondary" id="downloadBtn">
+                            💾 Ladda ner HTML
+                        </button>
+                        <button class="btn btn-primary" id="regenerateBtn">
+                            🔄 Generera ny
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- API Info -->
+            <div class="info-card" style="margin-top: 2rem;">
+                <h3>ℹ️ Om Artikelgeneratorn</h3>
+                <p>Artikelgeneratorn använder Claude AI för att skapa nyhetsartiklar baserat på företagsdata från vår databas. Artikelna formateras enligt Impact Loops stilguide.</p>
+                <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: var(--text-secondary);">
+                    <li>Max 10 artiklar per timme, 50 per dag</li>
+                    <li>Använder data från loop_table</li>
+                    <li>Kräver ANTHROPIC_API_KEY i Supabase</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Config
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+
+        // Elements
+        const companySearch = document.getElementById('companySearch');
+        const searchResults = document.getElementById('searchResults');
+        const orgnrInput = document.getElementById('orgnrInput');
+        const articleType = document.getElementById('articleType');
+        const articleTone = document.getElementById('articleTone');
+        const customPrompt = document.getElementById('customPrompt');
+        const includeFactbox = document.getElementById('includeFactbox');
+        const generateBtn = document.getElementById('generateBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultSection = document.getElementById('resultSection');
+
+        let selectedCompany = null;
+        let searchTimeout = null;
+        let lastArticle = null;
+
+        // Company search
+        companySearch.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+
+            if (searchTimeout) clearTimeout(searchTimeout);
+
+            if (query.length < 2) {
+                searchResults.classList.remove('visible');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => searchCompanies(query), 300);
+        });
+
+        async function searchCompanies(query) {
+            try {
+                // Search by name or orgnr
+                const isOrgnr = /^\d+$/.test(query.replace(/-/g, ''));
+
+                let url = `${SUPABASE_URL}/rest/v1/loop_table?select=orgnr,company_name,city,sector`;
+
+                if (isOrgnr) {
+                    url += `&orgnr=ilike.*${query}*`;
+                } else {
+                    url += `&company_name=ilike.*${query}*`;
+                }
+                url += '&limit=10';
+
+                const response = await fetch(url, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Search failed');
+
+                const companies = await response.json();
+
+                if (companies.length === 0) {
+                    searchResults.innerHTML = '<div class="search-result-item"><em>Inga resultat</em></div>';
+                } else {
+                    searchResults.innerHTML = companies.map(c => `
+                        <div class="search-result-item" data-orgnr="${c.orgnr}" data-name="${c.company_name}">
+                            <div>
+                                <div class="search-result-name">${escapeHtml(c.company_name)}</div>
+                                <div class="search-result-orgnr">${c.city || ''} ${c.sector ? '• ' + c.sector : ''}</div>
+                            </div>
+                            <div class="search-result-orgnr">${c.orgnr}</div>
+                        </div>
+                    `).join('');
+
+                    // Add click handlers
+                    searchResults.querySelectorAll('.search-result-item[data-orgnr]').forEach(item => {
+                        item.addEventListener('click', () => {
+                            selectCompany(item.dataset.orgnr, item.dataset.name);
+                        });
+                    });
+                }
+
+                searchResults.classList.add('visible');
+
+            } catch (error) {
+                console.error('Search error:', error);
+                searchResults.innerHTML = '<div class="search-result-item"><em>Sökfel</em></div>';
+                searchResults.classList.add('visible');
+            }
+        }
+
+        function selectCompany(orgnr, name) {
+            selectedCompany = { orgnr, name };
+            companySearch.value = name;
+            orgnrInput.value = orgnr;
+            searchResults.classList.remove('visible');
+            generateBtn.disabled = false;
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.company-search')) {
+                searchResults.classList.remove('visible');
+            }
+        });
+
+        // Generate article
+        generateBtn.addEventListener('click', generateArticle);
+
+        async function generateArticle() {
+            if (!selectedCompany) {
+                showError('Välj ett företag först');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span class="spinner"></span> Genererar...';
+            hideError();
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-article`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        orgnr: selectedCompany.orgnr,
+                        articleType: articleType.value,
+                        tone: articleTone.value,
+                        customPrompt: customPrompt.value || undefined,
+                        includeFactbox: includeFactbox.checked
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || 'Generation failed');
+                }
+
+                lastArticle = data;
+                displayArticle(data);
+
+            } catch (error) {
+                console.error('Generation error:', error);
+                showError(error.message);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<span class="btn-text">✨ Generera artikel</span>';
+            }
+        }
+
+        function displayArticle(data) {
+            const article = data.article;
+            const metadata = data.metadata;
+
+            // Update stats
+            document.getElementById('statTime').textContent = `${metadata.generationTimeMs}ms`;
+            document.getElementById('statType').textContent = getArticleTypeLabel(metadata.articleType);
+            document.getElementById('statRemaining').textContent = metadata.rateLimitRemaining;
+
+            // Update article preview
+            document.getElementById('articleCategory').textContent = getCategoryLabel(metadata.articleType, metadata.tone);
+            document.getElementById('articleTitle').textContent = article.title;
+            document.getElementById('articleIngress').textContent = article.ingress;
+            document.getElementById('articleBody').innerHTML = article.content;
+
+            // Factbox
+            const factboxEl = document.getElementById('articleFactbox');
+            if (data.factbox) {
+                factboxEl.innerHTML = data.factbox;
+                factboxEl.style.display = 'block';
+            } else {
+                factboxEl.style.display = 'none';
+            }
+
+            resultSection.classList.add('visible');
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function getArticleTypeLabel(type) {
+            const labels = {
+                general: 'Allmän',
+                nyemission: 'Nyemission',
+                vd_byte: 'VD-byte',
+                arsredovisning: 'Årsredovisning',
+                forvärv: 'Förvärv',
+                konkurs: 'Konkurs'
+            };
+            return labels[type] || type;
+        }
+
+        function getCategoryLabel(type, tone) {
+            if (tone === 'avslojar') return 'IMPACT LOOP AVSLÖJAR';
+            const cats = {
+                nyemission: 'NYEMISSION',
+                vd_byte: 'LEDNING',
+                arsredovisning: 'BOKSLUT',
+                forvärv: 'FÖRVÄRV',
+                konkurs: 'OBESTÅND'
+            };
+            return cats[type] || 'NYHET';
+        }
+
+        // Copy HTML
+        document.getElementById('copyHtmlBtn').addEventListener('click', async () => {
+            if (!lastArticle) return;
+
+            const html = generateFullHtml(lastArticle);
+            await navigator.clipboard.writeText(html);
+
+            const btn = document.getElementById('copyHtmlBtn');
+            btn.classList.add('copied');
+            btn.innerHTML = '✓ Kopierad!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = '📋 Kopiera HTML';
+            }, 2000);
+        });
+
+        // Copy text
+        document.getElementById('copyTextBtn').addEventListener('click', async () => {
+            if (!lastArticle) return;
+
+            const article = lastArticle.article;
+            const text = `${article.title}\n\n${article.ingress}\n\n${stripHtml(article.content)}`;
+            await navigator.clipboard.writeText(text);
+
+            const btn = document.getElementById('copyTextBtn');
+            btn.classList.add('copied');
+            btn.innerHTML = '✓ Kopierad!';
+            setTimeout(() => {
+                btn.classList.remove('copied');
+                btn.innerHTML = '📝 Kopiera text';
+            }, 2000);
+        });
+
+        // Download HTML
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (!lastArticle) return;
+
+            const html = generateFullHtml(lastArticle);
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `artikel-${lastArticle.company.orgnr}-${Date.now()}.html`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        });
+
+        // Regenerate
+        document.getElementById('regenerateBtn').addEventListener('click', generateArticle);
+
+        // Generate full HTML for export
+        function generateFullHtml(data) {
+            const article = data.article;
+            const company = data.company;
+            const factbox = data.factbox || '';
+
+            return `<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(article.title)} | Impact Loop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, sans-serif; line-height: 1.7; color: #1a1a1a; background: #fff; }
+        .header { background: #D4FF00; padding: 15px 40px; display: flex; align-items: center; }
+        .header .logo { font-weight: 700; font-size: 1.2rem; }
+        article { max-width: 680px; margin: 0 auto; padding: 40px 20px 60px; }
+        .category { font-size: 0.75em; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #555; margin-bottom: 15px; }
+        h1 { font-size: 2.4em; font-weight: 700; line-height: 1.15; margin-bottom: 25px; }
+        .ingress { font-size: 1.15em; font-weight: 600; line-height: 1.5; margin-bottom: 30px; }
+        .body p { margin-bottom: 20px; font-size: 1.05em; line-height: 1.75; }
+        .body h2 { font-size: 1.25em; font-weight: 700; margin-top: 35px; margin-bottom: 15px; }
+        .body strong { font-weight: 600; }
+        .factbox { background: #f8f8f8; padding: 15px 20px; border-radius: 4px; margin-top: 40px; font-size: 0.9em; line-height: 1.8; }
+        .factbox .separator { color: #bbb; margin: 0 6px; }
+        .factbox strong { font-weight: 600; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <span class="logo">IMPACT LOOP</span>
+    </header>
+    <article>
+        <p class="category">${getCategoryLabel(data.metadata.articleType, data.metadata.tone)}</p>
+        <h1>${escapeHtml(article.title)}</h1>
+        <p class="ingress">${escapeHtml(article.ingress)}</p>
+        <div class="body">${article.content}</div>
+        ${factbox ? `<div class="factbox">${factbox}</div>` : ''}
+    </article>
+</body>
+</html>`;
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('visible');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('visible');
+        }
+
+        // Sidebar toggle
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+    </script>
+</body>
+</html>

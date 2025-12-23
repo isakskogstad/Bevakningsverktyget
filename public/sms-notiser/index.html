@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS-notiser - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../assets/css/variables.css">
+    <link rel="stylesheet" href="../assets/css/reset.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/layout.css">
+    <link rel="stylesheet" href="../assets/css/utilities.css">
+    <style>
+        body { background: var(--gray-100); }
+
+        .sms-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--spacing-6);
+        }
+
+        .sms-header {
+            margin-bottom: var(--spacing-8);
+        }
+
+        .sms-header h1 {
+            font-size: var(--font-size-3xl);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .alert-rules {
+            display: grid;
+            gap: var(--spacing-4);
+            margin-bottom: var(--spacing-8);
+        }
+
+        .rule-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-300);
+            padding: var(--spacing-5);
+        }
+
+        .rule-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-3);
+        }
+
+        .rule-title {
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-lg);
+        }
+
+        .rule-status {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.active { background: var(--success); }
+        .status-dot.inactive { background: var(--gray-300); }
+
+        .rule-description {
+            color: var(--gray-500);
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .rule-conditions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-2);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .condition-tag {
+            background: var(--gray-100);
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .rule-actions {
+            display: flex;
+            gap: var(--spacing-2);
+        }
+
+        /* Phone number setup */
+        .phone-setup {
+            background: var(--accent-muted);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-bottom: var(--spacing-8);
+        }
+
+        .phone-setup h3 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .phone-setup p {
+            color: var(--gray-700);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .phone-input-group {
+            display: flex;
+            gap: var(--spacing-3);
+        }
+
+        .phone-input-group input {
+            flex: 1;
+            padding: var(--spacing-3) var(--spacing-4);
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-base);
+        }
+
+        /* History */
+        .history-section h2 {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .history-list {
+            display: grid;
+            gap: var(--spacing-3);
+        }
+
+        .history-item {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--gray-300);
+            padding: var(--spacing-4);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-4);
+        }
+
+        .history-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .history-icon.sent { background: var(--success-bg); }
+        .history-icon.failed { background: var(--error-bg); }
+
+        .history-content { flex: 1; }
+
+        .history-message {
+            font-weight: var(--font-weight-medium);
+            margin-bottom: 2px;
+        }
+
+        .history-meta {
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+        }
+
+        /* Coming soon */
+        .coming-soon {
+            background: var(--gray-100);
+            border: 2px dashed var(--gray-300);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-8);
+            text-align: center;
+            color: var(--gray-500);
+        }
+
+        .coming-soon-icon {
+            font-size: 48px;
+            margin-bottom: var(--spacing-4);
+        }
+
+        .coming-soon h3 {
+            color: var(--dark);
+            margin-bottom: var(--spacing-2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="dashboard-nav">
+        <div class="nav-inner">
+            <div class="d-flex items-center gap-4">
+                <a href="../" class="nav-brand">Bevakningsverktyget</a>
+                <span class="text-muted">›</span>
+                <span class="font-medium">SMS-notiser</span>
+            </div>
+            <div class="nav-right">
+                <a href="../" class="btn btn-ghost btn-sm">← Tillbaka</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="sms-container">
+        <div class="sms-header">
+            <h1>📱 SMS-notiser</h1>
+            <p class="text-muted">Få direktnotiser när viktiga händelser inträffar</p>
+        </div>
+
+        <!-- Phone setup -->
+        <div class="phone-setup" id="phone-setup">
+            <h3>Konfigurera ditt telefonnummer</h3>
+            <p>Ange ditt mobilnummer för att ta emot SMS-notiser</p>
+            <div class="phone-input-group">
+                <input type="tel" id="phone-number" placeholder="+46 70 123 45 67" value="">
+                <button class="btn btn-accent" onclick="savePhone()">Spara</button>
+            </div>
+        </div>
+
+        <!-- Alert rules -->
+        <section>
+            <h2 class="font-semibold mb-4">Notisregler</h2>
+            <div class="alert-rules" id="rules-list">
+                <!-- Filled by JS -->
+            </div>
+            <button class="btn btn-secondary" onclick="openAddRule()">➕ Lägg till regel</button>
+        </section>
+
+        <!-- History -->
+        <section class="history-section mt-8">
+            <h2>Skickade notiser</h2>
+            <div class="history-list" id="history-list">
+                <div class="coming-soon">
+                    <div class="coming-soon-icon">🚧</div>
+                    <h3>Kommer snart</h3>
+                    <p>SMS-funktionen kräver konfiguration av Supabase Edge Function med Twilio.</p>
+                    <p class="mt-2 text-sm">
+                        Se <a href="../SUPABASE-EDGE-FUNCTIONS-DESIGN.md" class="text-accent">dokumentationen</a> för setup-instruktioner.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Rule Modal -->
+    <div class="modal" id="rule-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Ny notisregel</h3>
+                <button class="modal-close" onclick="closeRuleModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Regelnamn</label>
+                    <input type="text" id="rule-name" placeholder="T.ex. Konkursvarning">
+                </div>
+                <div class="form-group">
+                    <label>Trigger på</label>
+                    <select id="rule-trigger">
+                        <option value="poit-konkurs">POIT: Konkurs</option>
+                        <option value="poit-all">POIT: Alla händelser</option>
+                        <option value="keyword">Nyckelord i nyheter</option>
+                        <option value="pressrelease">Ny pressrelease</option>
+                    </select>
+                </div>
+                <div class="form-group" id="keyword-group" style="display: none;">
+                    <label>Nyckelord (kommaseparerat)</label>
+                    <input type="text" id="rule-keywords" placeholder="startup, greentech, miljö">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRuleModal()">Avbryt</button>
+                <button class="btn btn-accent" onclick="saveRule()">Spara regel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/config.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    <script src="../assets/js/components.js"></script>
+    <script>
+        // =========================================================================
+        // SMS NOTISER
+        // =========================================================================
+
+        // Default rules
+        const DEFAULT_RULES = [
+            {
+                id: 'konkurs',
+                name: 'Konkursvarning',
+                description: 'Få SMS när ett bevakat företag går i konkurs',
+                trigger: 'poit-konkurs',
+                conditions: ['Konkurs', 'Bevakade företag'],
+                active: true
+            },
+            {
+                id: 'kallelse',
+                name: 'Kallelse till stämma',
+                description: 'Notis vid kallelser för bevakade företag',
+                trigger: 'poit-kallelse',
+                conditions: ['Kallelse', 'Stämma'],
+                active: false
+            }
+        ];
+
+        // State
+        let rules = Utils.getStorage('sms-rules', DEFAULT_RULES);
+        let phoneNumber = Utils.getStorage('sms-phone', '');
+        let history = Utils.getStorage('sms-history', []);
+
+        // =========================================================================
+        // RENDER
+        // =========================================================================
+
+        function renderRules() {
+            const container = document.getElementById('rules-list');
+
+            if (rules.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state p-6">
+                        <p>Inga regler konfigurerade ännu</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = rules.map(rule => `
+                <div class="rule-card">
+                    <div class="rule-header">
+                        <div class="rule-title">${escapeHtml(rule.name)}</div>
+                        <div class="rule-status">
+                            <div class="status-dot ${rule.active ? 'active' : 'inactive'}"></div>
+                            <span class="text-sm ${rule.active ? 'text-success' : 'text-muted'}">
+                                ${rule.active ? 'Aktiv' : 'Inaktiv'}
+                            </span>
+                        </div>
+                    </div>
+                    <p class="rule-description">${escapeHtml(rule.description)}</p>
+                    <div class="rule-conditions">
+                        ${rule.conditions.map(c => `<span class="condition-tag">${escapeHtml(c)}</span>`).join('')}
+                    </div>
+                    <div class="rule-actions">
+                        <button class="btn btn-sm ${rule.active ? 'btn-secondary' : 'btn-accent'}"
+                                onclick="toggleRule('${rule.id}')">
+                            ${rule.active ? 'Pausa' : 'Aktivera'}
+                        </button>
+                        <button class="btn btn-sm btn-ghost" onclick="deleteRule('${rule.id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-list');
+
+            if (history.length === 0) {
+                // Show coming soon message (already in HTML)
+                return;
+            }
+
+            container.innerHTML = history.slice(0, 10).map(item => `
+                <div class="history-item">
+                    <div class="history-icon ${item.status === 'sent' ? 'sent' : 'failed'}">
+                        ${item.status === 'sent' ? '✅' : '❌'}
+                    </div>
+                    <div class="history-content">
+                        <div class="history-message">${escapeHtml(item.message)}</div>
+                        <div class="history-meta">
+                            ${Utils.formatDate(item.timestamp, { includeTime: true })}
+                            • ${escapeHtml(item.rule)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // =========================================================================
+        // ACTIONS
+        // =========================================================================
+
+        function savePhone() {
+            const input = document.getElementById('phone-number');
+            const phone = input.value.trim();
+
+            if (!phone) {
+                Components.showToast('Ange ett telefonnummer', 'error');
+                return;
+            }
+
+            // Basic validation
+            const cleaned = phone.replace(/\s+/g, '');
+            if (!cleaned.match(/^\+?[0-9]{10,15}$/)) {
+                Components.showToast('Ogiltigt telefonnummer', 'error');
+                return;
+            }
+
+            phoneNumber = phone;
+            Utils.setStorage('sms-phone', phoneNumber);
+            Components.showToast('Telefonnummer sparat!', 'success');
+        }
+
+        function toggleRule(id) {
+            const rule = rules.find(r => r.id === id);
+            if (rule) {
+                rule.active = !rule.active;
+                Utils.setStorage('sms-rules', rules);
+                renderRules();
+                Components.showToast(rule.active ? 'Regel aktiverad' : 'Regel pausad', 'success');
+            }
+        }
+
+        function deleteRule(id) {
+            if (!confirm('Ta bort denna regel?')) return;
+
+            rules = rules.filter(r => r.id !== id);
+            Utils.setStorage('sms-rules', rules);
+            renderRules();
+            Components.showToast('Regel borttagen', 'success');
+        }
+
+        function openAddRule() {
+            document.getElementById('rule-modal').classList.add('show');
+        }
+
+        function closeRuleModal() {
+            document.getElementById('rule-modal').classList.remove('show');
+            document.getElementById('rule-name').value = '';
+            document.getElementById('rule-keywords').value = '';
+        }
+
+        function saveRule() {
+            const name = document.getElementById('rule-name').value.trim();
+            const trigger = document.getElementById('rule-trigger').value;
+
+            if (!name) {
+                Components.showToast('Ange ett namn för regeln', 'error');
+                return;
+            }
+
+            const triggerLabels = {
+                'poit-konkurs': 'Konkurs',
+                'poit-all': 'POIT-händelser',
+                'keyword': 'Nyckelord',
+                'pressrelease': 'Pressrelease'
+            };
+
+            const newRule = {
+                id: 'rule-' + Date.now(),
+                name: name,
+                description: `Notis vid ${triggerLabels[trigger].toLowerCase()}`,
+                trigger: trigger,
+                conditions: [triggerLabels[trigger]],
+                active: true
+            };
+
+            if (trigger === 'keyword') {
+                const keywords = document.getElementById('rule-keywords').value.trim();
+                if (keywords) {
+                    newRule.conditions = keywords.split(',').map(k => k.trim());
+                }
+            }
+
+            rules.push(newRule);
+            Utils.setStorage('sms-rules', rules);
+
+            closeRuleModal();
+            renderRules();
+            Components.showToast('Regel skapad!', 'success');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // =========================================================================
+        // INIT
+        // =========================================================================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Kolla auth
+            const user = await Auth.getUser();
+            if (!user) {
+                window.location.href = '../';
+                return;
+            }
+
+            // Visa telefonnummer om det finns
+            if (phoneNumber) {
+                document.getElementById('phone-number').value = phoneNumber;
+            }
+
+            // Event listeners
+            document.getElementById('rule-trigger').addEventListener('change', (e) => {
+                const keywordGroup = document.getElementById('keyword-group');
+                keywordGroup.style.display = e.target.value === 'keyword' ? 'block' : 'none';
+            });
+
+            renderRules();
+            renderHistory();
+        });
+    </script>
+</body>
+</html>

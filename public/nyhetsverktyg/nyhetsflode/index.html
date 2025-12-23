@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nyhetsflöde | Bevakningsverktyg</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        window.location.replace('../../index.html');
+    </script>
+    <style>
+        :root {
+            /* Ljust tema - matchande med dashboard */
+            --accent: #D4FF00;
+            --black: #000000;
+            --dark: #111111;
+            --gray-700: #404040;
+            --gray-500: #6b6b6b;
+            --gray-300: #d1d1d1;
+            --gray-100: #f5f5f5;
+            --white: #ffffff;
+            --error: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+
+            /* Mappning för kompatibilitet */
+            --bg-primary: var(--gray-100);
+            --bg-secondary: var(--white);
+            --bg-tertiary: var(--gray-100);
+            --text-primary: var(--dark);
+            --text-secondary: var(--gray-500);
+            --border: var(--gray-300);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Navigation - exakt som dashboard */
+        .nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-300);
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--dark);
+        }
+
+        .nav-brand span { font-weight: 700; font-size: 1.1rem; }
+
+        .back-link {
+            color: var(--gray-500);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .back-link:hover { color: var(--dark); }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 40px 0 40px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle { color: var(--gray-500); }
+
+        /* Search */
+        .search-container {
+            max-width: 100%;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            color: var(--dark);
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--dark);
+        }
+
+        .search-input::placeholder { color: var(--gray-500); }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Main layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 40px 40px 40px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+        }
+
+        /* Sidebar filters */
+        .sidebar {
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 80px;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--gray-100);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        .filter-option:hover { background: var(--gray-300); }
+
+        .filter-option.active {
+            background: var(--accent);
+            color: var(--dark);
+        }
+
+        .filter-option input[type="checkbox"],
+        .filter-option input[type="radio"] {
+            accent-color: var(--dark);
+        }
+
+        .filter-count {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: var(--gray-500);
+            background: var(--gray-100);
+            padding: 0.125rem 0.5rem;
+            border-radius: 10px;
+        }
+
+        /* Company filter with search */
+        .company-filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .company-search-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            color: var(--dark);
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .company-search-input:focus {
+            outline: none;
+            border-color: var(--dark);
+        }
+
+        .company-list {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .company-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            background: var(--gray-100);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.15s;
+        }
+
+        .company-item:hover { background: var(--gray-300); }
+        .company-item.selected {
+            background: var(--accent);
+            color: var(--dark);
+        }
+
+        .selected-companies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .selected-company-tag {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--accent);
+            color: var(--dark);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .selected-company-tag .remove {
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        .selected-company-tag .remove:hover { opacity: 1; }
+
+        /* Feed */
+        .feed-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .feed-title { font-size: 1.5rem; font-weight: 700; }
+
+        .feed-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: var(--dark);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .refresh-btn:hover { opacity: 0.9; }
+
+        .refresh-btn.loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .refresh-btn.loading .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .auto-update {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* News cards */
+        .news-card {
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            border-color: var(--gray-300);
+        }
+
+        .news-source-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .news-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .news-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+        }
+
+        .news-source {
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .news-type {
+            padding: 0.125rem 0.5rem;
+            background: var(--gray-100);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .news-type.press {
+            background: var(--accent);
+            color: var(--dark);
+        }
+
+        .news-type.news {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .news-type.tech {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+
+        .news-type.finans {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .news-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-title a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .news-title a:hover { color: var(--accent); }
+
+        .news-description {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-footer {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .news-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .news-keywords {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .keyword-tag {
+            padding: 0.125rem 0.5rem;
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .company-tag {
+            padding: 0.125rem 0.5rem;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Loading state */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--gray-300);
+            border-top-color: var(--dark);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray-500);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Load more button */
+        .load-more-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            color: var(--dark);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+
+        .load-more-btn:hover {
+            background: var(--gray-100);
+            border-color: var(--dark);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                position: static;
+                max-height: none;
+            }
+
+            .header-content {
+                flex-wrap: wrap;
+            }
+
+            .search-container {
+                order: 3;
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .stats { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="../../index.html" class="nav-brand">
+                <span>📡</span>
+                <span>Nyhetsflöde</span>
+            </a>
+            <a href="../../index.html" class="back-link">
+                ← Tillbaka till Dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Nyhetsflöde</h1>
+                <p class="page-subtitle">Samlat nyhetsflöde från alla bevakade källor</p>
+            </div>
+            <div class="stats">
+                <div class="stat">
+                    <span>Källor:</span>
+                    <span class="stat-value" id="sourceCount">-</span>
+                </div>
+                <div class="stat">
+                    <span>Artiklar:</span>
+                    <span class="stat-value" id="articleCount">-</span>
+                </div>
+                <div class="auto-update">
+                    <span class="pulse-dot"></span>
+                    <span>Live</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-container" style="margin-bottom: 24px;">
+            <input type="text" class="search-input" id="searchInput" placeholder="Sök nyheter, företag, nyckelord...">
+        </div>
+    </div>
+
+    <main class="main-container">
+        <aside class="sidebar">
+            <!-- Källtyp filter -->
+            <div class="filter-section">
+                <div class="filter-title">Källtyp</div>
+                <div class="filter-options" id="sourceTypeFilters">
+                    <label class="filter-option active">
+                        <input type="radio" name="sourceType" value="all" checked>
+                        <span>📋 Alla källor</span>
+                        <span class="filter-count" id="countAll">0</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="sourceType" value="press">
+                        <span>📢 Pressmeddelanden</span>
+                        <span class="filter-count" id="countPress">0</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="sourceType" value="news_sv">
+                        <span>🇸🇪 Svenska nyheter</span>
+                        <span class="filter-count" id="countNewsSv">0</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="sourceType" value="news_int">
+                        <span>🌍 Internationellt</span>
+                        <span class="filter-count" id="countNewsInt">0</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="sourceType" value="company">
+                        <span>🏢 Företagsbloggar</span>
+                        <span class="filter-count" id="countCompany">0</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Företagsfilter -->
+            <div class="company-filter-section">
+                <div class="filter-title">Filtrera på företag (1210+)</div>
+                <input type="text" class="company-search-input" id="companySearchInput" placeholder="Sök företag...">
+                <div class="company-list" id="companyList"></div>
+                <div class="selected-companies" id="selectedCompanies"></div>
+            </div>
+
+            <!-- Sektor filter -->
+            <div class="filter-section">
+                <div class="filter-title">Sektor</div>
+                <div class="filter-options" id="sectorFilters">
+                    <label class="filter-option">
+                        <input type="checkbox" value="fintech">
+                        <span>💰 Fintech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="greentech">
+                        <span>🌱 Green Tech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="ai">
+                        <span>🤖 AI / Deep Tech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="healthtech">
+                        <span>🏥 Health Tech</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="gaming">
+                        <span>🎮 Gaming</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="checkbox" value="saas">
+                        <span>☁️ SaaS</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Tidsperiod -->
+            <div class="filter-section">
+                <div class="filter-title">Tidsperiod</div>
+                <div class="filter-options">
+                    <label class="filter-option active">
+                        <input type="radio" name="timeFilter" value="all" checked>
+                        <span>Alla</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="timeFilter" value="today">
+                        <span>Idag</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="timeFilter" value="week">
+                        <span>Senaste veckan</span>
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="timeFilter" value="month">
+                        <span>Senaste månaden</span>
+                    </label>
+                </div>
+            </div>
+        </aside>
+
+        <section class="feed-container">
+            <div class="feed-header">
+                <h1 class="feed-title">Senaste nyheterna</h1>
+                <div class="feed-actions">
+                    <div class="auto-update">
+                        <span class="pulse-dot"></span>
+                        <span>Uppdateras var 5:e minut</span>
+                    </div>
+                    <button class="refresh-btn" id="refreshBtn">
+                        <span class="refresh-icon">🔄</span>
+                        <span>Uppdatera nu</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="newsFeed">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Laddar nyheter från alla källor...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // =============================================================================
+        // KONFIGURATION
+        // =============================================================================
+
+        const SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+        // Hårdkodade RSS-feeds (från RSS-läsare och Pressbevakning)
+        const STATIC_FEEDS = [
+            // Svenska affärs/tech
+            { id: 'breakit', name: 'Breakit', url: 'https://www.breakit.se/feed/artiklar', category: 'news_sv', icon: '🚀' },
+            { id: 'di', name: 'Dagens Industri', url: 'https://www.di.se/rss', category: 'news_sv', icon: '📈' },
+            { id: 'di-digital', name: 'Di Digital', url: 'https://digital.di.se/rss', category: 'news_sv', icon: '💻' },
+            { id: 'realtid', name: 'Realtid', url: 'https://www.realtid.se/rss/senaste', category: 'news_sv', icon: '💹' },
+            { id: 'nyteknik', name: 'Ny Teknik', url: 'https://www.nyteknik.se/feed', category: 'news_sv', icon: '🔧' },
+            { id: 'svt', name: 'SVT Nyheter', url: 'https://www.svt.se/nyheter/rss.xml', category: 'news_sv', icon: '📺' },
+            { id: 'omni', name: 'Omni', url: 'https://omni.se/rss', category: 'news_sv', icon: '📰' },
+
+            // Internationella tech
+            { id: 'techcrunch', name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: 'news_int', icon: '🌐' },
+            { id: 'theverge', name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'news_int', icon: '⚡' },
+            { id: 'hackernews', name: 'Hacker News', url: 'https://hnrss.org/frontpage', category: 'news_int', icon: '🔶' },
+            { id: 'reuters', name: 'Reuters', url: 'https://www.reutersagency.com/feed/', category: 'news_int', icon: '🌍' },
+
+            // Företagspressrum
+            { id: 'spotify', name: 'Spotify Newsroom', url: 'https://newsroom.spotify.com/feed/', category: 'company', icon: '🎵' }
+        ];
+
+        // Keywords för kategorisering
+        const KEYWORDS = {
+            fintech: ['fintech', 'bank', 'betalning', 'payment', 'kredit', 'lån', 'investering', 'klarna', 'swish'],
+            greentech: ['hållbar', 'grön', 'klimat', 'el', 'energi', 'batteri', 'solar', 'vind', 'emission', 'carbon'],
+            ai: ['ai', 'artificiell intelligens', 'machine learning', 'ml', 'data', 'algoritm', 'automation', 'chatgpt', 'openai'],
+            healthtech: ['hälsa', 'health', 'vård', 'patient', 'medicin', 'läkare', 'terapi', 'diagnos'],
+            gaming: ['spel', 'game', 'gaming', 'studio', 'release', 'dlc', 'expansion'],
+            saas: ['saas', 'cloud', 'plattform', 'subscription', 'enterprise', 'b2b']
+        };
+
+        // Highlight keywords
+        const HIGHLIGHT_KEYWORDS = [
+            'konkurs', 'likvidation', 'rekonstruktion', 'varsel',
+            'förvärv', 'uppköp', 'merger', 'fusion',
+            'nyemission', 'kapitalanskaffning', 'investering',
+            'vd', 'ceo', 'styrelse', 'avgår', 'tillträder'
+        ];
+
+        // =============================================================================
+        // STATE
+        // =============================================================================
+
+        let allPressrooms = [];      // Från Supabase company_pressrooms
+        let allCompanies = [];       // Från Supabase loop_table
+        let allArticles = [];        // Alla artiklar kombinerade
+        let filteredArticles = [];
+        let displayedCount = 50;     // Antal artiklar som visas
+
+        // Aktiva filter
+        let activeSourceType = 'all';
+        let activeSectorFilters = [];
+        let activeTimeFilter = 'all';
+        let selectedCompanyIds = [];
+        let searchQuery = '';
+
+        // =============================================================================
+        // SUPABASE DATA
+        // =============================================================================
+
+        async function loadPressrooms() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/company_pressrooms?is_active=eq.true&select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to load pressrooms');
+                allPressrooms = await response.json();
+                return allPressrooms;
+            } catch (error) {
+                console.error('Error loading pressrooms:', error);
+                return [];
+            }
+        }
+
+        async function loadCompanies() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/loop_table?select=id,company_name,orgnr,sector,city&order=company_name`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to load companies');
+                allCompanies = await response.json();
+                return allCompanies;
+            } catch (error) {
+                console.error('Error loading companies:', error);
+                return [];
+            }
+        }
+
+        // =============================================================================
+        // RSS FETCH
+        // =============================================================================
+
+        async function fetchRssFeed(feedUrl) {
+            try {
+                const response = await fetch(RSS2JSON_API + encodeURIComponent(feedUrl));
+                if (!response.ok) return [];
+                const data = await response.json();
+                if (data.status !== 'ok') return [];
+                return data.items || [];
+            } catch (error) {
+                console.error('Error fetching feed:', feedUrl, error);
+                return [];
+            }
+        }
+
+        // =============================================================================
+        // ARTICLE PROCESSING
+        // =============================================================================
+
+        function parseDate(dateStr) {
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? new Date() : date;
+        }
+
+        function formatRelativeTime(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just nu';
+            if (diffMins < 60) return `${diffMins} min sedan`;
+            if (diffHours < 24) return `${diffHours} tim sedan`;
+            if (diffDays < 7) return `${diffDays} dagar sedan`;
+            return date.toLocaleDateString('sv-SE');
+        }
+
+        function detectKeywords(text) {
+            const lowerText = text.toLowerCase();
+            return HIGHLIGHT_KEYWORDS.filter(kw => lowerText.includes(kw));
+        }
+
+        function detectSectors(text) {
+            const lowerText = text.toLowerCase();
+            const sectors = [];
+            for (const [sector, keywords] of Object.entries(KEYWORDS)) {
+                if (keywords.some(kw => lowerText.includes(kw))) {
+                    sectors.push(sector);
+                }
+            }
+            return sectors;
+        }
+
+        function matchCompanies(text) {
+            const lowerText = text.toLowerCase();
+            const matched = [];
+            for (const company of allCompanies) {
+                // Matcha på företagsnamn (första ordet eller hela namnet)
+                const nameParts = company.company_name.toLowerCase().split(/\s+/);
+                const mainName = nameParts[0];
+
+                // Hoppa över generiska ord
+                if (['ab', 'aktiebolag', 'sweden', 'nordic'].includes(mainName)) continue;
+
+                if (mainName.length > 3 && lowerText.includes(mainName)) {
+                    matched.push(company);
+                }
+            }
+            return matched.slice(0, 3); // Max 3 matchningar per artikel
+        }
+
+        // =============================================================================
+        // LOAD ALL FEEDS
+        // =============================================================================
+
+        async function loadAllFeeds() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.classList.add('loading');
+
+            const newsFeed = document.getElementById('newsFeed');
+            const totalSources = allPressrooms.length + STATIC_FEEDS.length;
+            newsFeed.innerHTML = `
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Laddar nyheter från ${totalSources} källor...</p>
+                </div>
+            `;
+
+            const articles = [];
+
+            // Hämta från Supabase pressrooms
+            const pressroomPromises = allPressrooms.map(async (pressroom) => {
+                const items = await fetchRssFeed(pressroom.rss_feed_url);
+                return items.map(item => ({
+                    title: item.title || '',
+                    link: item.link || '',
+                    description: (item.description || '').replace(/<[^>]*>/g, '').substring(0, 300),
+                    pubDate: parseDate(item.pubDate),
+                    source: pressroom.company_name,
+                    sourceType: 'press',
+                    sourceIcon: '📢',
+                    keywords: [],
+                    sectors: [],
+                    matchedCompanies: []
+                }));
+            });
+
+            // Hämta från statiska feeds
+            const staticPromises = STATIC_FEEDS.map(async (feed) => {
+                const items = await fetchRssFeed(feed.url);
+                return items.map(item => ({
+                    title: item.title || '',
+                    link: item.link || '',
+                    description: (item.description || '').replace(/<[^>]*>/g, '').substring(0, 300),
+                    pubDate: parseDate(item.pubDate),
+                    source: feed.name,
+                    sourceType: feed.category,
+                    sourceIcon: feed.icon,
+                    keywords: [],
+                    sectors: [],
+                    matchedCompanies: []
+                }));
+            });
+
+            // Vänta på alla
+            const results = await Promise.allSettled([...pressroomPromises, ...staticPromises]);
+
+            for (const result of results) {
+                if (result.status === 'fulfilled') {
+                    articles.push(...result.value);
+                }
+            }
+
+            // Efterbearbeta artiklar
+            for (const article of articles) {
+                const fullText = article.title + ' ' + article.description;
+                article.keywords = detectKeywords(fullText);
+                article.sectors = detectSectors(fullText);
+                article.matchedCompanies = matchCompanies(fullText);
+            }
+
+            // Sortera efter datum
+            articles.sort((a, b) => b.pubDate - a.pubDate);
+
+            allArticles = articles;
+            document.getElementById('sourceCount').textContent = totalSources;
+            document.getElementById('articleCount').textContent = articles.length;
+
+            refreshBtn.classList.remove('loading');
+            displayedCount = 50;
+            applyFilters();
+        }
+
+        // =============================================================================
+        // FILTERS
+        // =============================================================================
+
+        function applyFilters() {
+            let filtered = [...allArticles];
+
+            // Källtyp-filter
+            if (activeSourceType !== 'all') {
+                filtered = filtered.filter(a => a.sourceType === activeSourceType);
+            }
+
+            // Företagsfilter
+            if (selectedCompanyIds.length > 0) {
+                const selectedNames = allCompanies
+                    .filter(c => selectedCompanyIds.includes(c.id))
+                    .map(c => c.company_name.toLowerCase().split(/\s+/)[0]);
+
+                filtered = filtered.filter(a => {
+                    const text = (a.title + ' ' + a.description).toLowerCase();
+                    return selectedNames.some(name => name.length > 3 && text.includes(name)) ||
+                           a.matchedCompanies.some(mc => selectedCompanyIds.includes(mc.id));
+                });
+            }
+
+            // Sektor-filter
+            if (activeSectorFilters.length > 0) {
+                filtered = filtered.filter(a =>
+                    a.sectors.some(s => activeSectorFilters.includes(s))
+                );
+            }
+
+            // Tidsfilter
+            const now = new Date();
+            if (activeTimeFilter === 'today') {
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                filtered = filtered.filter(a => a.pubDate >= today);
+            } else if (activeTimeFilter === 'week') {
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                filtered = filtered.filter(a => a.pubDate >= weekAgo);
+            } else if (activeTimeFilter === 'month') {
+                const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                filtered = filtered.filter(a => a.pubDate >= monthAgo);
+            }
+
+            // Sökfilter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(a =>
+                    a.title.toLowerCase().includes(query) ||
+                    a.description.toLowerCase().includes(query) ||
+                    a.source.toLowerCase().includes(query)
+                );
+            }
+
+            filteredArticles = filtered;
+            renderArticles();
+            updateFilterCounts();
+        }
+
+        function updateFilterCounts() {
+            document.getElementById('countAll').textContent = allArticles.length;
+            document.getElementById('countPress').textContent = allArticles.filter(a => a.sourceType === 'press').length;
+            document.getElementById('countNewsSv').textContent = allArticles.filter(a => a.sourceType === 'news_sv').length;
+            document.getElementById('countNewsInt').textContent = allArticles.filter(a => a.sourceType === 'news_int').length;
+            document.getElementById('countCompany').textContent = allArticles.filter(a => a.sourceType === 'company').length;
+        }
+
+        // =============================================================================
+        // RENDER
+        // =============================================================================
+
+        function getTypeLabel(sourceType) {
+            const labels = {
+                'press': 'Pressmeddelande',
+                'news_sv': 'Svenska nyheter',
+                'news_int': 'Internationellt',
+                'company': 'Företag'
+            };
+            return labels[sourceType] || 'Nyhet';
+        }
+
+        function getTypeClass(sourceType) {
+            const classes = {
+                'press': 'press',
+                'news_sv': 'news',
+                'news_int': 'tech',
+                'company': 'finans'
+            };
+            return classes[sourceType] || 'news';
+        }
+
+        function renderArticles() {
+            const newsFeed = document.getElementById('newsFeed');
+
+            if (filteredArticles.length === 0) {
+                newsFeed.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>Inga nyheter hittades med valda filter</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const toShow = filteredArticles.slice(0, displayedCount);
+
+            let html = toShow.map(article => `
+                <article class="news-card" onclick="window.open('${escapeHtml(article.link)}', '_blank')">
+                    <div class="news-source-icon">${article.sourceIcon}</div>
+                    <div class="news-content">
+                        <div class="news-meta">
+                            <span class="news-source">${escapeHtml(article.source)}</span>
+                            <span class="news-type ${getTypeClass(article.sourceType)}">
+                                ${getTypeLabel(article.sourceType)}
+                            </span>
+                        </div>
+                        <h3 class="news-title">
+                            <a href="${escapeHtml(article.link)}" target="_blank" onclick="event.stopPropagation()">${escapeHtml(article.title)}</a>
+                        </h3>
+                        <p class="news-description">${escapeHtml(article.description)}</p>
+                        <div class="news-footer">
+                            <span class="news-time">${formatRelativeTime(article.pubDate)}</span>
+                            ${article.matchedCompanies.length > 0 ? `
+                                <div class="news-keywords">
+                                    ${article.matchedCompanies.slice(0, 2).map(c =>
+                                        `<span class="company-tag">${escapeHtml(c.company_name.split(' ')[0])}</span>`
+                                    ).join('')}
+                                </div>
+                            ` : ''}
+                            ${article.keywords.length > 0 ? `
+                                <div class="news-keywords">
+                                    ${article.keywords.slice(0, 2).map(k =>
+                                        `<span class="keyword-tag">${escapeHtml(k)}</span>`
+                                    ).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+
+            // Lägg till "Ladda fler"-knapp om det finns fler
+            if (displayedCount < filteredArticles.length) {
+                html += `
+                    <button class="load-more-btn" onclick="loadMore()">
+                        Visa fler (${filteredArticles.length - displayedCount} till)
+                    </button>
+                `;
+            }
+
+            newsFeed.innerHTML = html;
+        }
+
+        function loadMore() {
+            displayedCount += 50;
+            renderArticles();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // =============================================================================
+        // COMPANY FILTER UI
+        // =============================================================================
+
+        function renderCompanyList(filter = '') {
+            const list = document.getElementById('companyList');
+            const filtered = filter
+                ? allCompanies.filter(c =>
+                    c.company_name.toLowerCase().includes(filter.toLowerCase()) ||
+                    (c.sector && c.sector.toLowerCase().includes(filter.toLowerCase()))
+                )
+                : allCompanies.slice(0, 20);
+
+            list.innerHTML = filtered.slice(0, 30).map(company => `
+                <div class="company-item ${selectedCompanyIds.includes(company.id) ? 'selected' : ''}"
+                     onclick="toggleCompany(${company.id})">
+                    <span>${escapeHtml(company.company_name)}</span>
+                </div>
+            `).join('');
+        }
+
+        function toggleCompany(companyId) {
+            if (selectedCompanyIds.includes(companyId)) {
+                selectedCompanyIds = selectedCompanyIds.filter(id => id !== companyId);
+            } else {
+                selectedCompanyIds.push(companyId);
+            }
+            renderSelectedCompanies();
+            renderCompanyList(document.getElementById('companySearchInput').value);
+            applyFilters();
+        }
+
+        function renderSelectedCompanies() {
+            const container = document.getElementById('selectedCompanies');
+            const selected = allCompanies.filter(c => selectedCompanyIds.includes(c.id));
+
+            container.innerHTML = selected.map(company => `
+                <span class="selected-company-tag">
+                    ${escapeHtml(company.company_name.split(' ')[0])}
+                    <span class="remove" onclick="event.stopPropagation(); toggleCompany(${company.id})">✕</span>
+                </span>
+            `).join('');
+        }
+
+        // =============================================================================
+        // EVENT LISTENERS
+        // =============================================================================
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            applyFilters();
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', loadAllFeeds);
+
+        document.getElementById('companySearchInput').addEventListener('input', (e) => {
+            renderCompanyList(e.target.value);
+        });
+
+        // Källtyp-filter
+        document.querySelectorAll('#sourceTypeFilters input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                document.querySelectorAll('#sourceTypeFilters .filter-option').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                e.target.closest('.filter-option').classList.add('active');
+                activeSourceType = e.target.value;
+                applyFilters();
+            });
+        });
+
+        // Sektor-filter
+        document.querySelectorAll('#sectorFilters input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                e.target.closest('.filter-option').classList.toggle('active', e.target.checked);
+                if (e.target.checked) {
+                    activeSectorFilters.push(e.target.value);
+                } else {
+                    activeSectorFilters = activeSectorFilters.filter(s => s !== e.target.value);
+                }
+                applyFilters();
+            });
+        });
+
+        // Tidsfilter
+        document.querySelectorAll('input[name="timeFilter"]').forEach(input => {
+            input.addEventListener('change', (e) => {
+                document.querySelectorAll('input[name="timeFilter"]').forEach(i => {
+                    i.closest('.filter-option').classList.remove('active');
+                });
+                e.target.closest('.filter-option').classList.add('active');
+                activeTimeFilter = e.target.value;
+                applyFilters();
+            });
+        });
+
+        // Auto-refresh var 5:e minut
+        setInterval(loadAllFeeds, 5 * 60 * 1000);
+
+        // =============================================================================
+        // INIT
+        // =============================================================================
+
+        async function init() {
+            // Ladda data parallellt
+            await Promise.all([
+                loadPressrooms(),
+                loadCompanies()
+            ]);
+
+            // Rendera företagslista
+            renderCompanyList();
+
+            // Ladda alla feeds
+            await loadAllFeeds();
+        }
+
+        init();
+    </script>
+</body>
+</html>

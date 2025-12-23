@@ -1,43 +1,69 @@
 {
-  "name": "bevakningsverktyg",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "bevakningsverktyget",
+  "version": "2.0.0",
+  "description": "Svenskt företagsbevakningsverktyg - automatisk dokumenthämtning från Bolagsverket, POIT-sökning och nyhetsredaktion",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "test": "node --test tests/*.test.js",
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "test": "jest --passWithNoTests",
+    "build": "echo 'No build step needed - static files served directly'",
     "lint": "eslint docs/assets/js scripts lib src --max-warnings 200",
     "lint:fix": "eslint docs/assets/js scripts lib src --fix",
+    "typecheck": "tsc --noEmit",
+    "scrape:poit": "node scripts/poit-scraper.js",
+    "scrape:allabolag": "node src/scrapers/allabolag-scraper.js",
+    "scrape:protokoll": "node scripts/poit-purchase-stealth.js",
     "ratsit-server": "node scripts/ratsit-server.js",
     "ratsit-server:visible": "HEADLESS=false node scripts/ratsit-server.js",
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "typecheck": "tsc --noEmit"
+    "docker:build": "docker build -t bevakningsverktyget .",
+    "docker:run": "docker run -p 3000:3000 --env-file .env bevakningsverktyget",
+    "docker:dev": "docker-compose up --build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": [
+    "bevakningsverktyg",
+    "företagsbevakning",
+    "bolagsverket",
+    "poit",
+    "scraper",
+    "puppeteer",
+    "sweden",
+    "companies"
+  ],
+  "author": "Isak Skogstad",
+  "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@supabase/supabase-js": "^2.89.0",
     "2captcha": "^3.0.5-2",
     "2captcha-ts": "^2.4.1",
-    "express": "^5.2.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
     "https-proxy-agent": "^7.0.6",
     "media-scraper": "^0.1.2",
     "pdf-parse": "^2.4.5",
-    "playwright": "^1.57.0",
-    "puppeteer": "^24.33.1",
+    "puppeteer": "^22.0.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "puppeteer-real-browser": "^1.4.4",
-    "resend": "^6.6.0",
-    "undetected-chromedriver": "^0.0.1-security"
+    "resend": "^6.6.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^20.10.0",
+    "eslint": "^9.39.2",
+    "globals": "^16.5.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "typescript": "^5.3.0"
   },
   "directories": {
-    "doc": "docs",
+    "doc": "public",
     "lib": "lib"
   },
   "repository": {
@@ -47,12 +73,5 @@
   "bugs": {
     "url": "https://github.com/isakskogstad/Bevakningsverktyget/issues"
   },
-  "homepage": "https://github.com/isakskogstad/Bevakningsverktyget#readme",
-  "devDependencies": {
-    "@eslint/js": "^9.39.2",
-    "@types/node": "^20.10.0",
-    "eslint": "^9.39.2",
-    "globals": "^16.5.0",
-    "typescript": "^5.3.0"
-  }
+  "homepage": "https://bevakningsverktyget.onrender.com"
 }

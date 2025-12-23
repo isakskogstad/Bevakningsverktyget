@@ -49,3 +49,16 @@ data/successful-methods/*.json
 backups/session-start/
 backups/session-end/
 backups/changes/
+
+# Docker
+.docker/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Test coverage
+coverage/
+
+# Local development
+.env.development.local

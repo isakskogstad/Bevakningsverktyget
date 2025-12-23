@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin: API-nycklar - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --accent: #D4FF00;
+            --black: #000000;
+            --dark: #111111;
+            --gray-700: #404040;
+            --gray-500: #6b6b6b;
+            --gray-300: #d1d1d1;
+            --gray-100: #f5f5f5;
+            --white: #ffffff;
+            --error: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--gray-100);
+            color: var(--dark);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        .nav {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-300);
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--dark);
+        }
+        .nav-brand span { font-weight: 700; font-size: 1.1rem; }
+        .back-link {
+            color: var(--gray-500);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-link:hover { color: var(--dark); }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .page-header {
+            margin-bottom: 32px;
+        }
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .page-subtitle { color: var(--gray-500); }
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--gray-300);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .card-title { font-size: 1.1rem; font-weight: 600; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--dark); color: var(--white); }
+        .btn-primary:hover { background: var(--black); }
+        .btn-accent { background: var(--accent); color: var(--dark); }
+        .btn-accent:hover { opacity: 0.9; }
+        .btn-secondary {
+            background: transparent;
+            color: var(--dark);
+            border: 1px solid var(--gray-300);
+        }
+        .btn-secondary:hover { background: var(--gray-100); }
+        .btn-danger { background: var(--error); color: var(--white); }
+        .btn-danger:hover { opacity: 0.9; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .key-grid { display: grid; gap: 16px; }
+        .key-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--gray-100);
+            border-radius: 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .key-item:hover {
+            border-color: var(--gray-300);
+            background: var(--white);
+        }
+        .key-info h4 { font-weight: 600; margin-bottom: 4px; }
+        .key-email {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+        .key-value {
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+        .key-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-active { background: #dcfce7; color: var(--success); }
+        .status-suspended { background: #fef3c7; color: var(--warning); }
+        .status-revoked { background: #fecaca; color: var(--error); }
+        .key-actions { display: flex; gap: 8px; }
+        .key-actions .btn { padding: 8px 12px; font-size: 0.8rem; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 32px;
+            width: 90%;
+            max-width: 480px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .modal-title { font-size: 1.25rem; font-weight: 600; }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-500);
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--dark);
+        }
+        .form-hint {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+        .alert-success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
+        .alert-error { background: #fef2f2; color: var(--error); border: 1px solid #fecaca; }
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--gray-500);
+        }
+        .empty-state h3 { margin-bottom: 8px; color: var(--dark); }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-label { font-size: 0.85rem; color: var(--gray-500); }
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            .nav { padding: 0 20px; }
+            .key-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="../../" class="nav-brand">
+                <span>Bevakningsverktyget</span>
+            </a>
+            <a href="../../" class="back-link">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 12L6 8l4-4"/>
+                </svg>
+                Tillbaka till dashboard
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">API-nycklar</h1>
+            <p class="page-subtitle">Hantera API-nycklar och användarbehörigheter</p>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="stats-row" id="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total">-</div>
+                <div class="stat-label">Totalt antal nycklar</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-active">-</div>
+                <div class="stat-label">Aktiva nycklar</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-requests">-</div>
+                <div class="stat-label">Totala anrop idag</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">API-nycklar</h2>
+                <button class="btn btn-accent" onclick="openModal()">+ Skapa ny nyckel</button>
+            </div>
+            <div id="keys-list" class="key-grid">
+                <div class="empty-state">
+                    <h3>Laddar...</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal" id="key-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Skapa ny API-nyckel</h3>
+                <button class="close-btn" onclick="closeModal()" aria-label="Stäng modal">&times;</button>
+            </div>
+            <form id="key-form" onsubmit="saveKey(event)">
+                <input type="hidden" id="key-id">
+                <div class="form-group">
+                    <label for="key-name">Namn</label>
+                    <input type="text" id="key-name" placeholder="T.ex. Produktionsnyckel" required>
+                    <div class="form-hint">Ett beskrivande namn för nyckeln</div>
+                </div>
+                <div class="form-group">
+                    <label for="key-email">E-post</label>
+                    <input type="email" id="key-email" placeholder="användare@foretag.se" required>
+                    <div class="form-hint">Kontaktperson för denna nyckel</div>
+                </div>
+                <div class="form-group">
+                    <label for="key-status">Status</label>
+                    <select id="key-status" required>
+                        <option value="active">Aktiv</option>
+                        <option value="suspended">Pausad</option>
+                        <option value="revoked">Spärrad</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn-primary">Spara</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Avbryt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // App state - use var to allow redefinition
+        var SUPABASE_URL = 'https://wzkohritxdrstsmwopco.supabase.co';
+        var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6a29ocml0eGRyc3RzbXdvcGNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUyMjkzMjUsImV4cCI6MjA4MDgwNTMyNX0.GigaAVp781QF9rv-AslVD_p4ksT8auWHwXU72H1kOqo';
+
+        var sb = null; // Renamed to avoid overwriting window.supabase
+        var keys = [];
+
+        async function init() {
+            sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // Check auth
+            const { data: { session } } = await sb.auth.getSession();
+            if (!session) {
+                window.location.href = '../../';
+                return;
+            }
+
+            // Check if admin
+            const { data: profile } = await sb
+                .from('user_profiles')
+                .select('role')
+                .eq('id', session.user.id)
+                .single();
+
+            if (!profile || profile.role !== 'admin') {
+                showAlert('Du har inte behörighet att se denna sida', 'error');
+                setTimeout(() => window.location.href = '../../', 2000);
+                return;
+            }
+
+            loadKeys();
+        }
+
+        async function loadKeys() {
+            const { data, error } = await sb
+                .from('api_keys')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading keys:', error);
+                document.getElementById('keys-list').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Kunde inte ladda nycklar</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            keys = data || [];
+            updateStats();
+            renderKeys();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').textContent = keys.length;
+            document.getElementById('stat-active').textContent = keys.filter(k => k.status === 'active').length;
+            document.getElementById('stat-requests').textContent = keys.reduce((sum, k) => sum + (k.daily_requests || 0), 0);
+        }
+
+        function renderKeys() {
+            const container = document.getElementById('keys-list');
+
+            if (keys.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Inga API-nycklar</h3>
+                        <p>Klicka på "Skapa ny nyckel" för att komma igång</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = keys.map(key => `
+                <div class="key-item">
+                    <div class="key-info">
+                        <h4>${key.name || 'Namnlös nyckel'}</h4>
+                        <span class="key-email">${key.email}</span>
+                        <div class="key-value">${key.api_key ? key.api_key.substring(0, 16) + '...' : '---'}</div>
+                        <div class="key-meta">
+                            <span class="status-badge status-${key.status || 'active'}">${translateStatus(key.status)}</span>
+                            <span>Anrop idag: ${key.daily_requests || 0}</span>
+                            <span>Totalt: ${key.total_requests || 0}</span>
+                        </div>
+                    </div>
+                    <div class="key-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="copyKey('${key.api_key}')">Kopiera</button>
+                        <button class="btn btn-secondary btn-sm" onclick="editKey('${key.id}')">Redigera</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteKey('${key.id}')">Ta bort</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function translateStatus(status) {
+            const translations = {
+                'active': 'Aktiv',
+                'suspended': 'Pausad',
+                'revoked': 'Spärrad'
+            };
+            return translations[status] || 'Aktiv';
+        }
+
+        function generateApiKey() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < 32; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function openModal(keyId = null) {
+            const modal = document.getElementById('key-modal');
+            const title = document.getElementById('modal-title');
+            const form = document.getElementById('key-form');
+
+            form.reset();
+            document.getElementById('key-id').value = '';
+            document.getElementById('key-status').value = 'active';
+
+            if (keyId) {
+                const key = keys.find(k => k.id === keyId);
+                if (key) {
+                    title.textContent = 'Redigera API-nyckel';
+                    document.getElementById('key-id').value = key.id;
+                    document.getElementById('key-name').value = key.name || '';
+                    document.getElementById('key-email').value = key.email || '';
+                    document.getElementById('key-status').value = key.status || 'active';
+                }
+            } else {
+                title.textContent = 'Skapa ny API-nyckel';
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('key-modal').classList.remove('show');
+        }
+
+        async function saveKey(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('key-id').value;
+            const name = document.getElementById('key-name').value;
+            const email = document.getElementById('key-email').value;
+            const status = document.getElementById('key-status').value;
+
+            let result;
+            if (id) {
+                // Update existing
+                result = await sb
+                    .from('api_keys')
+                    .update({ name, email, status })
+                    .eq('id', id);
+            } else {
+                // Create new with generated API key
+                const api_key = generateApiKey();
+                result = await sb
+                    .from('api_keys')
+                    .insert([{ api_key, name, email, status }]);
+            }
+
+            if (result.error) {
+                showAlert('Fel vid sparande: ' + result.error.message, 'error');
+                return;
+            }
+
+            showAlert(id ? 'Nyckel uppdaterad!' : 'Nyckel skapad!', 'success');
+            closeModal();
+            loadKeys();
+        }
+
+        function editKey(id) {
+            openModal(id);
+        }
+
+        async function deleteKey(id) {
+            if (!confirm('Är du säker på att du vill ta bort denna nyckel? Detta går inte att ångra.')) return;
+
+            const { error } = await sb.from('api_keys').delete().eq('id', id);
+
+            if (error) {
+                showAlert('Fel vid borttagning: ' + error.message, 'error');
+                return;
+            }
+
+            showAlert('Nyckel borttagen!', 'success');
+            loadKeys();
+        }
+
+        async function copyKey(apiKey) {
+            if (apiKey) {
+                await navigator.clipboard.writeText(apiKey);
+                showAlert('API-nyckel kopierad till urklipp!', 'success');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 4000);
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

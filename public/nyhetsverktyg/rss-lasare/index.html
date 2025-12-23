@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS-läsare - Bevakningsverktyget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../../assets/css/variables.css">
+    <link rel="stylesheet" href="../../assets/css/reset.css">
+    <link rel="stylesheet" href="../../assets/css/components.css">
+    <link rel="stylesheet" href="../../assets/css/layout.css">
+    <link rel="stylesheet" href="../../assets/css/utilities.css">
+    <style>
+        /* RSS-specifika stilar */
+        body { background: var(--gray-100); }
+
+        .rss-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: var(--spacing-6);
+            height: calc(100vh - var(--nav-height));
+        }
+
+        @media (max-width: 900px) {
+            .rss-grid { grid-template-columns: 1fr; }
+            .feeds-sidebar { display: none; }
+        }
+
+        /* Feeds sidebar */
+        .feeds-sidebar {
+            background: var(--white);
+            border-right: 1px solid var(--gray-300);
+            padding: var(--spacing-4);
+            overflow-y: auto;
+        }
+
+        .feed-category-title {
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: var(--spacing-3) var(--spacing-2);
+            margin-top: var(--spacing-4);
+        }
+
+        .feed-category-title:first-child { margin-top: 0; }
+
+        .feed-source {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            padding: var(--spacing-2) var(--spacing-3);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .feed-source:hover { background: var(--gray-100); }
+        .feed-source.active { background: var(--accent-muted); }
+
+        .feed-source-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: var(--radius-sm);
+            background: var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .feed-source-name {
+            flex: 1;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .feed-source-count {
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+            background: var(--gray-100);
+            padding: 2px 6px;
+            border-radius: var(--radius-full);
+        }
+
+        /* Auto-update indicator */
+        .auto-update-indicator {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+            padding: var(--spacing-2) var(--spacing-3);
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-3);
+        }
+
+        .auto-update-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Articles container */
+        .articles-container {
+            padding: var(--spacing-4);
+            overflow-y: auto;
+        }
+
+        .articles-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-4);
+            flex-wrap: wrap;
+            gap: var(--spacing-3);
+        }
+
+        .articles-header h2 {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .articles-stats {
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+        }
+
+        /* Vertikal artikellista */
+        .articles-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-3);
+            max-width: 900px;
+        }
+
+        /* Horisontellt artikelkort - större och mer läsbart */
+        .article-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: flex;
+            flex-direction: row;
+            min-height: 180px;
+        }
+
+        .article-card:hover {
+            border-color: var(--dark);
+            box-shadow: var(--shadow-md);
+        }
+
+        .article-card.read {
+            opacity: 0.6;
+            background: var(--gray-50);
+        }
+
+        .article-card.new {
+            border-left: 4px solid #22c55e;
+        }
+
+        .article-card-image-wrapper {
+            width: 240px;
+            min-width: 240px;
+            height: 180px;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 700px) {
+            .article-card {
+                flex-direction: column;
+            }
+            .article-card-image-wrapper {
+                width: 100%;
+                height: 180px;
+            }
+        }
+
+        .article-card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: var(--gray-200);
+            transition: transform 0.3s ease;
+        }
+
+        .article-card:hover .article-card-image {
+            transform: scale(1.05);
+        }
+
+        .article-card-image-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            opacity: 0.5;
+        }
+
+        .article-card-content {
+            padding: var(--spacing-4);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .article-source {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+            margin-bottom: var(--spacing-2);
+            flex-wrap: wrap;
+        }
+
+        .article-source-badge {
+            background: var(--gray-100);
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-weight: var(--font-weight-medium);
+            color: var(--gray-700);
+        }
+
+        .article-time {
+            color: var(--gray-400);
+        }
+
+        .article-title {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-bold);
+            line-height: var(--line-height-snug);
+            margin-bottom: var(--spacing-2);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--gray-900);
+        }
+
+        .article-card:hover .article-title {
+            color: var(--accent);
+        }
+
+        .article-excerpt {
+            font-size: var(--font-size-base);
+            color: var(--gray-600);
+            line-height: var(--line-height-relaxed);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        /* Källlogotyper */
+        .article-source-logo {
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+            border-radius: 2px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            margin-top: auto;
+            padding-top: var(--spacing-2);
+            font-size: var(--font-size-xs);
+            color: var(--gray-500);
+        }
+
+        .article-actions {
+            display: flex;
+            gap: var(--spacing-1);
+            margin-left: auto;
+        }
+
+        .article-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            transition: all var(--transition-fast);
+            opacity: 0.6;
+        }
+
+        .article-action-btn:hover {
+            background: var(--gray-100);
+            opacity: 1;
+        }
+
+        /* Keyword alerts */
+        .keyword-match {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        /* New article badge */
+        .new-badge {
+            background: #dcfce7;
+            color: #166534;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        /* Relevance score badge */
+        .relevance-badge {
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+        }
+
+        .relevance-high {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .relevance-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .relevance-low {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+        /* Company match badge */
+        .company-match {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-medium);
+        }
+
+        /* Highlighted article card (high relevance) */
+        .article-card.high-relevance {
+            border-left: 4px solid #22c55e;
+            background: linear-gradient(to right, rgba(34, 197, 94, 0.05) 0%, var(--white) 10%);
+        }
+
+        .article-card.company-mention {
+            border-left: 4px solid #3b82f6;
+            background: linear-gradient(to right, rgba(59, 130, 246, 0.05) 0%, var(--white) 10%);
+        }
+
+        /* Search */
+        .search-box {
+            position: relative;
+            margin-bottom: var(--spacing-4);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: var(--spacing-3) var(--spacing-4);
+            padding-left: 40px;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius-md);
+            font-size: var(--font-size-sm);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
+
+        /* Filters */
+        .filter-tabs {
+            display: flex;
+            gap: var(--spacing-2);
+            margin-bottom: var(--spacing-4);
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: var(--spacing-2) var(--spacing-3);
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            background: var(--white);
+            border: 1px solid var(--gray-300);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .filter-tab:hover { border-color: var(--dark); }
+        .filter-tab.active { background: var(--dark); color: var(--white); border-color: var(--dark); }
+
+        /* Load more button */
+        .load-more-container {
+            text-align: center;
+            padding: var(--spacing-6);
+        }
+
+        .load-more-btn {
+            padding: var(--spacing-3) var(--spacing-6);
+        }
+
+        /* Spinner animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spinning {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        /* ============================================
+           LIGHTBOX - Artikelvisning
+           ============================================ */
+        .article-lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-4);
+            backdrop-filter: blur(4px);
+        }
+
+        .article-lightbox.show {
+            display: flex;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .lightbox-container {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .lightbox-header {
+            padding: var(--spacing-4) var(--spacing-6);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--gray-50);
+        }
+
+        .lightbox-source {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+
+        .lightbox-source-badge {
+            background: var(--dark);
+            color: var(--white);
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+        }
+
+        .lightbox-actions {
+            display: flex;
+            gap: var(--spacing-2);
+        }
+
+        .lightbox-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: var(--spacing-2);
+            border-radius: var(--radius-md);
+            transition: background var(--transition-fast);
+        }
+
+        .lightbox-close:hover {
+            background: var(--gray-200);
+        }
+
+        .lightbox-content {
+            padding: var(--spacing-6);
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .lightbox-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .lightbox-title {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            line-height: var(--line-height-snug);
+            margin-bottom: var(--spacing-4);
+        }
+
+        .lightbox-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-4);
+            font-size: var(--font-size-sm);
+            color: var(--gray-500);
+            margin-bottom: var(--spacing-6);
+            padding-bottom: var(--spacing-4);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .lightbox-text {
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-relaxed);
+            color: var(--gray-700);
+        }
+
+        .lightbox-text p {
+            margin-bottom: var(--spacing-4);
+        }
+
+        .lightbox-full-content {
+            background: var(--gray-50);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-6);
+            margin-top: var(--spacing-6);
+        }
+
+        .lightbox-full-content h4 {
+            margin-bottom: var(--spacing-4);
+            color: var(--gray-600);
+            font-size: var(--font-size-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .lightbox-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-8);
+            color: var(--gray-500);
+        }
+
+        .lightbox-footer {
+            padding: var(--spacing-4) var(--spacing-6);
+            border-top: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            display: flex;
+            gap: var(--spacing-3);
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="dashboard-nav">
+        <div class="nav-inner">
+            <div class="d-flex items-center gap-4">
+                <a href="../../" class="nav-brand">Bevakningsverktyget</a>
+                <span class="text-muted">›</span>
+                <span class="font-medium">RSS-läsare</span>
+            </div>
+            <div class="nav-right">
+                <button class="btn btn-secondary btn-sm" onclick="refreshAllFeeds()">
+                    <span id="refresh-icon">🔄</span> Uppdatera
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="toggleSettings()">⚙️</button>
+                <a href="../../" class="btn btn-ghost btn-sm">← Tillbaka</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="rss-grid">
+        <!-- Feeds sidebar -->
+        <aside class="feeds-sidebar">
+            <div class="auto-update-indicator">
+                <div class="auto-update-dot"></div>
+                <span>Auto-uppdatering aktiv</span>
+                <span id="next-update-timer" class="ml-auto">5:00</span>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="feed-search" placeholder="Sök källor...">
+            </div>
+
+            <div id="feeds-list">
+                <div class="empty-state p-4">
+                    <div class="loader"></div>
+                    <p class="mt-2 text-sm">Laddar källor...</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Articles list -->
+        <main class="articles-container">
+            <div class="articles-header">
+                <div>
+                    <h2 id="articles-title">Alla nyheter</h2>
+                    <span class="articles-stats">Laddar...</span>
+                </div>
+                <div class="d-flex gap-2 items-center">
+                    <input type="text" id="article-search" placeholder="Sök artiklar..."
+                           class="btn btn-secondary btn-sm" style="width: 200px; padding: 8px 12px;">
+                    <select id="sort-select" class="btn btn-secondary btn-sm">
+                        <option value="newest">Nyast först</option>
+                        <option value="relevance">Mest relevanta</option>
+                        <option value="oldest">Äldst först</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-tabs" id="category-tabs">
+                <button class="filter-tab active" data-category="all">Alla</button>
+                <button class="filter-tab" data-category="relevant">🎯 Relevanta</button>
+                <button class="filter-tab" data-category="companies">🏢 Bevakade företag</button>
+                <button class="filter-tab" data-category="omni">🔍 Omni-sök</button>
+                <button class="filter-tab" data-category="tech">💻 Tech</button>
+                <button class="filter-tab" data-category="finans">💰 Finans</button>
+                <button class="filter-tab" data-category="nyheter">📰 Nyheter</button>
+            </div>
+
+            <div id="articles-list">
+                <div class="empty-state">
+                    <div class="loader loader-lg"></div>
+                    <p class="mt-4">Hämtar nyheter från alla källor...</p>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Article Lightbox -->
+    <div class="article-lightbox" id="article-lightbox" onclick="closeLightboxOnBackdrop(event)">
+        <div class="lightbox-container" onclick="event.stopPropagation()">
+            <div class="lightbox-header">
+                <div class="lightbox-source">
+                    <span class="lightbox-source-badge" id="lightbox-source"></span>
+                    <span class="text-muted" id="lightbox-date"></span>
+                </div>
+                <div class="lightbox-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="bookmarkArticle()" title="Spara">⭐</button>
+                    <button class="btn btn-secondary btn-sm" onclick="shareArticle()" title="Dela">📤</button>
+                    <button class="lightbox-close" onclick="closeLightbox()" title="Stäng">×</button>
+                </div>
+            </div>
+            <div class="lightbox-content" id="lightbox-content">
+                <!-- Fylls i dynamiskt -->
+            </div>
+            <div class="lightbox-footer">
+                <button class="btn btn-secondary" onclick="investigateArticle()">
+                    🔍 Undersök vidare
+                </button>
+                <a href="#" id="lightbox-link" target="_blank" class="btn btn-accent">
+                    Läs på originalkällan →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Inställningar</h3>
+                <button class="modal-close" onclick="toggleSettings()">×</button>
+            </div>
+            <div class="modal-body">
+                <h4 class="font-semibold mb-4">Bevakade nyckelord</h4>
+                <p class="text-sm text-muted mb-4">Artiklar som innehåller dessa ord markeras</p>
+                <div id="keywords-list" class="mb-4"></div>
+                <div class="d-flex gap-2">
+                    <input type="text" id="new-keyword" placeholder="Lägg till nyckelord..." class="flex-1">
+                    <button class="btn btn-accent btn-sm" onclick="addKeyword()">Lägg till</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../assets/js/config.js"></script>
+    <script src="../../assets/js/auth.js"></script>
+    <script src="../../assets/js/api.js"></script>
+    <script src="../../assets/js/utils.js"></script>
+    <script src="../../assets/js/components.js"></script>
+    <script>
+        // =========================================================================
+        // RSS READER - Klientkod (Förbättrad version)
+        // =========================================================================
+
+        // RSS-specifik konfiguration (separat från global CONFIG)
+        const RSS_CONFIG = {
+            ITEMS_PER_FEED: 20,           // Fler artiklar per feed
+            AUTO_UPDATE_INTERVAL: 5 * 60 * 1000, // 5 minuter
+            INITIAL_DISPLAY_COUNT: 30,    // Visa 30 först
+            LOAD_MORE_COUNT: 20,          // Ladda 20 till
+            NEW_ARTICLE_THRESHOLD: 60 * 60 * 1000, // 1 timme = "ny"
+            RELEVANCE_THRESHOLD: 15       // Minsta poäng för att räknas som "relevant"
+        };
+
+        // =========================================================================
+        // SMART FILTRERING - Impact Loop's intressesfär
+        // =========================================================================
+
+        // Nyckelord med viktning för relevanspoäng
+        const RELEVANCE_KEYWORDS = {
+            // Startups & Venture Capital (hög vikt)
+            highPriority: {
+                weight: 25,
+                keywords: [
+                    // Svenska
+                    'startup', 'startups', 'scaleup', 'scale-up',
+                    'riskkapital', 'vc', 'venture capital', 'såddfinansiering', 'seedfinansiering',
+                    'investeringsrunda', 'investeringsrundor', 'serie a', 'serie b', 'serie c',
+                    'kapitalanskaffning', 'kapitalrunda', 'affärsängel', 'affärsänglar',
+                    'unicorn', 'enhörning', 'tech-bolag', 'techbolag',
+                    'börsnotering', 'ipo', 'notering',
+                    // Engelska
+                    'fundraise', 'funding round', 'seed round', 'series a', 'series b',
+                    'angel investor', 'accelerator', 'incubator'
+                ]
+            },
+            // Green Tech & Climate (hög vikt)
+            greenTech: {
+                weight: 20,
+                keywords: [
+                    'greentech', 'green tech', 'cleantech', 'clean tech',
+                    'klimattech', 'hållbarhet', 'hållbar', 'sustainability', 'sustainable',
+                    'förnybar energi', 'renewable', 'solenergi', 'vindkraft',
+                    'elbilar', 'ev', 'elektrifiering', 'laddinfrastruktur',
+                    'klimat', 'climate', 'co2', 'koldioxid', 'utsläpp', 'emission',
+                    'cirkulär ekonomi', 'circular economy', 'återvinning',
+                    'batteritech', 'battery tech', 'vätgas', 'hydrogen',
+                    'klimatomställning', 'fossilfri', 'fossilfritt'
+                ]
+            },
+            // AI & Tech (medelhög vikt)
+            aiTech: {
+                weight: 18,
+                keywords: [
+                    'ai', 'artificiell intelligens', 'artificial intelligence',
+                    'maskininlärning', 'machine learning', 'ml',
+                    'generativ ai', 'generative ai', 'llm', 'gpt', 'chatgpt',
+                    'automation', 'automatisering', 'robotik', 'robotics',
+                    'saas', 'software as a service', 'b2b saas', 'b2b-saas',
+                    'fintech', 'proptech', 'healthtech', 'edtech', 'medtech',
+                    'deep tech', 'deeptech'
+                ]
+            },
+            // Svenska Unicorns & Framgångsrika bolag
+            swedishSuccess: {
+                weight: 22,
+                keywords: [
+                    'klarna', 'spotify', 'northvolt', 'einride', 'voi',
+                    'bolt', 'kry', 'truecaller', 'tink', 'izettle', 'zettle',
+                    'king', 'mojang', 'skype', 'oatly', 'polestar',
+                    'swedish unicorn', 'svensk unicorn', 'svenskt techbolag'
+                ]
+            },
+            // Affärer & Finansnyheter (medium vikt)
+            businessNews: {
+                weight: 12,
+                keywords: [
+                    'förvärv', 'acquisition', 'uppköp', 'merger', 'fusion',
+                    'exit', 'avyttring', 'försäljning', 'miljoner', 'miljarder',
+                    'tillväxt', 'growth', 'expansion', 'internationalisering',
+                    'vd', 'ceo', 'grundare', 'founder', 'co-founder',
+                    'rekrytering', 'anställer', 'nyanställning'
+                ]
+            },
+            // Negativa signaler (vi vill se konkurser men markera dem)
+            warnings: {
+                weight: 15,
+                keywords: [
+                    'konkurs', 'bankruptcy', 'likvidation', 'avveckling',
+                    'nedläggning', 'varsel', 'uppsägning', 'nedskärning',
+                    'kris', 'problem', 'förlust'
+                ]
+            }
+        };
+
+        // Lista med bevakade företag (hämtas från API)
+        let monitoredCompanies = [];
+        let monitoredCompanyNames = new Set(); // För snabb lookup
+
+        // Logotyper för nyhetskällor
+        const SOURCE_LOGOS = {
+            'breakit': 'https://www.breakit.se/favicon.ico',
+            'realtid': 'https://www.realtid.se/favicon.ico',
+            'nyteknik': 'https://www.nyteknik.se/favicon.ico',
+            'di': 'https://digital.di.se/favicon.ico',
+            'idg': 'https://www.idg.se/favicon.ico',
+            'computersweden': 'https://computersweden.idg.se/favicon.ico',
+            'svt': 'https://www.svt.se/favicon.ico',
+            'omni': 'https://omni.se/favicon.ico',
+            'dn': 'https://www.dn.se/favicon.ico',
+            'svd': 'https://www.svd.se/favicon.ico',
+            'expressen': 'https://www.expressen.se/favicon.ico',
+            'affarsvarlden': 'https://www.affarsvarlden.se/favicon.ico',
+            'privataaffarer': 'https://www.privataaffarer.se/favicon.ico',
+            'techcrunch': 'https://techcrunch.com/favicon.ico',
+            'theverge': 'https://www.theverge.com/favicon.ico',
+            'arstechnica': 'https://arstechnica.com/favicon.ico',
+            'wired': 'https://www.wired.com/favicon.ico',
+            'bloomberg': 'https://www.bloomberg.com/favicon.ico',
+            'ft': 'https://www.ft.com/favicon.ico'
+        };
+
+        // Omni-söktermer: 100+ ämnen, företag och branscher
+        const OMNI_SEARCH_TOPICS = [
+            // Svenska Unicorns & Scaleups (30+)
+            'klarna', 'spotify', 'northvolt', 'einride', 'voi', 'bolt', 'kry', 'truecaller',
+            'tink', 'pleo', 'anyfin', 'karma app', 'epidemic sound', 'storytel', 'matsmart',
+            'tibber', 'heart aerospace', 'volta trucks', 'h2 green steel', 'polarium',
+            'oatly', 'polestar', 'cellink', 'detectify', 'mentimeter', 'funnel',
+            'catena media', 'sinch', 'fortnox', 'evolution gaming', 'stillfront',
+            'embracer group', 'paradox interactive', 'mojang', 'king',
+
+            // Riskkapital & Investeringar (20+)
+            'eqt', 'kinnevik', 'industrifonden', 'almi invest', 'creandum', 'northzone',
+            'atomico', 'sequoia capital', 'accel partners', 'balderton capital', 'index ventures',
+            'investeringsrunda', 'serie a finansiering', 'serie b finansiering', 'börsnotering stockholm',
+            'riskkapital sverige', 'venture capital nordic', 'private equity sverige',
+            'affärsänglar sverige', 'startup funding', 'seed investment',
+
+            // Green Tech & Klimat (25+)
+            'greentech sverige', 'cleantech stockholm', 'klimattech', 'förnybar energi sverige',
+            'solenergi företag', 'vindkraft sverige', 'vattenfall förnybart',
+            'elbilar sverige', 'elbil laddning', 'laddstolpar företag', 'batteritech',
+            'vätgas energi', 'hydrogen företag', 'klimatomställning industri',
+            'hållbarhet företag', 'cirkulär ekonomi', 'återvinning tech',
+            'koldioxid fångst', 'co2 reduktion', 'utsläppshandel', 'fossilfritt stål',
+            'biogas sverige', 'biobränsle', 'solceller', 'energilagring',
+
+            // AI & Tech (20+)
+            'artificiell intelligens sverige', 'ai startup stockholm', 'machine learning företag',
+            'generativ ai skandinavien', 'chatgpt användning', 'ai automatisering',
+            'deeptech startup', 'robotik industri', 'automation företag',
+            'saas bolag sverige', 'fintech stockholm', 'proptech skandinavien',
+            'healthtech nordic', 'edtech sverige', 'medtech malmö', 'foodtech startup',
+            'cybersäkerhet företag', 'datasäkerhet startup', 'cloud computing sverige',
+
+            // Stora Svenska Bolag (15+)
+            'hexagon ab', 'nibe industrier', 'assa abloy', 'atlas copco', 'sandvik ab',
+            'ericsson 5g', 'volvo group', 'scania ab', 'husqvarna', 'electrolux',
+            'h&m digital', 'ikea innovation', 'skf', 'alfa laval', 'securitas',
+
+            // Branscher & Sektorer (15+)
+            'e-handel sverige', 'gaming industri', 'spelindustrin stockholm', 'life science sweden',
+            'biotech nordic', 'fashiontech', 'retailtech', 'insurtech sverige',
+            'regtech compliance', 'legaltech startup', 'traveltech', 'edtech startup',
+
+            // Affärshändelser (10+)
+            'förvärv tech', 'uppköp startup', 'fusion bolag', 'konkurs tech',
+            'företagsrekonstruktion', 'expansion utland', 'internationalisering svenska företag',
+            'nyetablering startup', 'produktlansering tech', 'avknoppning bolag'
+        ];
+
+        // RSS feeds konfiguration (utan Hacker News)
+        const RSS_FEEDS = [
+            // Svenska Tech/Business
+            { id: 'breakit', name: 'Breakit', url: 'https://www.breakit.se/feed/artiklar', category: 'tech', enabled: true },
+            { id: 'realtid', name: 'Realtid', url: 'https://www.realtid.se/rss/senaste', category: 'finans', enabled: true },
+            { id: 'nyteknik', name: 'Ny Teknik', url: 'https://www.nyteknik.se/feed', category: 'tech', enabled: true },
+            { id: 'di', name: 'Dagens Industri', url: 'https://digital.di.se/rss', category: 'finans', enabled: true },
+            { id: 'idg', name: 'IDG', url: 'https://www.idg.se/rss', category: 'tech', enabled: true },
+            { id: 'computersweden', name: 'Computer Sweden', url: 'https://computersweden.idg.se/rss', category: 'tech', enabled: true },
+
+            // Svenska Dagstidningar
+            { id: 'svt', name: 'SVT Nyheter', url: 'https://www.svt.se/nyheter/rss.xml', category: 'nyheter', enabled: true },
+            { id: 'dn', name: 'Dagens Nyheter', url: 'https://www.dn.se/rss/', category: 'nyheter', enabled: true },
+            { id: 'svd', name: 'SvD', url: 'https://www.svd.se/feed/articles', category: 'nyheter', enabled: true },
+            { id: 'expressen', name: 'Expressen', url: 'https://feeds.expressen.se/nyheter', category: 'nyheter', enabled: true },
+
+            // Svenska Finans
+            { id: 'affarsvarlden', name: 'Affärsvärlden', url: 'https://www.affarsvarlden.se/rss', category: 'finans', enabled: true },
+            { id: 'privataaffarer', name: 'Privata Affärer', url: 'https://www.privataaffarer.se/rss/', category: 'finans', enabled: true },
+
+            // Internationella Tech
+            { id: 'techcrunch', name: 'TechCrunch', url: 'https://techcrunch.com/feed/', category: 'tech', enabled: true },
+            { id: 'theverge', name: 'The Verge', url: 'https://www.theverge.com/rss/index.xml', category: 'tech', enabled: true },
+            { id: 'arstechnica', name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index', category: 'tech', enabled: true },
+            { id: 'wired', name: 'Wired', url: 'https://www.wired.com/feed/rss', category: 'tech', enabled: true },
+
+            // Internationella Finans/Business
+            { id: 'bloomberg', name: 'Bloomberg', url: 'https://feeds.bloomberg.com/technology/news.rss', category: 'finans', enabled: true },
+            { id: 'ft', name: 'Financial Times', url: 'https://www.ft.com/rss/home', category: 'finans', enabled: true }
+        ];
+
+        // Generera Omni-sökflöden dynamiskt
+        const OMNI_FEEDS = OMNI_SEARCH_TOPICS.map(topic => ({
+            id: `omni-${topic.replace(/\s+/g, '-').toLowerCase().substring(0, 30)}`,
+            name: `Omni: ${topic}`,
+            // Omni har inte publikt RSS för sökningar, så vi använder scraping via proxy
+            url: `https://omni.se/upptack?sok=${encodeURIComponent(topic)}`,
+            category: 'omni',
+            enabled: true,
+            isOmniSearch: true,
+            searchTopic: topic
+        }));
+
+        // Funktion för att hämta logotyp
+        function getSourceLogo(sourceId) {
+            return SOURCE_LOGOS[sourceId] || null;
+        }
+
+        // State
+        let articles = [];
+        let displayedCount = RSS_CONFIG.INITIAL_DISPLAY_COUNT;
+        let selectedArticle = null;
+        let currentCategory = 'all';
+        let currentFeed = null;
+        let searchQuery = '';
+        let keywords = Utils.getStorage('rss-keywords', ['startup', 'greentech', 'cleantech', 'klimat', 'AI', 'konkurs']);
+        let readArticles = Utils.getStorage('rss-read', []);
+        let seenArticleIds = new Set(); // För att spåra nya artiklar
+        let autoUpdateTimer = null;
+        let countdownTimer = null;
+        let secondsUntilUpdate = 300; // 5 minuter
+
+        // RSS proxy URL - använder rss2json API
+        const RSS2JSON_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+        // =========================================================================
+        // RELEVANCE SCORING SYSTEM
+        // =========================================================================
+
+        // Hämta företagslistor från Supabase
+        async function fetchMonitoredCompanies() {
+            try {
+                const client = Auth.getClient();
+                if (!client) {
+                    console.warn('Supabase client not available');
+                    return;
+                }
+
+                const { data, error } = await client
+                    .from('loop_table')
+                    .select('name, orgnr')
+                    .order('name');
+
+                if (error) {
+                    console.error('Failed to fetch companies:', error);
+                    return;
+                }
+
+                monitoredCompanies = (data || []).map(c => ({
+                    name: c.name,
+                    orgnr: c.orgnr,
+                    normalized: (c.name || '').toLowerCase().trim()
+                })).filter(c => c.name && c.name.length > 2);
+
+                // Skapa Set för snabb lookup
+                monitoredCompanyNames = new Set(monitoredCompanies.map(c => c.normalized));
+
+                console.log(`📊 Laddade ${monitoredCompanies.length} bevakade företag`);
+            } catch (err) {
+                console.error('Error fetching companies:', err);
+            }
+        }
+
+        // Beräkna relevanspoäng för en artikel
+        function calculateRelevanceScore(article) {
+            const text = (article.title + ' ' + article.description).toLowerCase();
+            let score = 0;
+            let matchedCategories = [];
+            let matchedKeywords = [];
+
+            // Kolla alla keyword-kategorier
+            Object.entries(RELEVANCE_KEYWORDS).forEach(([category, config]) => {
+                const matches = config.keywords.filter(kw => text.includes(kw.toLowerCase()));
+                if (matches.length > 0) {
+                    score += config.weight * Math.min(matches.length, 3); // Max 3x per kategori
+                    matchedCategories.push(category);
+                    matchedKeywords.push(...matches);
+                }
+            });
+
+            // Kolla om några bevakade företag nämns (bonus poäng!)
+            const companyMatches = findCompanyMentions(text);
+            if (companyMatches.length > 0) {
+                score += 30 * Math.min(companyMatches.length, 5); // Max 5 företag ger poäng
+                matchedCategories.push('companies');
+            }
+
+            // Bonus för svenska källor (närmare Impact Loop's fokus)
+            const swedishSources = ['breakit', 'realtid', 'nyteknik', 'di', 'svt', 'dn', 'svd', 'affarsvarlden'];
+            if (swedishSources.includes(article.sourceId)) {
+                score += 5;
+            }
+
+            return {
+                score,
+                matchedCategories,
+                matchedKeywords: [...new Set(matchedKeywords)],
+                companyMatches,
+                isHighRelevance: score >= 40,
+                isMediumRelevance: score >= RSS_CONFIG.RELEVANCE_THRESHOLD && score < 40,
+                hasCompanyMention: companyMatches.length > 0
+            };
+        }
+
+        // Hitta omnämnda företag i text
+        function findCompanyMentions(text) {
+            if (monitoredCompanies.length === 0) return [];
+
+            const matches = [];
+            const normalizedText = text.toLowerCase();
+
+            // Kolla varje företag - optimerat för snabbhet
+            for (const company of monitoredCompanies) {
+                // Skip korta namn (för generiska)
+                if (company.normalized.length < 4) continue;
+
+                // Exakt match eller med ordgräns
+                const regex = new RegExp(`\\b${escapeRegex(company.normalized)}\\b`, 'i');
+                if (regex.test(normalizedText)) {
+                    matches.push(company.name);
+                    if (matches.length >= 10) break; // Max 10 matchningar per artikel
+                }
+            }
+
+            return matches;
+        }
+
+        // Escape regex special characters
+        function escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Applicera relevanspoäng på alla artiklar
+        function applyRelevanceScoring() {
+            articles.forEach(article => {
+                const relevance = calculateRelevanceScore(article);
+                article.relevanceScore = relevance.score;
+                article.relevanceCategories = relevance.matchedCategories;
+                article.relevanceKeywords = relevance.matchedKeywords;
+                article.companyMatches = relevance.companyMatches;
+                article.isHighRelevance = relevance.isHighRelevance;
+                article.hasCompanyMention = relevance.hasCompanyMention;
+            });
+        }
+
+        // =========================================================================
+        // FETCH RSS & OMNI
+        // =========================================================================
+
+        // Hämta Omni-sökresultat via proxy
+        async function fetchOmniSearch(feed) {
+            try {
+                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed.url)}`;
+                const response = await fetch(proxyUrl, { timeout: 15000 });
+
+                if (!response.ok) throw new Error('Omni fetch failed');
+
+                const html = await response.text();
+                return parseOmniSearchResults(html, feed);
+            } catch (error) {
+                console.warn(`Omni search failed for "${feed.searchTopic}":`, error.message);
+                return [];
+            }
+        }
+
+        // Parsa Omni-sökresultat från HTML
+        function parseOmniSearchResults(html, feed) {
+            const parsedArticles = [];
+
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Omni använder article-element för nyheter
+                const articles = doc.querySelectorAll('article, [data-testid="article"], .article-card');
+
+                articles.forEach((article, index) => {
+                    if (index >= 10) return; // Max 10 per sökterm
+
+                    const titleEl = article.querySelector('h2, h3, .headline, [class*="title"]');
+                    const linkEl = article.querySelector('a[href*="/a/"], a[href*="/article/"]');
+                    const descEl = article.querySelector('p, .summary, .excerpt');
+                    const imgEl = article.querySelector('img[src]');
+                    const timeEl = article.querySelector('time, [datetime], .timestamp');
+
+                    const title = titleEl?.textContent?.trim() || '';
+                    const link = linkEl?.href || '';
+                    const description = descEl?.textContent?.trim() || '';
+                    const image = imgEl?.src || '';
+                    const pubDateStr = timeEl?.getAttribute('datetime') || timeEl?.textContent || '';
+
+                    if (!title || !link) return;
+
+                    const articleId = simpleHash(link || `omni-${feed.searchTopic}-${index}`);
+                    const pubDate = pubDateStr ? new Date(pubDateStr) : new Date();
+
+                    parsedArticles.push({
+                        id: articleId,
+                        title: title,
+                        link: link.startsWith('http') ? link : `https://omni.se${link}`,
+                        description: description.substring(0, 400),
+                        pubDate: pubDate,
+                        author: '',
+                        image: image,
+                        source: 'Omni',
+                        sourceId: 'omni',
+                        category: 'omni',
+                        isNew: false,
+                        read: readArticles.includes(link),
+                        omniSearchTopic: feed.searchTopic
+                    });
+                });
+            } catch (e) {
+                console.warn('Omni parsing error:', e);
+            }
+
+            return parsedArticles;
+        }
+
+        async function fetchFeed(feed) {
+            // Hantera Omni-sökflöden separat
+            if (feed.isOmniSearch) {
+                return fetchOmniSearch(feed);
+            }
+
+            try {
+                // Använd rss2json API som returnerar JSON direkt
+                const apiUrl = RSS2JSON_API + encodeURIComponent(feed.url);
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) throw new Error('Fetch failed');
+
+                const data = await response.json();
+
+                if (data.status !== 'ok') {
+                    throw new Error(data.message || 'RSS parse failed');
+                }
+
+                return parseRss2JsonResponse(data, feed);
+            } catch (error) {
+                console.error(`Error fetching ${feed.name}:`, error);
+                return [];
+            }
+        }
+
+        // Parsa rss2json response format med förbättrad bildhantering
+        function parseRss2JsonResponse(data, feed) {
+            const parsedArticles = [];
+
+            (data.items || []).forEach((item, index) => {
+                const cleanDesc = (item.description || '').replace(/<[^>]+>/g, '').trim();
+
+                // Förbättrad bildextraktion
+                let image = '';
+
+                // 1. Direkt thumbnail
+                if (item.thumbnail && isValidImageUrl(item.thumbnail)) {
+                    image = item.thumbnail;
+                }
+                // 2. Enclosure
+                else if (item.enclosure?.link && isValidImageUrl(item.enclosure.link)) {
+                    image = item.enclosure.link;
+                }
+                // 3. Sök i content/description efter img-taggar
+                else {
+                    const content = item.content || item.description || '';
+                    const imgMatch = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+                    if (imgMatch && isValidImageUrl(imgMatch[1])) {
+                        image = imgMatch[1];
+                    }
+                }
+
+                // 4. Sök efter og:image eller andra meta-bilder i content
+                if (!image) {
+                    const content = item.content || '';
+                    const ogMatch = content.match(/og:image[^>]+content=["']([^"']+)["']/i);
+                    if (ogMatch && isValidImageUrl(ogMatch[1])) {
+                        image = ogMatch[1];
+                    }
+                }
+
+                // Skapa unik ID baserat på länk för att kunna spåra lästa artiklar
+                // Använd enkel hash istället för btoa() för att undvika Unicode-problem
+                const articleId = simpleHash(item.link || `${feed.id}-${index}`);
+
+                const pubDate = new Date(item.pubDate || Date.now());
+                const isNew = (Date.now() - pubDate.getTime()) < RSS_CONFIG.NEW_ARTICLE_THRESHOLD;
+
+                parsedArticles.push({
+                    id: articleId,
+                    title: item.title || '',
+                    link: item.link || '',
+                    description: cleanDesc.substring(0, 400) + (cleanDesc.length > 400 ? '...' : ''),
+                    pubDate: pubDate,
+                    author: item.author || '',
+                    image: image,
+                    source: feed.name,
+                    sourceId: feed.id,
+                    category: feed.category,
+                    isNew: isNew && !seenArticleIds.has(articleId),
+                    read: readArticles.includes(item.link)
+                });
+            });
+
+            return parsedArticles;
+        }
+
+        // Validera att URL är en giltig bild-URL
+        function isValidImageUrl(url) {
+            if (!url) return false;
+            // Filtrera bort tracking pixels, base64, och för små bilder
+            if (url.includes('1x1') || url.includes('pixel') || url.includes('tracking')) return false;
+            if (url.startsWith('data:')) return false;
+            if (url.length < 10) return false;
+            // Kräv http/https
+            return url.startsWith('http://') || url.startsWith('https://');
+        }
+
+        function parseRSS(xml, feed) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(xml, 'text/xml');
+            const items = doc.querySelectorAll('item, entry');
+            const articles = [];
+
+            items.forEach((item, index) => {
+                const title = item.querySelector('title')?.textContent || '';
+                const link = item.querySelector('link')?.textContent ||
+                    item.querySelector('link')?.getAttribute('href') || '';
+                const description = item.querySelector('description, summary, content')?.textContent || '';
+                const pubDate = item.querySelector('pubDate, published, updated')?.textContent || '';
+                const author = item.querySelector('author, creator, dc\\:creator')?.textContent || '';
+
+                // Försök hitta bild
+                let image = '';
+                const enclosure = item.querySelector('enclosure[type^="image"]');
+                const mediaContent = item.querySelector('media\\:content, content');
+                const thumbnail = item.querySelector('media\\:thumbnail');
+
+                if (enclosure) image = enclosure.getAttribute('url');
+                else if (mediaContent && mediaContent.getAttribute('url')) image = mediaContent.getAttribute('url');
+                else if (thumbnail) image = thumbnail.getAttribute('url');
+                else {
+                    // Sök i description efter img
+                    const imgMatch = description.match(/<img[^>]+src="([^"]+)"/);
+                    if (imgMatch) image = imgMatch[1];
+                }
+
+                // Rensa HTML från description
+                const cleanDesc = description.replace(/<[^>]+>/g, '').trim();
+
+                articles.push({
+                    id: `${feed.id}-${index}-${Date.now()}`,
+                    title: title.trim(),
+                    link: link.trim(),
+                    description: cleanDesc.substring(0, 300),
+                    pubDate: pubDate ? new Date(pubDate) : new Date(),
+                    author: author.trim(),
+                    image: image,
+                    source: feed.name,
+                    sourceId: feed.id,
+                    category: feed.category,
+                    read: readArticles.includes(link.trim())
+                });
+            });
+
+            return articles;
+        }
+
+        async function refreshAllFeeds(silent = false) {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('spinning');
+
+            const previousCount = articles.length;
+            const previousIds = new Set(articles.map(a => a.id));
+
+            articles = [];
+            const enabledFeeds = RSS_FEEDS.filter(f => f.enabled);
+
+            // Hämta alla RSS-feeds parallellt
+            const rssResults = await Promise.allSettled(
+                enabledFeeds.map(feed => fetchFeed(feed))
+            );
+
+            let successCount = 0;
+            rssResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value.length > 0) {
+                    articles = articles.concat(result.value);
+                    successCount++;
+                }
+            });
+
+            // Hämta ett slumpmässigt urval av Omni-sökningar (max 20 per refresh för att inte överlasta)
+            const shuffledOmniFeeds = [...OMNI_FEEDS].sort(() => Math.random() - 0.5).slice(0, 20);
+            console.log(`🔍 Söker Omni för ${shuffledOmniFeeds.length} ämnen...`);
+
+            const omniResults = await Promise.allSettled(
+                shuffledOmniFeeds.map(feed => fetchOmniSearch(feed))
+            );
+
+            let omniSuccessCount = 0;
+            omniResults.forEach(result => {
+                if (result.status === 'fulfilled' && result.value.length > 0) {
+                    articles = articles.concat(result.value);
+                    omniSuccessCount++;
+                }
+            });
+
+            if (omniSuccessCount > 0) {
+                console.log(`📰 Hittade artiklar från ${omniSuccessCount} Omni-sökningar`);
+            }
+
+            // Ta bort duplicerade artiklar (samma länk)
+            const seen = new Set();
+            articles = articles.filter(article => {
+                if (seen.has(article.link)) return false;
+                seen.add(article.link);
+                return true;
+            });
+
+            // Sortera efter datum (nyast först)
+            articles.sort((a, b) => b.pubDate - a.pubDate);
+
+            // Markera nya artiklar
+            const newArticleCount = articles.filter(a => !previousIds.has(a.id) && !seenArticleIds.has(a.id)).length;
+
+            // Uppdatera seen-listan
+            articles.forEach(a => seenArticleIds.add(a.id));
+
+            // Markera keyword-matches
+            highlightKeywords();
+
+            // Applicera relevanspoäng på alla artiklar
+            applyRelevanceScoring();
+
+            // Sortera relevanta artiklar högst
+            if (currentCategory === 'relevant' || currentCategory === 'companies') {
+                articles.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+            }
+
+            renderArticles();
+            renderFeedsSidebar();
+
+            icon.classList.remove('spinning');
+
+            // Visa toast
+            if (!silent) {
+                Components.showToast(`${articles.length} artiklar från ${successCount} källor`, 'success');
+            } else if (newArticleCount > 0) {
+                Components.showToast(`${newArticleCount} nya artiklar!`, 'success');
+            }
+
+            // Starta/återställ auto-update countdown
+            startAutoUpdateCountdown();
+        }
+
+        // Auto-update funktioner
+        function startAutoUpdateCountdown() {
+            secondsUntilUpdate = RSS_CONFIG.AUTO_UPDATE_INTERVAL / 1000;
+            updateCountdownDisplay();
+
+            if (countdownTimer) clearInterval(countdownTimer);
+            if (autoUpdateTimer) clearTimeout(autoUpdateTimer);
+
+            countdownTimer = setInterval(() => {
+                secondsUntilUpdate--;
+                updateCountdownDisplay();
+
+                if (secondsUntilUpdate <= 0) {
+                    clearInterval(countdownTimer);
+                }
+            }, 1000);
+
+            autoUpdateTimer = setTimeout(() => {
+                refreshAllFeeds(true); // Silent refresh
+            }, RSS_CONFIG.AUTO_UPDATE_INTERVAL);
+        }
+
+        function updateCountdownDisplay() {
+            const timerEl = document.getElementById('next-update-timer');
+            if (timerEl) {
+                const mins = Math.floor(secondsUntilUpdate / 60);
+                const secs = secondsUntilUpdate % 60;
+                timerEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        function highlightKeywords() {
+            articles.forEach(article => {
+                const text = (article.title + ' ' + article.description).toLowerCase();
+                article.keywordMatches = keywords.filter(kw =>
+                    text.includes(kw.toLowerCase())
+                );
+            });
+        }
+
+        // =========================================================================
+        // RENDER
+        // =========================================================================
+
+        function renderFeedsSidebar() {
+            const container = document.getElementById('feeds-list');
+            const categories = {};
+
+            RSS_FEEDS.forEach(feed => {
+                if (!categories[feed.category]) {
+                    categories[feed.category] = [];
+                }
+                const count = articles.filter(a => a.sourceId === feed.id).length;
+                categories[feed.category].push({ ...feed, count });
+            });
+
+            const categoryNames = {
+                tech: '💻 Tech',
+                finans: '💰 Finans',
+                nyheter: '📰 Nyheter',
+                omni: '🔍 Omni-sök'
+            };
+
+            // Lägg till Omni-artiklar som en egen kategori i sidomenyn
+            const omniCount = articles.filter(a => a.category === 'omni').length;
+            if (omniCount > 0) {
+                categories['omni'] = [{ id: 'omni', name: 'Omni-sökresultat', count: omniCount }];
+            }
+
+            let html = `
+                <div class="feed-source ${!currentFeed ? 'active' : ''}" onclick="selectFeed(null)">
+                    <div class="feed-source-icon">📚</div>
+                    <div class="feed-source-name">Alla källor</div>
+                    <div class="feed-source-count">${articles.length}</div>
+                </div>
+            `;
+
+            Object.entries(categories).forEach(([cat, feeds]) => {
+                html += `<div class="feed-category-title">${categoryNames[cat] || cat}</div>`;
+                feeds.forEach(feed => {
+                    html += `
+                        <div class="feed-source ${currentFeed === feed.id ? 'active' : ''}"
+                             onclick="selectFeed('${feed.id}')">
+                            <div class="feed-source-name">${feed.name}</div>
+                            <div class="feed-source-count">${feed.count}</div>
+                        </div>
+                    `;
+                });
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderArticles() {
+            const container = document.getElementById('articles-list');
+            let filtered = articles;
+
+            // Smart filtrering baserat på kategori
+            if (currentCategory === 'relevant') {
+                // Visa bara artiklar med hög relevanspoäng
+                filtered = filtered.filter(a => (a.relevanceScore || 0) >= RSS_CONFIG.RELEVANCE_THRESHOLD);
+                // Sortera efter relevans
+                filtered.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+            } else if (currentCategory === 'companies') {
+                // Visa bara artiklar som nämner bevakade företag
+                filtered = filtered.filter(a => a.hasCompanyMention);
+                filtered.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+            } else if (currentCategory !== 'all') {
+                // Standard kategorifiltrering
+                filtered = filtered.filter(a => a.category === currentCategory);
+            }
+
+            // Filtrera på källa
+            if (currentFeed) {
+                filtered = filtered.filter(a => a.sourceId === currentFeed);
+            }
+
+            // Sökfilter - sök även i företagsnamn
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(a =>
+                    a.title.toLowerCase().includes(query) ||
+                    a.description.toLowerCase().includes(query) ||
+                    a.source.toLowerCase().includes(query) ||
+                    (a.companyMatches && a.companyMatches.some(c => c.toLowerCase().includes(query)))
+                );
+            }
+
+            // Beräkna statistik
+            const relevantCount = articles.filter(a => (a.relevanceScore || 0) >= RSS_CONFIG.RELEVANCE_THRESHOLD).length;
+            const companyMentionCount = articles.filter(a => a.hasCompanyMention).length;
+
+            // Uppdatera statistik
+            const statsEl = document.querySelector('.articles-stats');
+            if (statsEl) {
+                if (currentCategory === 'relevant') {
+                    statsEl.textContent = `${filtered.length} relevanta artiklar (av ${articles.length} totalt)`;
+                } else if (currentCategory === 'companies') {
+                    statsEl.textContent = `${filtered.length} artiklar nämner bevakade företag`;
+                } else {
+                    statsEl.textContent = `${filtered.length} artiklar | 🎯 ${relevantCount} relevanta | 🏢 ${companyMentionCount} med företag`;
+                }
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <h3>Inga artiklar</h3>
+                        <p>${currentCategory === 'relevant'
+                            ? 'Inga artiklar matchade dina relevansfilter. Prova att justera nyckelorden i inställningarna.'
+                            : currentCategory === 'companies'
+                            ? 'Inga nyheter omnämner just nu något av de bevakade företagen.'
+                            : 'Inga artiklar matchade dina filter'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Begränsa till displayedCount
+            const displayArticles = filtered.slice(0, displayedCount);
+            const hasMore = filtered.length > displayedCount;
+
+            // Använd vertikal lista-layout för artikelkort
+            let html = `<div class="articles-list">`;
+
+            html += displayArticles.map(article => {
+                const hasKeywords = article.keywordMatches && article.keywordMatches.length > 0;
+                const categoryIcon = getCategoryIcon(article.category);
+                const isNewClass = article.isNew ? 'new' : '';
+                const isReadClass = article.read ? 'read' : '';
+                const timeAgo = formatTimeAgo(article.pubDate);
+
+                // Relevans-klasser
+                const relevanceClass = article.hasCompanyMention ? 'company-mention'
+                    : article.isHighRelevance ? 'high-relevance' : '';
+
+                // Relevans-badge
+                const relevanceBadge = article.relevanceScore >= 40
+                    ? `<span class="relevance-badge relevance-high">🎯 ${article.relevanceScore}p</span>`
+                    : article.relevanceScore >= RSS_CONFIG.RELEVANCE_THRESHOLD
+                    ? `<span class="relevance-badge relevance-medium">📊 ${article.relevanceScore}p</span>`
+                    : '';
+
+                // Company-badge
+                const companyBadge = article.companyMatches && article.companyMatches.length > 0
+                    ? `<span class="company-match">🏢 ${article.companyMatches.slice(0, 2).join(', ')}${article.companyMatches.length > 2 ? '...' : ''}</span>`
+                    : '';
+
+                return `
+                    <article class="article-card ${isNewClass} ${isReadClass} ${relevanceClass}"
+                             onclick="openArticleLightbox('${article.id}')">
+                        <div class="article-card-image-wrapper">
+                            ${article.image
+                                ? `<img src="${article.image}" class="article-card-image" alt="" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                   <div class="article-card-image-placeholder" style="display:none;">${categoryIcon}</div>`
+                                : `<div class="article-card-image-placeholder">${categoryIcon}</div>`
+                            }
+                        </div>
+                        <div class="article-card-content">
+                            <div class="article-source">
+                                <span class="article-source-badge">
+                                    ${getSourceLogo(article.sourceId) ? `<img src="${getSourceLogo(article.sourceId)}" class="article-source-logo" alt="" onerror="this.style.display='none'">` : ''}
+                                    ${escapeHtml(article.source)}
+                                </span>
+                                <span class="article-time">${timeAgo}</span>
+                                ${article.isNew ? '<span class="new-badge">Ny</span>' : ''}
+                                ${relevanceBadge}
+                                ${companyBadge}
+                                ${hasKeywords ? `<span class="keyword-match">🔔 ${article.keywordMatches.join(', ')}</span>` : ''}
+                            </div>
+                            <h3 class="article-title">${escapeHtml(article.title)}</h3>
+                            <p class="article-excerpt">${escapeHtml(article.description)}</p>
+                            <div class="article-meta">
+                                ${article.author ? `<span>✍️ ${escapeHtml(article.author)}</span>` : ''}
+                                <div class="article-actions">
+                                    <button class="article-action-btn" onclick="event.stopPropagation(); quickBookmark('${article.id}')" title="Spara">⭐</button>
+                                    <button class="article-action-btn" onclick="event.stopPropagation(); quickShare('${article.id}')" title="Dela">📤</button>
+                                    <button class="article-action-btn" onclick="event.stopPropagation(); window.open('${escapeHtml(article.link)}', '_blank')" title="Öppna">↗️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            html += `</div>`;
+
+            // Lägg till "Ladda fler" knapp
+            if (hasMore) {
+                html += `
+                    <div class="load-more-container">
+                        <button class="btn btn-secondary load-more-btn" onclick="loadMoreArticles()">
+                            Visa fler artiklar (${filtered.length - displayedCount} kvar)
+                        </button>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function loadMoreArticles() {
+            displayedCount += RSS_CONFIG.LOAD_MORE_COUNT;
+            renderArticles();
+        }
+
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just nu';
+            if (diffMins < 60) return `${diffMins} min sedan`;
+            if (diffHours < 24) return `${diffHours} tim sedan`;
+            if (diffDays === 1) return 'Igår';
+            if (diffDays < 7) return `${diffDays} dagar sedan`;
+
+            return date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'tech': '💻',
+                'finans': '💰',
+                'nyheter': '📰'
+            };
+            return icons[category] || '📄';
+        }
+
+        // =========================================================================
+        // LIGHTBOX FUNCTIONS
+        // =========================================================================
+
+        function openArticleLightbox(id) {
+            selectedArticle = articles.find(a => a.id === id);
+            if (!selectedArticle) return;
+
+            // Markera som läst
+            if (!readArticles.includes(selectedArticle.link)) {
+                readArticles.push(selectedArticle.link);
+                Utils.setStorage('rss-read', readArticles);
+                selectedArticle.read = true;
+                renderArticles(); // Uppdatera UI för att visa "read" status
+            }
+
+            // Uppdatera lightbox header
+            document.getElementById('lightbox-source').textContent = selectedArticle.source;
+            document.getElementById('lightbox-date').textContent = Utils.formatDate(selectedArticle.pubDate, { includeTime: true });
+            document.getElementById('lightbox-link').href = selectedArticle.link;
+
+            // Rendera innehållet
+            const content = document.getElementById('lightbox-content');
+            content.innerHTML = `
+                ${selectedArticle.image ? `<img src="${selectedArticle.image}" class="lightbox-image" alt="">` : ''}
+                <h1 class="lightbox-title">${escapeHtml(selectedArticle.title)}</h1>
+                <div class="lightbox-meta">
+                    <span>📅 ${Utils.formatDate(selectedArticle.pubDate, { includeTime: true })}</span>
+                    ${selectedArticle.author ? `<span>✍️ ${escapeHtml(selectedArticle.author)}</span>` : ''}
+                    <span>📁 ${selectedArticle.category}</span>
+                </div>
+                <div class="lightbox-text">
+                    <p>${escapeHtml(selectedArticle.description)}</p>
+                </div>
+                <div class="lightbox-full-content" id="full-content-area">
+                    <h4>Laddar fullständigt innehåll...</h4>
+                    <div class="lightbox-loading">
+                        <div class="loader"></div>
+                        <p class="mt-2">Hämtar artikel...</p>
+                    </div>
+                </div>
+            `;
+
+            // Visa lightbox
+            document.getElementById('article-lightbox').classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Försök hämta fullständigt innehåll via proxy
+            fetchFullArticleContent(selectedArticle.link);
+        }
+
+        function closeLightbox() {
+            document.getElementById('article-lightbox').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function closeLightboxOnBackdrop(event) {
+            if (event.target.id === 'article-lightbox') {
+                closeLightbox();
+            }
+        }
+
+        // Stäng med Escape-tangenten
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('article-lightbox').classList.contains('show')) {
+                closeLightbox();
+            }
+        });
+
+        async function fetchFullArticleContent(url) {
+            const contentArea = document.getElementById('full-content-area');
+
+            try {
+                // Använd en CORS-proxy för att hämta innehållet
+                // Vi provar flera alternativ
+                const proxyUrls = [
+                    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                    `https://corsproxy.io/?${encodeURIComponent(url)}`
+                ];
+
+                let html = null;
+                for (const proxyUrl of proxyUrls) {
+                    try {
+                        const response = await fetch(proxyUrl, {
+                            timeout: 10000,
+                            headers: {
+                                'Accept': 'text/html'
+                            }
+                        });
+                        if (response.ok) {
+                            html = await response.text();
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn('Proxy failed:', proxyUrl, e);
+                    }
+                }
+
+                if (!html) {
+                    throw new Error('Kunde inte hämta artikeln');
+                }
+
+                // Extrahera huvudinnehållet från HTML
+                const cleanContent = extractArticleContent(html);
+
+                if (cleanContent) {
+                    contentArea.innerHTML = `
+                        <h4>Fullständigt innehåll</h4>
+                        <div class="lightbox-text">${cleanContent}</div>
+                    `;
+                } else {
+                    contentArea.innerHTML = `
+                        <h4>Förhandsgranskning</h4>
+                        <p class="text-muted">Kunde inte extrahera fullständigt innehåll. Klicka på "Läs på originalkällan" för att läsa hela artikeln.</p>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error fetching article:', error);
+                contentArea.innerHTML = `
+                    <h4>Förhandsgranskning</h4>
+                    <p class="text-muted">Kunde inte hämta fullständigt innehåll. Klicka på "Läs på originalkällan" för att läsa hela artikeln.</p>
+                `;
+            }
+        }
+
+        function extractArticleContent(html) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // Ta bort störande element
+                const removeSelectors = [
+                    'script', 'style', 'nav', 'header', 'footer', 'aside',
+                    '.ad', '.ads', '.advertisement', '.cookie', '.cookies',
+                    '.popup', '.modal', '.newsletter', '.subscribe',
+                    '.social', '.share', '.comments', '.related',
+                    '[class*="cookie"]', '[class*="consent"]', '[class*="gdpr"]',
+                    '[class*="banner"]', '[class*="popup"]', '[class*="modal"]',
+                    '[id*="cookie"]', '[id*="consent"]', '[id*="gdpr"]',
+                    'iframe', 'video', 'audio'
+                ];
+
+                removeSelectors.forEach(selector => {
+                    doc.querySelectorAll(selector).forEach(el => el.remove());
+                });
+
+                // Försök hitta huvudinnehållet med vanliga selectors
+                const contentSelectors = [
+                    'article',
+                    '[class*="article-body"]',
+                    '[class*="article-content"]',
+                    '[class*="post-content"]',
+                    '[class*="entry-content"]',
+                    '[class*="story-body"]',
+                    '[class*="article__body"]',
+                    '.content',
+                    'main',
+                    '[role="main"]'
+                ];
+
+                let content = null;
+                for (const selector of contentSelectors) {
+                    const el = doc.querySelector(selector);
+                    if (el && el.textContent.trim().length > 200) {
+                        content = el;
+                        break;
+                    }
+                }
+
+                if (!content) {
+                    // Fallback: ta alla paragrafer
+                    const paragraphs = doc.querySelectorAll('p');
+                    if (paragraphs.length > 0) {
+                        const div = doc.createElement('div');
+                        paragraphs.forEach(p => {
+                            if (p.textContent.trim().length > 50) {
+                                div.appendChild(p.cloneNode(true));
+                            }
+                        });
+                        if (div.textContent.trim().length > 200) {
+                            content = div;
+                        }
+                    }
+                }
+
+                if (content) {
+                    // Rensa upp innehållet
+                    content.querySelectorAll('a').forEach(a => {
+                        a.removeAttribute('href');
+                        a.style.color = 'inherit';
+                        a.style.textDecoration = 'none';
+                    });
+
+                    // Behåll endast text och bilder
+                    const cleanHTML = content.innerHTML
+                        .replace(/<img[^>]*>/gi, '') // Ta bort bilder (kan visa originalbilden istället)
+                        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+
+                    return cleanHTML;
+                }
+
+                return null;
+            } catch (e) {
+                console.error('Error extracting content:', e);
+                return null;
+            }
+        }
+
+        // Snabbåtgärder för artikelkort
+        function quickBookmark(id) {
+            const article = articles.find(a => a.id === id);
+            if (article) {
+                Components.showToast(`"${article.title.substring(0, 30)}..." sparad ⭐`, 'success');
+            }
+        }
+
+        function quickShare(id) {
+            const article = articles.find(a => a.id === id);
+            if (article) {
+                if (navigator.share) {
+                    navigator.share({ title: article.title, url: article.link });
+                } else {
+                    Utils.copyToClipboard(article.link);
+                    Components.showToast('Länk kopierad!', 'success');
+                }
+            }
+        }
+
+        // =========================================================================
+        // ACTIONS
+        // =========================================================================
+
+        function selectFeed(feedId) {
+            currentFeed = feedId;
+            renderFeedsSidebar();
+            renderArticles();
+
+            const feedName = feedId ? RSS_FEEDS.find(f => f.id === feedId)?.name : 'Alla nyheter';
+            document.getElementById('articles-title').textContent = feedName;
+        }
+
+        function filterByCategory(category) {
+            currentCategory = category;
+
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.category === category);
+            });
+
+            renderArticles();
+        }
+
+        function bookmarkArticle() {
+            if (!selectedArticle) return;
+            Components.showToast('Artikel sparad ⭐', 'success');
+        }
+
+        function shareArticle() {
+            if (!selectedArticle) return;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: selectedArticle.title,
+                    url: selectedArticle.link
+                });
+            } else {
+                Utils.copyToClipboard(selectedArticle.link);
+                Components.showToast('Länk kopierad!', 'success');
+            }
+        }
+
+        function investigateArticle() {
+            if (!selectedArticle) return;
+            // Öppna i företagsbevakning med sökning på eventuellt företagsnamn
+            const query = encodeURIComponent(selectedArticle.title.split(' ').slice(0, 3).join(' '));
+            window.open(`../../bevakning/foretagslista/?search=${query}`, '_blank');
+        }
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('show');
+            if (modal.classList.contains('show')) {
+                renderKeywords();
+            }
+        }
+
+        function renderKeywords() {
+            const container = document.getElementById('keywords-list');
+            if (keywords.length === 0) {
+                container.innerHTML = '<p class="text-muted text-sm">Inga nyckelord tillagda</p>';
+                return;
+            }
+
+            container.innerHTML = keywords.map(kw => `
+                <span class="badge badge-member mr-2 mb-2" style="display: inline-flex; align-items: center; gap: 4px;">
+                    ${escapeHtml(kw)}
+                    <button onclick="removeKeyword('${escapeHtml(kw)}')" style="background:none;border:none;cursor:pointer;padding:0;margin-left:4px;">×</button>
+                </span>
+            `).join('');
+        }
+
+        function addKeyword() {
+            const input = document.getElementById('new-keyword');
+            const kw = input.value.trim().toLowerCase();
+
+            if (kw && !keywords.includes(kw)) {
+                keywords.push(kw);
+                Utils.setStorage('rss-keywords', keywords);
+                highlightKeywords();
+                renderKeywords();
+                renderArticles();
+            }
+
+            input.value = '';
+        }
+
+        function removeKeyword(kw) {
+            keywords = keywords.filter(k => k !== kw);
+            Utils.setStorage('rss-keywords', keywords);
+            highlightKeywords();
+            renderKeywords();
+            renderArticles();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
+
+        // Enkel hash-funktion för att skapa unika IDs
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return 'art' + Math.abs(hash).toString(36);
+        }
+
+        // =========================================================================
+        // INIT
+        // =========================================================================
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Kolla auth
+            const user = await Auth.getUser();
+            if (!user) {
+                window.location.href = '../../';
+                return;
+            }
+
+            // Ladda bevakade företag för smart filtrering
+            console.log('🔄 Laddar bevakade företag...');
+            await fetchMonitoredCompanies();
+
+            // Event listeners - kategori-filter
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', () => filterByCategory(tab.dataset.category));
+            });
+
+            // Sortering
+            document.getElementById('sort-select').addEventListener('change', (e) => {
+                const sortType = e.target.value;
+                if (sortType === 'oldest') {
+                    articles.sort((a, b) => a.pubDate - b.pubDate);
+                } else if (sortType === 'relevance') {
+                    articles.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+                } else {
+                    articles.sort((a, b) => b.pubDate - a.pubDate);
+                }
+                renderArticles();
+            });
+
+            // Artikelsökning med debounce
+            const articleSearchInput = document.getElementById('article-search');
+            let searchTimeout;
+            articleSearchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    searchQuery = e.target.value.trim();
+                    displayedCount = RSS_CONFIG.INITIAL_DISPLAY_COUNT; // Återställ paginering vid ny sökning
+                    renderArticles();
+                }, 300);
+            });
+
+            // Källsökning i sidopanelen
+            const feedSearchInput = document.getElementById('feed-search');
+            feedSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                document.querySelectorAll('.feed-source').forEach(el => {
+                    const name = el.querySelector('.feed-source-name')?.textContent.toLowerCase() || '';
+                    el.style.display = name.includes(query) || query === '' ? 'flex' : 'none';
+                });
+            });
+
+            // Nyckelord
+            document.getElementById('new-keyword').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addKeyword();
+            });
+
+            // Tangentbordsnavigering
+            document.addEventListener('keydown', (e) => {
+                // R = refresh
+                if (e.key === 'r' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
+                    refreshAllFeeds();
+                }
+            });
+
+            // Ladda feeds
+            await refreshAllFeeds();
+
+            // Visa välkomstmeddelande
+            console.log('🗞️ RSS-läsare startat!');
+            console.log(`📰 ${RSS_FEEDS.length} källor konfigurerade`);
+            console.log(`📊 ${monitoredCompanies.length} bevakade företag laddade`);
+            console.log('⏰ Auto-uppdatering var 5:e minut');
+            console.log('🎯 Smart filtrering aktiverad för Impact Loop');
+        });
+
+        // Cleanup vid sidstängning
+        window.addEventListener('beforeunload', () => {
+            if (autoUpdateTimer) clearTimeout(autoUpdateTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
+        });
+    </script>
+</body>
+</html>
