@@ -968,6 +968,9 @@
             return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : email.substring(0, 2).toUpperCase();
         }
 
+        // Aktiva subscriptions
+        var poitSubscription = null;
+
         async function showDashboard() {
             document.getElementById('login-form').classList.add('hide');
             document.getElementById('dashboard').classList.add('show');
@@ -975,6 +978,9 @@
             const email = currentUser.email;
             document.getElementById('user-email-display').textContent = email;
             document.getElementById('user-avatar').textContent = getInitials(email);
+
+            // Sätt upp realtime-subscription för POIT-händelser
+            setupRealtimeSubscription();
 
             try {
                 const { data: profile } = await sb
@@ -1014,10 +1020,98 @@
         }
 
         // =========================================================================
-        // DATA LOADING
+        // REALTIME SUBSCRIPTION
+        // =========================================================================
+
+        function setupRealtimeSubscription() {
+            // Avsluta befintlig subscription om sådan finns
+            if (poitSubscription) {
+                poitSubscription.unsubscribe();
+            }
+
+            poitSubscription = sb
+                .channel('poit_realtime_dashboard')
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'poit_announcements'
+                    },
+                    (payload) => {
+                        console.log('[Realtime] Ny POIT-händelse mottagen:', payload.new);
+                        // Visa toast-notifikation
+                        showNewEventToast(payload.new);
+                        // Invalidera cache
+                        if (window.CacheManager) {
+                            window.CacheManager.invalidate('poit');
+                            window.CacheManager.invalidate('dashboard_stats');
+                        }
+                        // Uppdatera statistik
+                        loadStats();
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('[Realtime] Dashboard subscription:', status);
+                });
+        }
+
+        function showNewEventToast(event) {
+            // Skapa toast-element om det inte finns
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;';
+                document.body.appendChild(toastContainer);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.style.cssText = 'background:#1e293b;color:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:flex;align-items:center;gap:10px;animation:slideIn 0.3s ease;cursor:pointer;';
+            toast.innerHTML = `
+                <span style="font-size:18px;">🔔</span>
+                <div>
+                    <div style="font-weight:600;font-size:13px;">Ny bolagshändelse</div>
+                    <div style="font-size:12px;opacity:0.8;">${event.company_name || 'Nytt företag'}</div>
+                </div>
+            `;
+            toast.onclick = () => {
+                refreshFeed();
+                toast.remove();
+            };
+
+            toastContainer.appendChild(toast);
+
+            // Ta bort efter 5 sekunder
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'slideOut 0.3s ease forwards';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        // =========================================================================
+        // DATA LOADING (med caching)
         // =========================================================================
 
         async function loadWatchedCompanies() {
+            const cacheKey = 'watched_companies';
+            const TTL = 10 * 60 * 1000; // 10 min
+
+            // Försök hämta från cache först
+            if (window.CacheManager) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached) {
+                    console.log('[Cache] Företagsdata från cache');
+                    watchedOrgnrs = cached.watchedOrgnrs;
+                    companyNames = cached.companyNames;
+                    document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
+                    return;
+                }
+            }
+
             const { data } = await sb
                 .from('loop_table')
                 .select('orgnr, company_name, sector, turnover_2024_sek')
@@ -1035,9 +1129,29 @@
                 }
             });
             document.getElementById('stat-companies').textContent = watchedOrgnrs.length;
+
+            // Spara i cache
+            if (window.CacheManager) {
+                window.CacheManager.set(cacheKey, { watchedOrgnrs, companyNames });
+            }
         }
 
         async function loadStats() {
+            const cacheKey = 'dashboard_stats';
+            const TTL = 1 * 60 * 1000; // 1 min
+
+            // Försök hämta från cache först
+            if (window.CacheManager) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached) {
+                    console.log('[Cache] Dashboard-statistik från cache');
+                    document.getElementById('stat-poit').textContent = cached.weekValue;
+                    document.getElementById('stat-total').textContent = cached.totalValue;
+                    document.getElementById('poit-badge').textContent = cached.weekValue;
+                    return;
+                }
+            }
+
             const today = new Date();
             const sevenDaysAgo = new Date(today);
             sevenDaysAgo.setDate(today.getDate() - 7);
@@ -1062,9 +1176,33 @@
             document.getElementById('stat-poit').textContent = weekValue;
             document.getElementById('stat-total').textContent = totalValue;
             document.getElementById('poit-badge').textContent = weekValue;
+
+            // Spara i cache
+            if (window.CacheManager) {
+                window.CacheManager.set(cacheKey, { weekValue, totalValue });
+            }
         }
 
         async function loadPoitEvents() {
+            const cacheKey = `poit_events_${currentOffset}_${pageSize}`;
+            const TTL = 2 * 60 * 1000; // 2 min
+
+            // Försök hämta från cache först
+            if (window.CacheManager && currentOffset === 0) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached) {
+                    console.log('[Cache] POIT-händelser från cache');
+                    allEvents = cached;
+                    updateCategoryCounts();
+                    applyFilter();
+                    if (allEvents.length === pageSize) {
+                        document.getElementById('load-more-btn').style.display = 'inline-flex';
+                    }
+                    showCacheIndicator();
+                    return;
+                }
+            }
+
             // Hämta ENDAST bolagshändelser för Loop's 1214 bevakade företag
             // Filtrera på matched_orgnr för att endast få matchade händelser
             const { data, error } = await sb
@@ -1090,6 +1228,20 @@
 
             if (allEvents.length === pageSize) {
                 document.getElementById('load-more-btn').style.display = 'inline-flex';
+            }
+
+            // Spara i cache (endast första sidan)
+            if (window.CacheManager && currentOffset === 0) {
+                window.CacheManager.set(cacheKey, allEvents);
+            }
+        }
+
+        function showCacheIndicator() {
+            // Visa en liten indikator att data är cachad
+            const badge = document.getElementById('poit-badge');
+            if (badge && !badge.dataset.cacheShown) {
+                badge.title = 'Data från cache - klicka för att uppdatera';
+                badge.dataset.cacheShown = 'true';
             }
         }
 
@@ -1363,8 +1515,14 @@
         // =========================================================================
 
         async function refreshFeed() {
+            // Invalidera cache vid manuell refresh
+            if (window.CacheManager) {
+                window.CacheManager.invalidate('poit_events');
+                window.CacheManager.invalidate('dashboard_stats');
+            }
             currentOffset = 0;
             await loadPoitEvents();
+            await loadStats();
         }
 
         async function loadMoreEvents() {

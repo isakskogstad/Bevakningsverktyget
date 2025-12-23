@@ -463,9 +463,23 @@
         }
 
         async function refreshAll() {
+            const cacheKey = 'press_releases';
+            const TTL = 2 * 60 * 1000; // 2 min cache
+
             const icon = document.getElementById('refresh-icon');
             icon.textContent = '⏳';
             icon.style.animation = 'spin 1s linear infinite';
+
+            // Visa cachade releaser direkt om de finns
+            if (releases.length === 0 && window.CacheManager) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached && cached.length > 0) {
+                    console.log('[Cache] Visar cachade pressmeddelanden...');
+                    releases = cached;
+                    renderReleases();
+                    updateSourceFilter();
+                }
+            }
 
             releases = [];
 
@@ -484,6 +498,12 @@
 
             renderReleases();
             updateSourceFilter();
+
+            // Spara i cache
+            if (window.CacheManager && releases.length > 0) {
+                window.CacheManager.set(cacheKey, releases);
+                console.log('[Cache] Sparade', releases.length, 'pressmeddelanden');
+            }
 
             icon.textContent = '🔄';
             icon.style.animation = '';

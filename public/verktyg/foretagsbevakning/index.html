@@ -667,9 +667,10 @@
                                 <th>Sektor</th>
                                 <th>Stad</th>
                                 <th>VD</th>
-                                <th>Ordförande</th>
+                                <th>Anställda</th>
                                 <th>Omsättning 2024</th>
-                                <th>Status</th>
+                                <th>Värdering</th>
+                                <th>Hemsida</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -849,9 +850,25 @@
         }
 
         async function loadCompanies() {
+            const cacheKey = 'companies_list';
+            const TTL = 10 * 60 * 1000; // 10 min
+
+            // Försök hämta från cache först
+            if (window.CacheManager) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached) {
+                    console.log('[Cache] Företagslista från cache');
+                    companies = cached;
+                    filteredCompanies = [...companies];
+                    document.getElementById('stat-total').textContent = companies.length;
+                    renderCompanies();
+                    return;
+                }
+            }
+
             const { data, error } = await sb
                 .from('loop_companies_with_management')
-                .select('orgnr, company_name, sector, city, turnover_2024_sek, investment_status, ceo_name, chairman_name, website, board_count')
+                .select('orgnr, company_name, sector, city, turnover_2024_sek, investment_status, ceo_name, chairman_name, website, board_count, logo_url, latest_valuation_sek, total_funding_sek, num_employees, largest_owners, foundation_date, ebit_2024_sek')
                 .order('company_name');
 
             if (error) {
@@ -864,6 +881,11 @@
             filteredCompanies = [...companies];
             document.getElementById('stat-total').textContent = companies.length;
             renderCompanies();
+
+            // Spara i cache
+            if (window.CacheManager) {
+                window.CacheManager.set(cacheKey, companies);
+            }
         }
 
         async function loadSectors() {
@@ -949,7 +971,7 @@
             if (pageData.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9" class="empty-state">
+                        <td colspan="10" class="empty-state">
                             <h3>Inga företag hittades</h3>
                             <p>Försök ändra dina sökfilter</p>
                         </td>
@@ -959,18 +981,19 @@
                 tbody.innerHTML = pageData.map(c => `
                     <tr>
                         <td>
-                            <div class="company-name">${c.company_name || 'Okänt'}</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${getCompanyLogo(c)}
+                                <div class="company-name">${c.company_name || 'Okänt'}</div>
+                            </div>
                         </td>
                         <td class="company-orgnr">${c.orgnr || '-'}</td>
                         <td>${c.sector ? `<span class="sector-badge">${c.sector.split(',')[0]}</span>` : '-'}</td>
                         <td>${c.city || '-'}</td>
                         <td>${c.ceo_name || '-'}</td>
-                        <td>${c.chairman_name || '-'}</td>
+                        <td>${c.num_employees || '-'}</td>
                         <td>${c.turnover_2024_sek ? formatCurrency(c.turnover_2024_sek) : '-'}</td>
-                        <td>
-                            <span class="status-dot active"></span>
-                            Bevakas
-                        </td>
+                        <td>${c.latest_valuation_sek ? formatCurrency(c.latest_valuation_sek) : '-'}</td>
+                        <td>${c.website ? `<a href="${c.website.startsWith('http') ? c.website : 'https://' + c.website}" target="_blank" rel="noopener" style="color: var(--gray-700); text-decoration: none;">🔗</a>` : '-'}</td>
                         <td>
                             <button class="btn btn-secondary btn-sm" onclick="viewCompany('${c.orgnr}')">Visa</button>
                         </td>
@@ -986,6 +1009,36 @@
 
             document.getElementById('prev-btn').disabled = currentPage === 0;
             document.getElementById('next-btn').disabled = end >= total;
+        }
+
+        function getCompanyLogo(company) {
+            // Om det finns en logo_url, använd den
+            if (company.logo_url) {
+                return `<img src="${company.logo_url}"
+                    alt="${company.company_name}"
+                    style="width: 32px; height: 32px; border-radius: 6px; object-fit: contain; background: #f5f5f5;"
+                    onerror="this.outerHTML='${generateInitialsLogo(company.company_name).replace(/'/g, "\\'")}'">`;
+            }
+            // Annars generera initialer
+            return generateInitialsLogo(company.company_name);
+        }
+
+        function generateInitialsLogo(name) {
+            if (!name) return '';
+            // Få initialer (max 2 bokstäver)
+            const words = name.trim().split(/\s+/);
+            let initials;
+            if (words.length >= 2) {
+                initials = (words[0][0] + words[1][0]).toUpperCase();
+            } else {
+                initials = name.substring(0, 2).toUpperCase();
+            }
+            // Generera en konsekvent färg baserad på namnet
+            const colors = ['#3b82f6', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1'];
+            const colorIndex = name.charCodeAt(0) % colors.length;
+            const bgColor = colors[colorIndex];
+
+            return `<div style="width: 32px; height: 32px; border-radius: 6px; background: ${bgColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">${initials}</div>`;
         }
 
         function formatCurrency(value) {

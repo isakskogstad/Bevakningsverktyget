@@ -223,6 +223,227 @@ const Utils = (function() {
     }
 
     // --------------------------------------------------------------------------
+    // CACHE MANAGER - Intelligent caching med TTL
+    // --------------------------------------------------------------------------
+
+    const CacheManager = {
+        // Time-To-Live i millisekunder (aggressiv caching)
+        TTL: {
+            POIT_EVENTS: 2 * 60 * 1000,       // 2 min
+            COMPANIES: 10 * 60 * 1000,         // 10 min
+            RSS_ARTICLES: 2 * 60 * 1000,       // 2 min
+            COMPANY_DETAILS: 10 * 60 * 1000,   // 10 min
+            STATS: 1 * 60 * 1000,              // 1 min
+            PRESS_RELEASES: 2 * 60 * 1000      // 2 min
+        },
+
+        PREFIX: 'bv_cache_',
+
+        /**
+         * Spara data med tidsstämpel
+         */
+        set(key, data) {
+            try {
+                const cacheEntry = {
+                    data,
+                    timestamp: Date.now(),
+                    version: '1.0'
+                };
+                localStorage.setItem(this.PREFIX + key, JSON.stringify(cacheEntry));
+                return true;
+            } catch (e) {
+                console.warn('Cache set error:', e);
+                // Försök rensa gammal cache om storage är full
+                this.cleanup();
+                return false;
+            }
+        },
+
+        /**
+         * Hämta cachad data om den inte har expirerat
+         */
+        get(key, ttl) {
+            try {
+                const cached = localStorage.getItem(this.PREFIX + key);
+                if (!cached) return null;
+
+                const { data, timestamp } = JSON.parse(cached);
+                const age = Date.now() - timestamp;
+
+                if (age > ttl) {
+                    localStorage.removeItem(this.PREFIX + key);
+                    return null;
+                }
+
+                return data;
+            } catch (e) {
+                console.warn('Cache get error:', e);
+                return null;
+            }
+        },
+
+        /**
+         * Hämta cachad data och dess ålder
+         */
+        getWithMeta(key, ttl) {
+            try {
+                const cached = localStorage.getItem(this.PREFIX + key);
+                if (!cached) return { data: null, age: null, isStale: true };
+
+                const { data, timestamp } = JSON.parse(cached);
+                const age = Date.now() - timestamp;
+                const isStale = age > ttl;
+
+                return { data, age, isStale, timestamp };
+            } catch (e) {
+                return { data: null, age: null, isStale: true };
+            }
+        },
+
+        /**
+         * Invalidera alla cache-nycklar som matchar ett mönster
+         */
+        invalidate(pattern) {
+            const prefix = this.PREFIX;
+            Object.keys(localStorage)
+                .filter(k => k.startsWith(prefix) && k.includes(pattern))
+                .forEach(k => localStorage.removeItem(k));
+        },
+
+        /**
+         * Rensa all cache
+         */
+        clear() {
+            const prefix = this.PREFIX;
+            Object.keys(localStorage)
+                .filter(k => k.startsWith(prefix))
+                .forEach(k => localStorage.removeItem(k));
+        },
+
+        /**
+         * Rensa gammal cache (äldre än 24 timmar)
+         */
+        cleanup() {
+            const prefix = this.PREFIX;
+            const maxAge = 24 * 60 * 60 * 1000; // 24 timmar
+
+            Object.keys(localStorage)
+                .filter(k => k.startsWith(prefix))
+                .forEach(k => {
+                    try {
+                        const { timestamp } = JSON.parse(localStorage.getItem(k));
+                        if (Date.now() - timestamp > maxAge) {
+                            localStorage.removeItem(k);
+                        }
+                    } catch (e) {
+                        localStorage.removeItem(k);
+                    }
+                });
+        },
+
+        /**
+         * Formatera cache-ålder för visning
+         */
+        formatAge(ageMs) {
+            if (!ageMs) return '';
+            const seconds = Math.floor(ageMs / 1000);
+            const minutes = Math.floor(seconds / 60);
+
+            if (seconds < 60) return `${seconds} sek sedan`;
+            if (minutes < 60) return `${minutes} min sedan`;
+            return 'Över en timme sedan';
+        }
+    };
+
+    // --------------------------------------------------------------------------
+    // SMART DATA FETCHER - Visa cache, uppdatera i bakgrunden
+    // --------------------------------------------------------------------------
+
+    const SmartFetcher = {
+        /**
+         * Hämta data med smart caching
+         * @param {string} cacheKey - Nyckel för cache
+         * @param {Function} fetchFn - Async funktion som hämtar data
+         * @param {number} ttl - Time-to-live i millisekunder
+         * @param {Object} options - Extra options
+         */
+        async fetch(cacheKey, fetchFn, ttl, options = {}) {
+            const { onCached, onFresh, forceRefresh = false } = options;
+
+            // Kolla cache först (om inte force refresh)
+            if (!forceRefresh) {
+                const { data: cachedData, isStale, age } = CacheManager.getWithMeta(cacheKey, ttl);
+
+                if (cachedData && !isStale) {
+                    // Cache är färsk - använd den
+                    if (onCached) onCached(cachedData, age);
+                    return cachedData;
+                }
+
+                if (cachedData && isStale) {
+                    // Cache finns men är gammal - visa den medan vi hämtar ny
+                    if (onCached) onCached(cachedData, age);
+                    // Fortsätt till att hämta ny data i bakgrunden
+                }
+            }
+
+            // Hämta ny data
+            try {
+                const freshData = await fetchFn();
+                CacheManager.set(cacheKey, freshData);
+
+                if (onFresh) onFresh(freshData);
+                return freshData;
+            } catch (error) {
+                console.error('SmartFetcher error:', error);
+                // Returnera gammal cache om fetch misslyckas
+                const { data: fallbackData } = CacheManager.getWithMeta(cacheKey, Infinity);
+                return fallbackData || null;
+            }
+        },
+
+        /**
+         * Hämta med stale-while-revalidate mönster
+         * Visar cachad data direkt, uppdaterar i bakgrunden
+         */
+        async fetchWithSWR(cacheKey, fetchFn, ttl, options = {}) {
+            const { onData, onUpdate } = options;
+            const { data: cachedData, age, isStale } = CacheManager.getWithMeta(cacheKey, ttl);
+
+            // Visa cachad data direkt om den finns
+            if (cachedData) {
+                if (onData) onData(cachedData, { fromCache: true, age });
+            }
+
+            // Om cache är stale eller tom, hämta ny data
+            if (isStale || !cachedData) {
+                try {
+                    const freshData = await fetchFn();
+                    CacheManager.set(cacheKey, freshData);
+
+                    // Kolla om data har ändrats
+                    const hasChanged = JSON.stringify(freshData) !== JSON.stringify(cachedData);
+
+                    if (onData && !cachedData) {
+                        // Första laddningen
+                        onData(freshData, { fromCache: false, age: 0 });
+                    } else if (hasChanged && onUpdate) {
+                        // Data har uppdaterats
+                        onUpdate(freshData, cachedData);
+                    }
+
+                    return freshData;
+                } catch (error) {
+                    console.error('SWR fetch error:', error);
+                    return cachedData;
+                }
+            }
+
+            return cachedData;
+        }
+    };
+
+    // --------------------------------------------------------------------------
     // VALIDERING
     // --------------------------------------------------------------------------
 
@@ -333,6 +554,10 @@ const Utils = (function() {
         getStorage,
         removeStorage,
 
+        // Cache (nytt)
+        CacheManager,
+        SmartFetcher,
+
         // Validering
         isValidEmail,
         isValidOrgNr,
@@ -349,3 +574,7 @@ const Utils = (function() {
         copyToClipboard
     };
 })();
+
+// Exponera CacheManager globalt för enkel åtkomst
+window.CacheManager = Utils.CacheManager;
+window.SmartFetcher = Utils.SmartFetcher;

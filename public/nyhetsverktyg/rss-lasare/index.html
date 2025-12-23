@@ -1321,11 +1321,28 @@
         }
 
         async function refreshAllFeeds(silent = false) {
+            const cacheKey = 'rss_articles';
+            const TTL = 2 * 60 * 1000; // 2 min cache
+
             const icon = document.getElementById('refresh-icon');
             icon.classList.add('spinning');
 
             const previousCount = articles.length;
             const previousIds = new Set(articles.map(a => a.id));
+
+            // Visa cachade artiklar direkt om det är första laddningen
+            if (articles.length === 0 && window.CacheManager) {
+                const cached = window.CacheManager.get(cacheKey, TTL);
+                if (cached && cached.length > 0) {
+                    console.log('[Cache] Visar cachade RSS-artiklar...');
+                    articles = cached;
+                    highlightKeywords();
+                    applyRelevanceScoring();
+                    renderArticles();
+                    renderFeedsSidebar();
+                    // Fortsätt att hämta i bakgrunden...
+                }
+            }
 
             articles = [];
             const enabledFeeds = RSS_FEEDS.filter(f => f.enabled);
@@ -1395,6 +1412,12 @@
             renderFeedsSidebar();
 
             icon.classList.remove('spinning');
+
+            // Spara i cache
+            if (window.CacheManager && articles.length > 0) {
+                window.CacheManager.set(cacheKey, articles);
+                console.log('[Cache] Sparade', articles.length, 'RSS-artiklar i cache');
+            }
 
             // Visa toast
             if (!silent) {
